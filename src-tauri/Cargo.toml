@@ -1,8 +1,8 @@
 [package]
 name = "qbt"
 version = "0.0.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "qBittorrent"
+authors = ["karoyqiu@gmail.com"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
