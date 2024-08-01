@@ -1,5 +1,5 @@
 {
-  "plugins": ["prettier-plugin-organize-attributes"],
+  "plugins": ["prettier-plugin-tailwindcss", "prettier-plugin-organize-attributes"],
   "attributeGroups": ["$CODE_GUIDE"],
   "attributeSort": "ASC",
   "printWidth": 100,

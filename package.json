@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^1",
+    "primeicons": "^7.0.0",
+    "primereact": "^10.8.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
@@ -21,11 +23,15 @@
     "@typescript-eslint/eslint-plugin": "latest",
     "@typescript-eslint/parser": "latest",
     "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.19",
     "eslint": "latest",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-react": "latest",
+    "postcss": "^8.4.40",
     "prettier": "^3.3.3",
     "prettier-plugin-organize-attributes": "^1.0.0",
+    "prettier-plugin-tailwindcss": "^0.6.5",
+    "tailwindcss": "^3.4.7",
     "typescript": "^5.2.2",
     "vite": "^5.3.1"
   }

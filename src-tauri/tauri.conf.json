@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../node_modules/@tauri-apps/cli/schema.json",
+  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
     "beforeDevCommand": "yarn dev",
     "beforeBuildCommand": "yarn build",
@@ -12,10 +12,11 @@
   },
   "tauri": {
     "allowlist": {
-      "all": false,
       "shell": {
-        "all": false,
         "open": true
+      },
+      "window": {
+        "show": true
       }
     },
     "windows": [
@@ -23,7 +24,8 @@
         "center": true,
         "title": "qBittorrent",
         "width": 1200,
-        "height": 700
+        "height": 700,
+        "visible": false
       }
     ],
     "security": {

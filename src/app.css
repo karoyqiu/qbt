@@ -1,0 +1,69 @@
+@layer tailwind-base, primereact, tailwind-utilities;
+
+/* IMPORTANT: In "styled" mode you must add the PrimeReact Theme here. Do NOT include in "unstyled" mode */
+@import 'primereact/resources/themes/lara-dark-blue/theme.css' layer(primereact);
+
+@layer tailwind-base {
+  @tailwind base;
+}
+
+@layer tailwind-utilities {
+  @tailwind components;
+  @tailwind utilities;
+}
+
+@layer base {
+  html {
+    font-size: 75%;
+  }
+
+  body {
+    @apply m-0;
+  }
+}
+
+@layer components {
+  #root {
+    @apply h-screen w-screen;
+  }
+
+  .card {
+    @apply border-[--card-border] bg-[--surface-card];
+  }
+
+  .join {
+    @apply inline-flex items-stretch;
+
+    & .join-item:not(:first-child):not(:last-child),
+    & *:not(:first-child):not(:last-child) .join-item {
+      @apply rounded-none;
+    }
+
+    & .join-item:first-child:not(:last-child),
+    & *:first-child:not(:last-child) .join-item {
+      @apply rounded-e-none;
+    }
+
+    & .join-item:last-child:not(:first-child),
+    & *:last-child:not(:first-child) .join-item {
+      @apply rounded-s-none;
+    }
+
+    & .join-item:not(:last-child),
+    & *:not(:last-child) .join-item {
+      @apply border-e-0;
+    }
+  }
+
+  @supports not selector(:has(*)) {
+    :where(.join *) {
+      @apply rounded-[inherit];
+    }
+  }
+
+  @supports selector(:has(*)) {
+    :where(.join *:has(.join-item)) {
+      @apply rounded-[inherit];
+    }
+  }
+}
