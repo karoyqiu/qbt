@@ -1,7 +1,7 @@
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { ProgressBar } from 'primereact/progressbar';
-import type { TorrentInfo } from '../lib/qBittorrentTypes';
+import type { TorrentFilter, TorrentInfo } from '../lib/qBittorrentTypes';
 
 const threshold = 1024 as const;
 const sizeUnits = ['byte', 'kilobyte', 'megabyte', 'gigabyte', 'terabyte', 'petabyte'] as const;
@@ -41,13 +41,14 @@ const formatSize = (bytes: number, formatters: readonly Intl.NumberFormat[]) => 
 };
 
 type TorrentTableProps = {
+  filter: TorrentFilter;
   torrents: TorrentInfo[];
   selection: TorrentInfo[];
   onSelectionChange: (value: TorrentInfo[]) => void;
 };
 
 export default function TorrentTable(props: TorrentTableProps) {
-  const { torrents, selection, onSelectionChange } = props;
+  const { filter, torrents, selection, onSelectionChange } = props;
 
   return (
     <div className="min-h-0 grow">
@@ -62,7 +63,18 @@ export default function TorrentTable(props: TorrentTableProps) {
         onSelectionChange={(e) => onSelectionChange(e.value)}
       >
         <Column selectionMode="multiple" />
-        <Column field="name" header="Name" />
+        <Column
+          field="name"
+          header="Name"
+          body={(torrent: TorrentInfo) => (
+            <span
+              className="hover:cursor-pointer hover:text-[--primary-color] hover:underline"
+              onClick={() => console.log(torrent.name)}
+            >
+              {torrent.name}
+            </span>
+          )}
+        />
         <Column
           field="size"
           header="Size"
@@ -86,20 +98,24 @@ export default function TorrentTable(props: TorrentTableProps) {
             </div>
           )}
         />
-        <Column
-          field="added_on"
-          header="Added at"
-          body={(torrent: TorrentInfo) => new Date(torrent.added_on * 1000).toLocaleString()}
-        />
-        <Column
-          field="completion_on"
-          header="Completed at"
-          body={(torrent: TorrentInfo) =>
-            torrent.completion_on > 0
-              ? new Date(torrent.completion_on * 1000).toLocaleString()
-              : null
-          }
-        />
+        {filter !== 'completed' && (
+          <Column
+            field="added_on"
+            header="Added at"
+            body={(torrent: TorrentInfo) => new Date(torrent.added_on * 1000).toLocaleString()}
+          />
+        )}
+        {filter !== 'downloading' && (
+          <Column
+            field="completion_on"
+            header="Completed at"
+            body={(torrent: TorrentInfo) =>
+              torrent.completion_on > 0
+                ? new Date(torrent.completion_on * 1000).toLocaleString()
+                : null
+            }
+          />
+        )}
       </DataTable>
     </div>
   );

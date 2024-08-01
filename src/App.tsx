@@ -94,7 +94,12 @@ function App() {
           onTabChange={(e) => setFilter(e.value.data as TorrentFilter)}
         />
       </div>
-      <TorrentTable torrents={torrents} selection={selected} onSelectionChange={setSelected} />
+      <TorrentTable
+        filter={filter}
+        torrents={torrents}
+        selection={selected}
+        onSelectionChange={setSelected}
+      />
       <LoginDialog
         open={showLogin}
         onLogin={(data) => {
