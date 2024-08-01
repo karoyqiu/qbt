@@ -1,54 +1,19 @@
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { ProgressBar } from 'primereact/progressbar';
+import { formatPercent, formatSize } from '../lib/format';
 import type { TorrentFilter, TorrentInfo } from '../lib/qBittorrentTypes';
-
-const threshold = 1024 as const;
-const sizeUnits = ['byte', 'kilobyte', 'megabyte', 'gigabyte', 'terabyte', 'petabyte'] as const;
-const sizeFormatters = Object.freeze(
-  sizeUnits.map((unit) =>
-    Intl.NumberFormat(undefined, {
-      style: 'unit',
-      unit,
-      maximumFractionDigits: 2,
-    }),
-  ),
-);
-const speedFormatters = Object.freeze(
-  sizeUnits.map((unit) =>
-    Intl.NumberFormat(undefined, {
-      style: 'unit',
-      unit: `${unit}-per-second`,
-      maximumFractionDigits: 2,
-    }),
-  ),
-);
-const percentFormatter = new Intl.NumberFormat(undefined, {
-  style: 'percent',
-  minimumFractionDigits: 2,
-});
-const formatSize = (bytes: number, formatters: readonly Intl.NumberFormat[]) => {
-  let i = 0;
-  let n = bytes;
-
-  while (n > threshold && i < formatters.length) {
-    n /= threshold;
-    i += 1;
-  }
-
-  const formatter = formatters[i];
-  return formatter.format(n);
-};
 
 type TorrentTableProps = {
   filter: TorrentFilter;
   torrents: TorrentInfo[];
   selection: TorrentInfo[];
   onSelectionChange: (value: TorrentInfo[]) => void;
+  onClick: (hash: string) => void;
 };
 
 export default function TorrentTable(props: TorrentTableProps) {
-  const { filter, torrents, selection, onSelectionChange } = props;
+  const { filter, torrents, selection, onSelectionChange, onClick } = props;
 
   return (
     <div className="min-h-0 grow">
@@ -68,8 +33,8 @@ export default function TorrentTable(props: TorrentTableProps) {
           header="Name"
           body={(torrent: TorrentInfo) => (
             <span
-              className="hover:cursor-pointer hover:text-[--primary-color] hover:underline"
-              onClick={() => console.log(torrent.name)}
+              className="cursor-pointer hover:text-[--primary-color] hover:underline"
+              onClick={() => onClick(torrent.hash)}
             >
               {torrent.name}
             </span>
@@ -80,7 +45,7 @@ export default function TorrentTable(props: TorrentTableProps) {
           header="Size"
           headerClassName="text-end"
           bodyClassName="font-mono text-end"
-          body={(torrent: TorrentInfo) => formatSize(torrent.size, sizeFormatters)}
+          body={(torrent: TorrentInfo) => formatSize(torrent.size)}
         />
         <Column
           field="completed"
@@ -89,7 +54,7 @@ export default function TorrentTable(props: TorrentTableProps) {
           bodyClassName="font-mono text-end"
           body={(torrent: TorrentInfo) => (
             <div className="flex flex-col">
-              <span>{percentFormatter.format(torrent.completed / torrent.size)}</span>
+              <span>{formatPercent(torrent.completed / torrent.size)}</span>
               <ProgressBar
                 value={(torrent.completed * 100) / torrent.size}
                 showValue={false}

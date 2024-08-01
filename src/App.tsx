@@ -5,11 +5,14 @@ import { InputText } from 'primereact/inputtext';
 import { Menubar } from 'primereact/menubar';
 import type { MenuItem } from 'primereact/menuitem';
 import { TabMenu } from 'primereact/tabmenu';
+import type { TreeTableExpandedKeysType, TreeTableSelectionKeysType } from 'primereact/treetable';
 import { useEffect, useState } from 'react';
 import { useInterval, useLocalStorage } from 'usehooks-ts';
+import makeTree from './lib/makeTree';
 import QBittorrent from './lib/QBittorrent';
 import { TorrentInfo, type TorrentFilter } from './lib/qBittorrentTypes';
 import LoginDialog, { type Credentials } from './ui/LoginDialog';
+import TorrentDialog, { TorrentNode } from './ui/TorrentDialog';
 import TorrentTable from './ui/TorrentTable';
 
 let qbt: QBittorrent;
@@ -25,6 +28,10 @@ function App() {
   const [refreshInterval, setRefreshInterval] = useState<number | null>(null);
   const [torrents, setTorrents] = useState<TorrentInfo[]>([]);
   const [selected, setSelected] = useState<TorrentInfo[]>([]);
+  const [nodes, setNodes] = useState<TorrentNode[]>([]);
+  const [selectedNodes, setSelectedNodes] = useState<TreeTableSelectionKeysType>({});
+  const [expanded, setExpanded] = useState<TreeTableExpandedKeysType>({});
+  const [showTorrent, setShowTorrent] = useState(false);
 
   const buttons: MenuItem[] = [
     { label: 'Add', icon: 'pi pi-plus' },
@@ -99,6 +106,21 @@ function App() {
         torrents={torrents}
         selection={selected}
         onSelectionChange={setSelected}
+        onClick={async (hash) => {
+          if (!qbt) {
+            return;
+          }
+
+          setNodes([]);
+          setShowTorrent(true);
+
+          const content = await qbt.getTorrentContent(hash);
+          const { nodes, selected, expanded } = makeTree(content);
+
+          setNodes(nodes);
+          setSelectedNodes(selected);
+          setExpanded(expanded);
+        }}
       />
       <LoginDialog
         open={showLogin}
@@ -107,6 +129,14 @@ function App() {
             setCredentials(data);
           }
         }}
+      />
+      <TorrentDialog
+        open={showTorrent}
+        onOpenChanged={setShowTorrent}
+        title="Torrent"
+        nodes={nodes}
+        selected={selectedNodes}
+        expanded={expanded}
       />
     </div>
   );
