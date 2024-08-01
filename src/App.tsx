@@ -7,8 +7,10 @@ import type { MenuItem } from 'primereact/menuitem';
 import { TabMenu } from 'primereact/tabmenu';
 import { useEffect, useState } from 'react';
 import { useInterval, useLocalStorage } from 'usehooks-ts';
-import LoginDialog, { type Credentials } from './LoginDialog';
 import QBittorrent from './lib/QBittorrent';
+import { TorrentInfo, type TorrentFilter } from './lib/qBittorrentTypes';
+import LoginDialog, { type Credentials } from './ui/LoginDialog';
+import TorrentTable from './ui/TorrentTable';
 
 let qbt: QBittorrent;
 
@@ -19,7 +21,10 @@ function App() {
     password: '',
   });
   const [showLogin, setShowLogin] = useState(false);
+  const [filter, setFilter] = useState<TorrentFilter>('downloading');
   const [refreshInterval, setRefreshInterval] = useState<number | null>(null);
+  const [torrents, setTorrents] = useState<TorrentInfo[]>([]);
+  const [selected, setSelected] = useState<TorrentInfo[]>([]);
 
   const buttons: MenuItem[] = [
     { label: 'Add', icon: 'pi pi-plus' },
@@ -27,6 +32,23 @@ function App() {
     { label: 'Resume', icon: 'pi pi-play' },
     { label: 'Delete', icon: 'pi pi-trash' },
     { label: 'Settings', icon: 'pi pi-cog' },
+  ];
+  const tabs: MenuItem[] = [
+    {
+      label: 'All',
+      icon: 'pi pi-list',
+      data: 'all',
+    },
+    {
+      label: 'Downloading',
+      icon: 'pi pi-download',
+      data: 'downloading',
+    },
+    {
+      label: 'Completed',
+      icon: 'pi pi-check',
+      data: 'completed',
+    },
   ];
 
   useEffect(() => {
@@ -51,16 +73,14 @@ function App() {
   useInterval(() => {
     if (qbt) {
       qbt
-        .getTorrentList({ filter: 'downloading', sort: 'added_on' })
-        .then((torrents) => {
-          console.debug(torrents);
-        })
+        .getTorrentList({ filter, sort: filter === 'completed' ? 'completion_on' : 'added_on' })
+        .then(setTorrents)
         .catch(console.error);
     }
   }, refreshInterval);
 
   return (
-    <>
+    <div className="flex h-full w-full flex-col">
       <div className="card flex gap-4">
         <Menubar className="border-none bg-transparent" model={buttons} />
         <IconField className="grow self-center" iconPosition="left">
@@ -69,22 +89,12 @@ function App() {
         </IconField>
         <TabMenu
           className="pb-1"
-          model={[
-            {
-              label: 'All',
-              icon: 'pi pi-list',
-            },
-            {
-              label: 'Downloading',
-              icon: 'pi pi-download',
-            },
-            {
-              label: 'Completed',
-              icon: 'pi pi-check',
-            },
-          ]}
+          model={tabs}
+          activeIndex={tabs.findIndex((tab) => tab.data === filter)}
+          onTabChange={(e) => setFilter(e.value.data as TorrentFilter)}
         />
       </div>
+      <TorrentTable torrents={torrents} selection={selected} onSelectionChange={setSelected} />
       <LoginDialog
         open={showLogin}
         onLogin={(data) => {
@@ -93,7 +103,7 @@ function App() {
           }
         }}
       />
-    </>
+    </div>
   );
 }
 
