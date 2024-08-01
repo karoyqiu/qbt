@@ -6,6 +6,7 @@ import { Menubar } from 'primereact/menubar';
 import type { MenuItem } from 'primereact/menuitem';
 import { TabMenu } from 'primereact/tabmenu';
 import { useEffect } from 'react';
+import LoginDialog from './LoginDialog';
 
 function App() {
   const buttons: MenuItem[] = [
@@ -46,6 +47,7 @@ function App() {
           ]}
         />
       </div>
+      <LoginDialog open onLogin={() => {}} />
     </>
   );
 }
