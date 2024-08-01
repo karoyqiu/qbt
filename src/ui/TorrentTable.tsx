@@ -27,7 +27,7 @@ export default function TorrentTable(props: TorrentTableProps) {
         selection={selection}
         onSelectionChange={(e) => onSelectionChange(e.value)}
       >
-        <Column selectionMode="multiple" />
+        <Column selectionMode="multiple" headerClassName="w-0" bodyClassName="w-0" />
         <Column
           field="name"
           header="Name"
@@ -43,15 +43,15 @@ export default function TorrentTable(props: TorrentTableProps) {
         <Column
           field="size"
           header="Size"
-          headerClassName="text-end"
-          bodyClassName="font-mono text-end"
+          align="right"
+          bodyClassName="font-mono"
           body={(torrent: TorrentInfo) => formatSize(torrent.size)}
         />
         <Column
           field="completed"
           header="Progress"
-          headerClassName="text-end"
-          bodyClassName="font-mono text-end"
+          align="right"
+          bodyClassName="font-mono"
           body={(torrent: TorrentInfo) => (
             <div className="flex flex-col">
               <span>{formatPercent(torrent.completed / torrent.size)}</span>
