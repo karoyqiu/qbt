@@ -3,12 +3,11 @@ import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { FloatLabel } from 'primereact/floatlabel';
 import { InputText } from 'primereact/inputtext';
-import { Password } from 'primereact/password';
 import { useId } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-type Credentials = {
+export type Credentials = {
   url: string;
   username: string;
   password: string;
@@ -62,11 +61,11 @@ export default function LoginDialog(props: LoginDialogProps) {
           <label htmlFor={`${id}u`}>Username</label>
         </FloatLabel>
         <FloatLabel>
-          <Password
-            inputId={`${id}p`}
-            className="w-full [&>input]:w-full"
+          <InputText
+            id={`${id}p`}
+            className="w-full"
+            type="password"
             autoComplete="current-password"
-            feedback={false}
             required
             {...form.register('password')}
           />

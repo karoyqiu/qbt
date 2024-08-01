@@ -5,10 +5,22 @@ import { InputText } from 'primereact/inputtext';
 import { Menubar } from 'primereact/menubar';
 import type { MenuItem } from 'primereact/menuitem';
 import { TabMenu } from 'primereact/tabmenu';
-import { useEffect } from 'react';
-import LoginDialog from './LoginDialog';
+import { useEffect, useState } from 'react';
+import { useInterval, useLocalStorage } from 'usehooks-ts';
+import LoginDialog, { type Credentials } from './LoginDialog';
+import QBittorrent from './lib/QBittorrent';
+
+let qbt: QBittorrent;
 
 function App() {
+  const [credentials, setCredentials] = useLocalStorage<Credentials>('credentials', {
+    url: '',
+    username: '',
+    password: '',
+  });
+  const [showLogin, setShowLogin] = useState(false);
+  const [refreshInterval, setRefreshInterval] = useState<number | null>(null);
+
   const buttons: MenuItem[] = [
     { label: 'Add', icon: 'pi pi-plus' },
     { label: 'Pause', icon: 'pi pi-pause' },
@@ -20,6 +32,32 @@ function App() {
   useEffect(() => {
     appWindow.show();
   }, []);
+
+  useEffect(() => {
+    qbt = new QBittorrent(credentials.url);
+    qbt
+      .login(credentials.username, credentials.password)
+      .then((ok) => {
+        setShowLogin(!ok);
+        setRefreshInterval(1000);
+      })
+      .catch((e) => {
+        console.error('Failed to login', e);
+        setShowLogin(true);
+        setRefreshInterval(null);
+      });
+  }, [credentials]);
+
+  useInterval(() => {
+    if (qbt) {
+      qbt
+        .getTorrentList({ filter: 'downloading', sort: 'added_on' })
+        .then((torrents) => {
+          console.debug(torrents);
+        })
+        .catch(console.error);
+    }
+  }, refreshInterval);
 
   return (
     <>
@@ -47,7 +85,14 @@ function App() {
           ]}
         />
       </div>
-      <LoginDialog open onLogin={() => {}} />
+      <LoginDialog
+        open={showLogin}
+        onLogin={(data) => {
+          if (data) {
+            setCredentials(data);
+          }
+        }}
+      />
     </>
   );
 }
