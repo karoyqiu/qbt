@@ -9,7 +9,7 @@ import './app.css';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <PrimeReactProvider value={{ ripple: true }}>
+    <PrimeReactProvider value={{ ripple: true, nonce: 'Eyb2JqlROQDm6V2LGWjuj' }}>
       <App />
     </PrimeReactProvider>
   </React.StrictMode>,

@@ -43,10 +43,10 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'"
+      "csp": "default-src 'self'; style-src 'self' 'nonce-Eyb2JqlROQDm6V2LGWjuj'"
     },
     "bundle": {
-      "active": true,
+      "active": false,
       "targets": "all",
       "identifier": "com.gmail.karoyqiu.qbt",
       "icon": [
