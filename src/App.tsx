@@ -1,4 +1,5 @@
 import { appWindow } from '@tauri-apps/api/window';
+import { PrimeIcons } from 'primereact/api';
 import { IconField } from 'primereact/iconfield';
 import { InputIcon } from 'primereact/inputicon';
 import { InputText } from 'primereact/inputtext';
@@ -6,11 +7,16 @@ import { Menubar } from 'primereact/menubar';
 import type { MenuItem } from 'primereact/menuitem';
 import { TabMenu } from 'primereact/tabmenu';
 import type { TreeTableExpandedKeysType, TreeTableSelectionKeysType } from 'primereact/treetable';
-import { useEffect, useRef, useState } from 'react';
+import { diff, fork } from 'radashi';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useInterval, useLocalStorage } from 'usehooks-ts';
 import makeTree from './lib/makeTree';
 import QBittorrent from './lib/QBittorrent';
-import { TorrentInfo, type TorrentFilter } from './lib/qBittorrentTypes';
+import {
+  TorrentContentPriority,
+  type TorrentFilter,
+  type TorrentInfo,
+} from './lib/qBittorrentTypes';
 import LoginDialog, { type Credentials } from './ui/LoginDialog';
 import TorrentDialog, { TorrentNode } from './ui/TorrentDialog';
 import TorrentTable from './ui/TorrentTable';
@@ -32,31 +38,91 @@ function App() {
   const [showTorrent, setShowTorrent] = useState(false);
 
   const qbt = useRef<QBittorrent>();
+  const metas = useRef<TorrentInfo[]>([]);
 
   const buttons: MenuItem[] = [
-    { label: 'Add', icon: 'pi pi-plus' },
-    { label: 'Pause', icon: 'pi pi-pause' },
-    { label: 'Resume', icon: 'pi pi-play' },
-    { label: 'Delete', icon: 'pi pi-trash' },
-    { label: 'Settings', icon: 'pi pi-cog' },
+    { label: 'Add', icon: PrimeIcons.PLUS },
+    {
+      label: 'Pause',
+      icon: PrimeIcons.PAUSE,
+      disabled: selected.length === 0,
+      command: () => qbt.current?.pause(selected.map((s) => s.hash)),
+    },
+    {
+      label: 'Resume',
+      icon: PrimeIcons.PLAY,
+      disabled: selected.length === 0,
+      command: () => qbt.current?.resume(selected.map((s) => s.hash)),
+    },
+    {
+      label: 'Delete',
+      icon: PrimeIcons.TRASH,
+      disabled: selected.length === 0,
+      command: () => qbt.current?.delete(selected.map((s) => s.hash)),
+    },
+    { label: 'Settings', icon: PrimeIcons.COG },
   ];
   const tabs: MenuItem[] = [
     {
       label: 'All',
-      icon: 'pi pi-list',
+      icon: PrimeIcons.LIST,
       data: 'all',
     },
     {
       label: 'Downloading',
-      icon: 'pi pi-download',
+      icon: PrimeIcons.DOWNLOAD,
       data: 'downloading',
     },
     {
       label: 'Completed',
-      icon: 'pi pi-check',
+      icon: PrimeIcons.CHECK,
       data: 'completed',
     },
   ];
+
+  const refresh = useCallback(async () => {
+    if (!qbt.current) {
+      return;
+    }
+
+    const ts = await qbt.current.getTorrentList({
+      filter,
+      sort: filter === 'completed' ? 'completion_on' : 'added_on',
+    });
+
+    setTorrents(ts);
+
+    const hashes = ts.map((item) => item.hash);
+    setSelected((old) => old.filter((item) => hashes.includes(item.hash)));
+
+    const newMetas = ts.filter((v) => v.state === 'metaDL');
+    const noLongers = diff(metas.current, newMetas);
+    metas.current = newMetas;
+
+    await Promise.all(
+      noLongers.map(async (m) => {
+        if (!qbt.current) {
+          return;
+        }
+
+        const content = await qbt.current.getTorrentContent(m.hash);
+        const [larges, smalls] = fork(content, (item) => item.size >= 200 * 1024 * 1024);
+
+        await Promise.all([
+          qbt.current.setFilePriority(
+            m.hash,
+            larges.map((item) => item.index),
+            TorrentContentPriority.NORMAL,
+          ),
+          qbt.current.setFilePriority(
+            m.hash,
+            smalls.map((item) => item.index),
+            TorrentContentPriority.DO_NOT_DOWNLOAD,
+          ),
+        ]);
+      }),
+    );
+  }, [filter]);
 
   useEffect(() => {
     appWindow.show();
@@ -78,12 +144,7 @@ function App() {
   }, [credentials]);
 
   useInterval(() => {
-    if (qbt.current) {
-      qbt.current
-        .getTorrentList({ filter, sort: filter === 'completed' ? 'completion_on' : 'added_on' })
-        .then(setTorrents)
-        .catch(console.error);
-    }
+    refresh().catch(console.error);
   }, refreshInterval);
 
   return (
