@@ -18,24 +18,23 @@ export type TorrentNode = Omit<TreeNode, 'data' | 'children'> & {
 
 type TorrentDialogProps = {
   open: boolean;
-  onOpenChanged: (value: boolean) => void;
-  title: string;
+  onClose: () => void;
   nodes: TorrentNode[];
   selected: TreeTableSelectionKeysType;
   expanded: TreeTableExpandedKeysType;
 };
 
 export default function TorrentDialog(props: TorrentDialogProps) {
-  const { open, onOpenChanged, title, nodes, selected, expanded } = props;
+  const { open, onClose, nodes, selected, expanded } = props;
   const [expandedKeys, setExpandedKeys] = useState<TreeTableExpandedKeysType>({});
 
   useEffect(() => setExpandedKeys(expanded), [expanded]);
 
   return (
     <Dialog
-      header={title}
+      header="Torrent"
       visible={open}
-      onHide={() => onOpenChanged(false)}
+      onHide={onClose}
       className="w-[calc(100vw-16rem)] max-w-screen-lg"
     >
       <TreeTable

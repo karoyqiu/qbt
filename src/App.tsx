@@ -9,7 +9,7 @@ import { TabMenu } from 'primereact/tabmenu';
 import type { TreeTableExpandedKeysType, TreeTableSelectionKeysType } from 'primereact/treetable';
 import { diff, fork } from 'radashi';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useInterval, useLocalStorage } from 'usehooks-ts';
+import { useInterval, useLocalStorage, useReadLocalStorage } from 'usehooks-ts';
 import makeTree from './lib/makeTree';
 import QBittorrent from './lib/QBittorrent';
 import {
@@ -18,6 +18,7 @@ import {
   type TorrentInfo,
 } from './lib/qBittorrentTypes';
 import LoginDialog, { type Credentials } from './ui/LoginDialog';
+import SettingsDialog from './ui/SettingsDialog';
 import TorrentDialog, { TorrentNode } from './ui/TorrentDialog';
 import TorrentTable from './ui/TorrentTable';
 
@@ -29,13 +30,15 @@ function App() {
   });
   const [showLogin, setShowLogin] = useState(false);
   const [filter, setFilter] = useState<TorrentFilter>('downloading');
-  const [refreshInterval, setRefreshInterval] = useState<number | null>(null);
   const [torrents, setTorrents] = useState<TorrentInfo[]>([]);
   const [selected, setSelected] = useState<TorrentInfo[]>([]);
   const [nodes, setNodes] = useState<TorrentNode[]>([]);
   const [selectedNodes, setSelectedNodes] = useState<TreeTableSelectionKeysType>({});
   const [expanded, setExpanded] = useState<TreeTableExpandedKeysType>({});
   const [showTorrent, setShowTorrent] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const refreshInterval = useReadLocalStorage<number>('refreshInterval') ?? 1000;
+  const smallFileThreshold = useReadLocalStorage<number>('smallFileThreshold') ?? 200 * 1024 * 1024;
 
   const qbt = useRef<QBittorrent>();
   const metas = useRef<TorrentInfo[]>([]);
@@ -60,7 +63,7 @@ function App() {
       disabled: selected.length === 0,
       command: () => qbt.current?.delete(selected.map((s) => s.hash)),
     },
-    { label: 'Settings', icon: PrimeIcons.COG },
+    { label: 'Settings', icon: PrimeIcons.COG, command: () => setShowSettings(true) },
   ];
   const tabs: MenuItem[] = [
     {
@@ -106,7 +109,7 @@ function App() {
         }
 
         const content = await qbt.current.getTorrentContent(m.hash);
-        const [larges, smalls] = fork(content, (item) => item.size >= 200 * 1024 * 1024);
+        const [larges, smalls] = fork(content, (item) => item.size >= smallFileThreshold);
 
         await Promise.all([
           qbt.current.setFilePriority(
@@ -122,7 +125,7 @@ function App() {
         ]);
       }),
     );
-  }, [filter]);
+  }, [filter, smallFileThreshold]);
 
   useEffect(() => {
     appWindow.show();
@@ -134,18 +137,19 @@ function App() {
       .login(credentials.username, credentials.password)
       .then((ok) => {
         setShowLogin(!ok);
-        setRefreshInterval(1000);
       })
       .catch((e) => {
         console.error('Failed to login', e);
         setShowLogin(true);
-        setRefreshInterval(null);
       });
   }, [credentials]);
 
-  useInterval(() => {
-    refresh().catch(console.error);
-  }, refreshInterval);
+  useInterval(
+    () => {
+      refresh().catch(console.error);
+    },
+    showLogin ? null : refreshInterval,
+  );
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -193,12 +197,12 @@ function App() {
       />
       <TorrentDialog
         open={showTorrent}
-        onOpenChanged={setShowTorrent}
-        title="Torrent"
+        onClose={() => setShowTorrent(false)}
         nodes={nodes}
         selected={selectedNodes}
         expanded={expanded}
       />
+      <SettingsDialog open={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 }

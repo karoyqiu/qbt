@@ -12,6 +12,9 @@
   },
   "tauri": {
     "allowlist": {
+      "dialog": {
+        "open": true
+      },
       "http": {
         "request": true,
         "scope": ["http://192.168.0.104:8080/*"]
