@@ -17,6 +17,7 @@ import {
   type TorrentFilter,
   type TorrentInfo,
 } from './lib/qBittorrentTypes';
+import AddDialog from './ui/AddDialog';
 import LoginDialog, { type Credentials } from './ui/LoginDialog';
 import SettingsDialog from './ui/SettingsDialog';
 import TorrentDialog, { TorrentNode } from './ui/TorrentDialog';
@@ -35,6 +36,7 @@ function App() {
   const [nodes, setNodes] = useState<TorrentNode[]>([]);
   const [selectedNodes, setSelectedNodes] = useState<TreeTableSelectionKeysType>({});
   const [expanded, setExpanded] = useState<TreeTableExpandedKeysType>({});
+  const [showAdd, setShowAdd] = useState(false);
   const [showTorrent, setShowTorrent] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const refreshInterval = useReadLocalStorage<number>('refreshInterval') ?? 1000;
@@ -44,7 +46,7 @@ function App() {
   const metas = useRef<TorrentInfo[]>([]);
 
   const buttons: MenuItem[] = [
-    { label: 'Add', icon: PrimeIcons.PLUS },
+    { label: 'Add', icon: PrimeIcons.PLUS, command: () => setShowAdd(true) },
     {
       label: 'Pause',
       icon: PrimeIcons.PAUSE,
@@ -156,7 +158,7 @@ function App() {
       <div className="card flex gap-4">
         <Menubar className="border-none bg-transparent" model={buttons} />
         <IconField className="grow self-center" iconPosition="left">
-          <InputIcon className="pi pi-search" />
+          <InputIcon className={PrimeIcons.SEARCH} />
           <InputText className="w-full" type="search" placeholder="Search" />
         </IconField>
         <TabMenu
@@ -192,6 +194,16 @@ function App() {
         onLogin={(data) => {
           if (data) {
             setCredentials(data);
+          }
+        }}
+      />
+      <AddDialog
+        open={showAdd}
+        onClose={(urls) => {
+          setShowAdd(false);
+
+          if (urls) {
+            qbt.current?.add(urls);
           }
         }}
       />

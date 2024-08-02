@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { PrimeIcons } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { FloatLabel } from 'primereact/floatlabel';
@@ -74,7 +75,7 @@ export default function LoginDialog(props: LoginDialogProps) {
         <div className="flex flex-row-reverse">
           <Button
             label="Login"
-            icon="pi pi-sign-in"
+            icon={PrimeIcons.SIGN_IN}
             type="submit"
             disabled={form.formState.isSubmitting}
           />

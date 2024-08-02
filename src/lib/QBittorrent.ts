@@ -41,9 +41,9 @@ class QBittorrent {
     return this.getObject<TorrentContent[]>('torrents', 'files', { hash });
   }
 
-  add(urls: string[]) {
+  add(urls: string | string[]) {
     return this.post('torrents', 'add', {
-      urls: urls.join('\n'),
+      urls: Array.isArray(urls) ? urls.join('\n') : urls,
       root_folder: 'true',
     });
   }
