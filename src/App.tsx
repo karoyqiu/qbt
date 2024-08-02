@@ -131,6 +131,7 @@ function App() {
 
   useEffect(() => {
     appWindow.show();
+    appWindow.maximize();
   }, []);
 
   useEffect(() => {

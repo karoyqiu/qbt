@@ -12,6 +12,9 @@
   },
   "tauri": {
     "allowlist": {
+      "clipboard": {
+        "readText": true
+      },
       "dialog": {
         "open": true
       },
@@ -26,15 +29,16 @@
         "open": ".+"
       },
       "window": {
+        "maximize": true,
         "show": true
       }
     },
     "windows": [
       {
-        "center": true,
         "title": "qBittorrent",
         "width": 1200,
         "height": 700,
+        "center": true,
         "visible": false
       }
     ],
