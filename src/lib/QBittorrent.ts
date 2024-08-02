@@ -92,7 +92,9 @@ class QBittorrent {
     if (typeof indexes === 'number') {
       id.push(indexes.toString());
     } else {
-      indexes.forEach((index) => id.push(index.toString()));
+      for (const index of indexes) {
+        id.push(index.toString());
+      }
     }
 
     await this.post('torrents', 'filePrio', {

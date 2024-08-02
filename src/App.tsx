@@ -23,6 +23,22 @@ import SettingsDialog from './ui/SettingsDialog';
 import TorrentDialog, { TorrentNode } from './ui/TorrentDialog';
 import TorrentTable from './ui/TorrentTable';
 
+const collectChildIndexes = (node: TorrentNode) => {
+  const indexes: number[] = [];
+
+  if (node.children) {
+    for (const child of node.children) {
+      if (child.data.index === -1) {
+        indexes.push(...collectChildIndexes(child));
+      } else {
+        indexes.push(child.data.index);
+      }
+    }
+  }
+
+  return indexes;
+};
+
 function App() {
   const [credentials, setCredentials] = useLocalStorage<Credentials>('credentials', {
     url: '',
@@ -33,6 +49,7 @@ function App() {
   const [filter, setFilter] = useState<TorrentFilter>('downloading');
   const [torrents, setTorrents] = useState<TorrentInfo[]>([]);
   const [selected, setSelected] = useState<TorrentInfo[]>([]);
+  const [currentHash, setCurrentHash] = useState('');
   const [nodes, setNodes] = useState<TorrentNode[]>([]);
   const [selectedNodes, setSelectedNodes] = useState<TreeTableSelectionKeysType>({});
   const [expanded, setExpanded] = useState<TreeTableExpandedKeysType>({});
@@ -129,6 +146,20 @@ function App() {
     );
   }, [filter, smallFileThreshold]);
 
+  const select = async (node: TorrentNode) => {
+    let indexes = node.data.index === -1 ? collectChildIndexes(node) : node.data.index;
+    await qbt.current?.setFilePriority(currentHash, indexes, TorrentContentPriority.NORMAL);
+  };
+
+  const unselect = async (node: TorrentNode) => {
+    let indexes = node.data.index === -1 ? collectChildIndexes(node) : node.data.index;
+    await qbt.current?.setFilePriority(
+      currentHash,
+      indexes,
+      TorrentContentPriority.DO_NOT_DOWNLOAD,
+    );
+  };
+
   useEffect(() => {
     appWindow.show();
     appWindow.maximize();
@@ -179,6 +210,7 @@ function App() {
             return;
           }
 
+          setCurrentHash(hash);
           setNodes([]);
           setShowTorrent(true);
 
@@ -213,6 +245,9 @@ function App() {
         onClose={() => setShowTorrent(false)}
         nodes={nodes}
         selected={selectedNodes}
+        onSelectedChange={setSelectedNodes}
+        onSelect={select}
+        onUnselect={unselect}
         expanded={expanded}
       />
       <SettingsDialog open={showSettings} onClose={() => setShowSettings(false)} />

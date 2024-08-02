@@ -24,11 +24,15 @@ type TorrentDialogProps = {
   onClose: () => void;
   nodes: TorrentNode[];
   selected: TreeTableSelectionKeysType;
+  onSelectedChange: (value: TreeTableSelectionKeysType) => void;
+  onSelect: (node: TorrentNode) => void;
+  onUnselect: (node: TorrentNode) => void;
   expanded: TreeTableExpandedKeysType;
 };
 
 export default function TorrentDialog(props: TorrentDialogProps) {
-  const { open, onClose, nodes, selected, expanded } = props;
+  const { open, onClose, nodes, selected, onSelectedChange, onSelect, onUnselect, expanded } =
+    props;
   const [expandedKeys, setExpandedKeys] = useState<TreeTableExpandedKeysType>({});
   const localDownloadDir = useReadLocalStorage<string>('localDownloadDir');
 
@@ -48,8 +52,12 @@ export default function TorrentDialog(props: TorrentDialogProps) {
         expandedKeys={expandedKeys}
         onToggle={(e) => setExpandedKeys(e.value)}
         onSelectionChange={(e) => {
-          console.log(e.value);
+          if (typeof e.value !== 'string') {
+            onSelectedChange(e.value);
+          }
         }}
+        onSelect={(e) => onSelect(e.node as TorrentNode)}
+        onUnselect={(e) => onUnselect(e.node as TorrentNode)}
         sortField="size"
         sortOrder={-1}
       >
