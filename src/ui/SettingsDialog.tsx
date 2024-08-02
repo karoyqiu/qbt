@@ -41,6 +41,7 @@ export default function SettingsDialog(props: SettingsDialogProps) {
       onHide={onClose}
       className="w-full max-w-xl"
       footer={<Button label="OK" icon={PrimeIcons.CHECK} onClick={() => onClose()} />}
+      dismissableMask
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-auto flex-col gap-1">
@@ -50,6 +51,7 @@ export default function SettingsDialog(props: SettingsDialogProps) {
             autoFocus
             allowEmpty={false}
             inputClassName="w-full font-mono text-end"
+            inputMode="numeric"
             suffix={` ${getUnit('millisecond')}`}
             value={refreshInterval}
             onValueChange={(e) => setRefreshInterval(e.value ?? 1000)}
@@ -61,6 +63,7 @@ export default function SettingsDialog(props: SettingsDialogProps) {
             id={`${id}smt`}
             allowEmpty={false}
             inputClassName="w-full font-mono text-end"
+            inputMode="numeric"
             suffix={` ${getUnit('megabyte')}`}
             value={smallFileThreshold / 1024 / 1024}
             onValueChange={(e) => setSmallFileThreshold((e.value ?? 200) * 1024 * 1024)}

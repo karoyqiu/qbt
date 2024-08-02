@@ -28,6 +28,7 @@ export default function AddDialog(props: AddDialogProps) {
       footer={
         <Button label="Add" icon={PrimeIcons.PLUS} onClick={() => onClose(ref.current?.value)} />
       }
+      dismissableMask
     >
       <InputTextarea ref={ref} className="w-full font-mono" autoFocus autoResize rows={5} />
     </Dialog>

@@ -44,6 +44,7 @@ export default function TorrentDialog(props: TorrentDialogProps) {
       visible={open}
       onHide={onClose}
       className="w-[calc(100vw-16rem)] max-w-screen-lg"
+      dismissableMask
     >
       <TreeTable
         value={nodes}
