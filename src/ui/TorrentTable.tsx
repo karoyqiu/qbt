@@ -61,7 +61,7 @@ export default function TorrentTable(props: TorrentTableProps) {
           body={(torrent: TorrentInfo) => (
             <span
               className={cn(
-                'cursor-pointer hover:text-[--primary-color] hover:underline',
+                'cursor-pointer text-[--primary-color] underline-offset-4 hover:underline',
                 getStateIcon(torrent.state),
               )}
               onClick={() => onClick(torrent.hash)}

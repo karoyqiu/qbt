@@ -62,6 +62,7 @@ const makeTree = (content: TorrentContent[]) => {
     data: {
       index: -1,
       name: '',
+      fullPath: '',
       size: 0,
       priority: TorrentContentPriority.DO_NOT_DOWNLOAD,
       progress: 0,
@@ -98,7 +99,7 @@ const makeTree = (content: TorrentContent[]) => {
     while (parts.length > 0) {
       const child: TorrentNode = {
         key: crypto.randomUUID(),
-        data: { ...c },
+        data: { ...c, fullPath: c.name },
       };
 
       child.data.name = parts.shift()!;

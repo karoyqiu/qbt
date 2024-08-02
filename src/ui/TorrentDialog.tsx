@@ -1,3 +1,5 @@
+import { join } from '@tauri-apps/api/path';
+import { open as shellOpen } from '@tauri-apps/api/shell';
 import { Column } from 'primereact/column';
 import { Dialog } from 'primereact/dialog';
 import { ProgressBar } from 'primereact/progressbar';
@@ -8,11 +10,12 @@ import {
   type TreeTableSelectionKeysType,
 } from 'primereact/treetable';
 import { useEffect, useState } from 'react';
+import { useReadLocalStorage } from 'usehooks-ts';
 import { formatPercent, formatSize } from '../lib/format';
 import type { TorrentContent } from '../lib/qBittorrentTypes';
 
 export type TorrentNode = Omit<TreeNode, 'data' | 'children'> & {
-  data: TorrentContent;
+  data: TorrentContent & { fullPath: string };
   children?: TorrentNode[];
 };
 
@@ -27,6 +30,7 @@ type TorrentDialogProps = {
 export default function TorrentDialog(props: TorrentDialogProps) {
   const { open, onClose, nodes, selected, expanded } = props;
   const [expandedKeys, setExpandedKeys] = useState<TreeTableExpandedKeysType>({});
+  const localDownloadDir = useReadLocalStorage<string>('localDownloadDir');
 
   useEffect(() => setExpandedKeys(expanded), [expanded]);
 
@@ -49,7 +53,29 @@ export default function TorrentDialog(props: TorrentDialogProps) {
         sortField="size"
         sortOrder={-1}
       >
-        <Column field="name" header="Name" bodyClassName="truncate" expander />
+        <Column
+          field="name"
+          header="Name"
+          bodyClassName="truncate"
+          expander
+          body={(node: TorrentNode) => {
+            if (!localDownloadDir || node.data.progress < 1) {
+              return node.data.name;
+            }
+
+            return (
+              <span
+                className="cursor-pointer text-[--primary-color] underline-offset-4 hover:underline"
+                onClick={async () => {
+                  const path = await join(localDownloadDir, node.data.fullPath);
+                  await shellOpen(path);
+                }}
+              >
+                {node.data.name}
+              </span>
+            );
+          }}
+        />
         <Column
           field="size"
           align="right"
