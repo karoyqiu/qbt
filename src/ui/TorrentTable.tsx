@@ -1,8 +1,35 @@
+import { PrimeIcons } from 'primereact/api';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { ProgressBar } from 'primereact/progressbar';
+import cn from '../lib/cn';
 import { formatPercent, formatSize } from '../lib/format';
-import type { TorrentFilter, TorrentInfo } from '../lib/qBittorrentTypes';
+import type { TorrentFilter, TorrentInfo, TorrentState } from '../lib/qBittorrentTypes';
+
+const getStateIcon = (state: TorrentState) => {
+  switch (state) {
+    case 'allocating':
+    case 'downloading':
+    case 'metaDL':
+    case 'queuedDL':
+    case 'stalledDL':
+    case 'checkingDL':
+    case 'forcedDL':
+      return PrimeIcons.DOWNLOAD;
+    case 'uploading':
+    case 'queuedUP':
+    case 'stalledUP':
+    case 'checkingUP':
+    case 'forcedUP':
+      return PrimeIcons.UPLOAD;
+    case 'pausedDL':
+      return PrimeIcons.PAUSE;
+    case 'pausedUP':
+      return PrimeIcons.CHECK;
+    default:
+      return PrimeIcons.TIMES_CIRCLE;
+  }
+};
 
 type TorrentTableProps = {
   filter: TorrentFilter;
@@ -33,9 +60,13 @@ export default function TorrentTable(props: TorrentTableProps) {
           header="Name"
           body={(torrent: TorrentInfo) => (
             <span
-              className="cursor-pointer hover:text-[--primary-color] hover:underline"
+              className={cn(
+                'cursor-pointer hover:text-[--primary-color] hover:underline',
+                getStateIcon(torrent.state),
+              )}
               onClick={() => onClick(torrent.hash)}
             >
+              &nbsp;
               {torrent.name}
             </span>
           )}

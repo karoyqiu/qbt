@@ -6,7 +6,7 @@ import { Menubar } from 'primereact/menubar';
 import type { MenuItem } from 'primereact/menuitem';
 import { TabMenu } from 'primereact/tabmenu';
 import type { TreeTableExpandedKeysType, TreeTableSelectionKeysType } from 'primereact/treetable';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useInterval, useLocalStorage } from 'usehooks-ts';
 import makeTree from './lib/makeTree';
 import QBittorrent from './lib/QBittorrent';
@@ -14,8 +14,6 @@ import { TorrentInfo, type TorrentFilter } from './lib/qBittorrentTypes';
 import LoginDialog, { type Credentials } from './ui/LoginDialog';
 import TorrentDialog, { TorrentNode } from './ui/TorrentDialog';
 import TorrentTable from './ui/TorrentTable';
-
-let qbt: QBittorrent;
 
 function App() {
   const [credentials, setCredentials] = useLocalStorage<Credentials>('credentials', {
@@ -32,6 +30,8 @@ function App() {
   const [selectedNodes, setSelectedNodes] = useState<TreeTableSelectionKeysType>({});
   const [expanded, setExpanded] = useState<TreeTableExpandedKeysType>({});
   const [showTorrent, setShowTorrent] = useState(false);
+
+  const qbt = useRef<QBittorrent>();
 
   const buttons: MenuItem[] = [
     { label: 'Add', icon: 'pi pi-plus' },
@@ -63,8 +63,8 @@ function App() {
   }, []);
 
   useEffect(() => {
-    qbt = new QBittorrent(credentials.url);
-    qbt
+    qbt.current = new QBittorrent(credentials.url);
+    qbt.current
       .login(credentials.username, credentials.password)
       .then((ok) => {
         setShowLogin(!ok);
@@ -78,8 +78,8 @@ function App() {
   }, [credentials]);
 
   useInterval(() => {
-    if (qbt) {
-      qbt
+    if (qbt.current) {
+      qbt.current
         .getTorrentList({ filter, sort: filter === 'completed' ? 'completion_on' : 'added_on' })
         .then(setTorrents)
         .catch(console.error);
@@ -107,14 +107,14 @@ function App() {
         selection={selected}
         onSelectionChange={setSelected}
         onClick={async (hash) => {
-          if (!qbt) {
+          if (!qbt.current) {
             return;
           }
 
           setNodes([]);
           setShowTorrent(true);
 
-          const content = await qbt.getTorrentContent(hash);
+          const content = await qbt.current.getTorrentContent(hash);
           const { nodes, selected, expanded } = makeTree(content);
 
           setNodes(nodes);
