@@ -9,22 +9,34 @@ const sizeFormatters = Object.freeze(
     }),
   ),
 );
+const speedFormatters = Object.freeze(
+  sizeUnits.map((unit) =>
+    Intl.NumberFormat(undefined, {
+      style: 'unit',
+      unit: `${unit}-per-second`,
+      maximumFractionDigits: 2,
+    }),
+  ),
+);
 const percentFormatter = new Intl.NumberFormat(undefined, {
   style: 'percent',
   minimumFractionDigits: 2,
 });
 
-export const formatSize = (bytes: number) => {
+const formatWith = (value: number, formatters: readonly Intl.NumberFormat[]) => {
   let i = 0;
-  let n = bytes;
+  let n = value;
 
-  while (n > threshold && i < sizeFormatters.length) {
+  while (n > threshold && i < formatters.length) {
     n /= threshold;
     i += 1;
   }
 
-  const formatter = sizeFormatters[i];
+  const formatter = formatters[i];
   return formatter.format(n);
 };
+
+export const formatSize = (bytes: number) => formatWith(bytes, sizeFormatters);
+export const formatSpeed = (bps: number) => formatWith(bps, speedFormatters);
 
 export const formatPercent = (value: number) => percentFormatter.format(value);

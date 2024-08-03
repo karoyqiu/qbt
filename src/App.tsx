@@ -211,7 +211,10 @@ function App() {
           className="pb-1"
           model={tabs}
           activeIndex={tabs.findIndex((tab) => tab.data === filter)}
-          onTabChange={(e) => setFilter(e.value.data as TorrentFilter)}
+          onTabChange={(e) => {
+            setLoading(true);
+            setFilter(e.value.data as TorrentFilter);
+          }}
         />
       </div>
       <TorrentTable

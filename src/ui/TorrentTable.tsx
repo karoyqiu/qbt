@@ -3,7 +3,7 @@ import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { ProgressBar } from 'primereact/progressbar';
 import cn from '../lib/cn';
-import { formatPercent, formatSize } from '../lib/format';
+import { formatPercent, formatSize, formatSpeed } from '../lib/format';
 import type { TorrentFilter, TorrentInfo, TorrentState } from '../lib/qBittorrentTypes';
 
 const getStateIcon = (state: TorrentState) => {
@@ -80,19 +80,24 @@ export default function TorrentTable(props: TorrentTableProps) {
           bodyClassName="font-mono"
           body={(torrent: TorrentInfo) => formatSize(torrent.size)}
         />
+        {filter === 'downloading' && (
+          <Column
+            field="dlspeed"
+            header="Download speed"
+            align="right"
+            bodyClassName="font-mono"
+            body={(torrent: TorrentInfo) => formatSpeed(torrent.dlspeed)}
+          />
+        )}
         <Column
-          field="completed"
+          field="progress"
           header="Progress"
           align="right"
           bodyClassName="font-mono"
           body={(torrent: TorrentInfo) => (
             <div className="flex flex-col">
-              <span>{formatPercent(torrent.completed / torrent.size)}</span>
-              <ProgressBar
-                value={(torrent.completed * 100) / torrent.size}
-                showValue={false}
-                className="h-1"
-              />
+              <span>{formatPercent(torrent.progress)}</span>
+              <ProgressBar value={torrent.progress * 100} showValue={false} className="h-1" />
             </div>
           )}
         />
