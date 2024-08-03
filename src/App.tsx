@@ -47,6 +47,7 @@ function App() {
     password: '',
   });
   const [showLogin, setShowLogin] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<TorrentFilter>('downloading');
   const [torrents, setTorrents] = useState<TorrentInfo[]>([]);
   const [selected, setSelected] = useState<TorrentInfo[]>([]);
@@ -56,6 +57,7 @@ function App() {
   const [expanded, setExpanded] = useState<TreeTableExpandedKeysType>({});
   const [showAdd, setShowAdd] = useState(false);
   const [showTorrent, setShowTorrent] = useState(false);
+  const [contentLoading, setContentLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const refreshInterval = useReadLocalStorage<number>('refreshInterval') ?? 1000;
   const smallFileThreshold = useReadLocalStorage<number>('smallFileThreshold') ?? 200 * 1024 * 1024;
@@ -115,6 +117,7 @@ function App() {
     });
 
     setTorrents(ts);
+    setLoading(false);
 
     const hashes = ts.map((item) => item.hash);
     setSelected((old) => old.filter((item) => hashes.includes(item.hash)));
@@ -212,6 +215,7 @@ function App() {
         />
       </div>
       <TorrentTable
+        loading={loading}
         filter={filter}
         torrents={torrents}
         selection={selected}
@@ -222,6 +226,7 @@ function App() {
           }
 
           setCurrentHash(hash);
+          setContentLoading(true);
           setNodes([]);
           setShowTorrent(true);
 
@@ -231,6 +236,7 @@ function App() {
           setNodes(nodes);
           setSelectedNodes(selected);
           setExpanded(expanded);
+          setContentLoading(false);
         }}
       />
       <LoginDialog
@@ -254,6 +260,7 @@ function App() {
       <TorrentDialog
         open={showTorrent}
         onClose={() => setShowTorrent(false)}
+        loading={contentLoading}
         nodes={nodes}
         selected={selectedNodes}
         onSelectedChange={setSelectedNodes}

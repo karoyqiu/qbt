@@ -22,6 +22,7 @@ export type TorrentNode = Omit<TreeNode, 'data' | 'children'> & {
 type TorrentDialogProps = {
   open: boolean;
   onClose: () => void;
+  loading?: boolean;
   nodes: TorrentNode[];
   selected: TreeTableSelectionKeysType;
   onSelectedChange: (value: TreeTableSelectionKeysType) => void;
@@ -31,8 +32,17 @@ type TorrentDialogProps = {
 };
 
 export default function TorrentDialog(props: TorrentDialogProps) {
-  const { open, onClose, nodes, selected, onSelectedChange, onSelect, onUnselect, expanded } =
-    props;
+  const {
+    open,
+    onClose,
+    loading,
+    nodes,
+    selected,
+    onSelectedChange,
+    onSelect,
+    onUnselect,
+    expanded,
+  } = props;
   const [expandedKeys, setExpandedKeys] = useState<TreeTableExpandedKeysType>({});
   const localDownloadDir = useReadLocalStorage<string>('localDownloadDir');
 
@@ -47,6 +57,7 @@ export default function TorrentDialog(props: TorrentDialogProps) {
       dismissableMask
     >
       <TreeTable
+        loading={loading}
         value={nodes}
         selectionMode="checkbox"
         selectionKeys={selected}

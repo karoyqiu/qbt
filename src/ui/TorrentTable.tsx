@@ -32,6 +32,7 @@ const getStateIcon = (state: TorrentState) => {
 };
 
 type TorrentTableProps = {
+  loading?: boolean;
   filter: TorrentFilter;
   torrents: TorrentInfo[];
   selection: TorrentInfo[];
@@ -40,11 +41,12 @@ type TorrentTableProps = {
 };
 
 export default function TorrentTable(props: TorrentTableProps) {
-  const { filter, torrents, selection, onSelectionChange, onClick } = props;
+  const { loading, filter, torrents, selection, onSelectionChange, onClick } = props;
 
   return (
     <div className="min-h-0 grow">
       <DataTable
+        loading={loading}
         value={torrents}
         dataKey="hash"
         stripedRows
