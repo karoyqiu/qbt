@@ -30,7 +30,14 @@ export default function AddDialog(props: AddDialogProps) {
       }
       dismissableMask
     >
-      <InputTextarea ref={ref} className="w-full font-mono" autoFocus autoResize rows={5} />
+      <InputTextarea
+        ref={ref}
+        className="w-full font-mono"
+        autoFocus
+        autoResize
+        rows={5}
+        placeholder="Input one URL per line"
+      />
     </Dialog>
   );
 }

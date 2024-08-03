@@ -8,7 +8,7 @@ import type { MenuItem } from 'primereact/menuitem';
 import { TabMenu } from 'primereact/tabmenu';
 import type { TreeTableExpandedKeysType, TreeTableSelectionKeysType } from 'primereact/treetable';
 import { diff, fork } from 'radashi';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useInterval, useLocalStorage, useReadLocalStorage } from 'usehooks-ts';
 import makeTree from './lib/makeTree';
 import QBittorrent from './lib/QBittorrent';
@@ -49,6 +49,7 @@ function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<TorrentFilter>('downloading');
+  const [search, setSearch] = useState('');
   const [torrents, setTorrents] = useState<TorrentInfo[]>([]);
   const [selected, setSelected] = useState<TorrentInfo[]>([]);
   const [currentHash, setCurrentHash] = useState('');
@@ -66,45 +67,51 @@ function App() {
   const qbt = useRef<QBittorrent>();
   const metas = useRef<TorrentInfo[]>([]);
 
-  const buttons: MenuItem[] = [
-    { label: 'Add', icon: PrimeIcons.PLUS, command: () => setShowAdd(true) },
-    {
-      label: 'Pause',
-      icon: PrimeIcons.PAUSE,
-      disabled: selected.length === 0,
-      command: () => qbt.current?.pause(selected.map((s) => s.hash)),
-    },
-    {
-      label: 'Resume',
-      icon: PrimeIcons.PLAY,
-      disabled: selected.length === 0,
-      command: () => qbt.current?.resume(selected.map((s) => s.hash)),
-    },
-    {
-      label: 'Delete',
-      icon: PrimeIcons.TRASH,
-      disabled: selected.length === 0,
-      command: () => qbt.current?.delete(selected.map((s) => s.hash)),
-    },
-    { label: 'Settings', icon: PrimeIcons.COG, command: () => setShowSettings(true) },
-  ];
-  const tabs: MenuItem[] = [
-    {
-      label: 'All',
-      icon: PrimeIcons.LIST,
-      data: 'all',
-    },
-    {
-      label: 'Downloading',
-      icon: PrimeIcons.DOWNLOAD,
-      data: 'downloading',
-    },
-    {
-      label: 'Completed',
-      icon: PrimeIcons.CHECK,
-      data: 'completed',
-    },
-  ];
+  const buttons = useMemo<MenuItem[]>(
+    () => [
+      { label: 'Add', icon: PrimeIcons.PLUS, command: () => setShowAdd(true) },
+      {
+        label: 'Pause',
+        icon: PrimeIcons.PAUSE,
+        disabled: selected.length === 0,
+        command: () => qbt.current?.pause(selected.map((s) => s.hash)),
+      },
+      {
+        label: 'Resume',
+        icon: PrimeIcons.PLAY,
+        disabled: selected.length === 0,
+        command: () => qbt.current?.resume(selected.map((s) => s.hash)),
+      },
+      {
+        label: 'Delete',
+        icon: PrimeIcons.TRASH,
+        disabled: selected.length === 0,
+        command: () => qbt.current?.delete(selected.map((s) => s.hash)),
+      },
+      { label: 'Settings', icon: PrimeIcons.COG, command: () => setShowSettings(true) },
+    ],
+    [selected],
+  );
+  const tabs = useMemo<MenuItem[]>(
+    () => [
+      {
+        label: 'All',
+        icon: PrimeIcons.LIST,
+        data: 'all',
+      },
+      {
+        label: 'Downloading',
+        icon: PrimeIcons.DOWNLOAD,
+        data: 'downloading',
+      },
+      {
+        label: 'Completed',
+        icon: PrimeIcons.CHECK,
+        data: 'completed',
+      },
+    ],
+    [],
+  );
 
   const refresh = useCallback(async () => {
     if (!qbt.current) {
@@ -151,19 +158,25 @@ function App() {
     );
   }, [filter, smallFileThreshold]);
 
-  const select = async (node: TorrentNode) => {
-    let indexes = node.data.index === -1 ? collectChildIndexes(node) : node.data.index;
-    await qbt.current?.setFilePriority(currentHash, indexes, TorrentContentPriority.NORMAL);
-  };
+  const select = useCallback(
+    async (node: TorrentNode) => {
+      let indexes = node.data.index === -1 ? collectChildIndexes(node) : node.data.index;
+      await qbt.current?.setFilePriority(currentHash, indexes, TorrentContentPriority.NORMAL);
+    },
+    [currentHash],
+  );
 
-  const unselect = async (node: TorrentNode) => {
-    let indexes = node.data.index === -1 ? collectChildIndexes(node) : node.data.index;
-    await qbt.current?.setFilePriority(
-      currentHash,
-      indexes,
-      TorrentContentPriority.DO_NOT_DOWNLOAD,
-    );
-  };
+  const unselect = useCallback(
+    async (node: TorrentNode) => {
+      let indexes = node.data.index === -1 ? collectChildIndexes(node) : node.data.index;
+      await qbt.current?.setFilePriority(
+        currentHash,
+        indexes,
+        TorrentContentPriority.DO_NOT_DOWNLOAD,
+      );
+    },
+    [currentHash],
+  );
 
   useEffect(() => {
     appWindow.show();
@@ -205,7 +218,13 @@ function App() {
         <Menubar className="border-none bg-transparent" model={buttons} />
         <IconField className="grow self-center" iconPosition="left">
           <InputIcon className={PrimeIcons.SEARCH} />
-          <InputText className="w-full" type="search" placeholder="Search" />
+          <InputText
+            className="w-full"
+            type="search"
+            placeholder="Search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </IconField>
         <TabMenu
           className="pb-1"
@@ -218,9 +237,7 @@ function App() {
         />
       </div>
       <TorrentTable
-        loading={loading}
-        filter={filter}
-        torrents={torrents}
+        {...{ loading, filter, search, torrents }}
         selection={selected}
         onSelectionChange={setSelected}
         onClick={async (hash) => {

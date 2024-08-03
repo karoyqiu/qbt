@@ -72,6 +72,7 @@ export default function TorrentDialog(props: TorrentDialogProps) {
         onUnselect={(e) => onUnselect(e.node as TorrentNode)}
         sortField="size"
         sortOrder={-1}
+        emptyMessage="No content"
       >
         <Column
           field="name"

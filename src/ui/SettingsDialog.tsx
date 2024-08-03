@@ -42,7 +42,6 @@ export default function SettingsDialog(props: SettingsDialogProps) {
       visible={open}
       onHide={onClose}
       className="w-full max-w-xl"
-      footer={<Button label="OK" icon={PrimeIcons.CHECK} onClick={() => onClose()} />}
       dismissableMask
     >
       <div className="flex flex-col gap-4">

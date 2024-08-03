@@ -34,6 +34,8 @@ const getStateIcon = (state: TorrentState) => {
 type TorrentTableProps = {
   loading?: boolean;
   filter: TorrentFilter;
+
+  search?: string;
   torrents: TorrentInfo[];
   selection: TorrentInfo[];
   onSelectionChange: (value: TorrentInfo[]) => void;
@@ -41,7 +43,7 @@ type TorrentTableProps = {
 };
 
 export default function TorrentTable(props: TorrentTableProps) {
-  const { loading, filter, torrents, selection, onSelectionChange, onClick } = props;
+  const { loading, filter, search, torrents, selection, onSelectionChange, onClick } = props;
 
   return (
     <div className="min-h-0 grow">
@@ -55,6 +57,9 @@ export default function TorrentTable(props: TorrentTableProps) {
         selectionMode="checkbox"
         selection={selection}
         onSelectionChange={(e) => onSelectionChange(e.value)}
+        emptyMessage="No torrents"
+        globalFilterFields={['name']}
+        globalFilter={search}
       >
         <Column selectionMode="multiple" headerClassName="w-0" bodyClassName="w-0" />
         <Column
