@@ -3,6 +3,7 @@ import { PrimeIcons } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { InputNumber } from 'primereact/inputnumber';
+import { InputSwitch } from 'primereact/inputswitch';
 import { InputText } from 'primereact/inputtext';
 import { useId } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
@@ -32,6 +33,7 @@ export default function SettingsDialog(props: SettingsDialogProps) {
     200 * 1024 * 1024,
   );
   const [localDownloadDir, setLocalDownloadDir] = useLocalStorage('localDownloadDir', '');
+  const [watchClipboard, setWatchClipboard] = useLocalStorage('watchClipboard', false);
   const id = useId();
 
   return (
@@ -88,6 +90,14 @@ export default function SettingsDialog(props: SettingsDialogProps) {
               }}
             />
           </div>
+        </div>
+        <div className="flex flex-auto items-center justify-between">
+          <label htmlFor={`${id}wc`}>Watch clipboard</label>
+          <InputSwitch
+            id={`${id}wc`}
+            checked={watchClipboard}
+            onChange={(e) => setWatchClipboard(e.value)}
+          />
         </div>
       </div>
     </Dialog>

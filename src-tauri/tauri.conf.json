@@ -12,9 +12,6 @@
   },
   "tauri": {
     "allowlist": {
-      "clipboard": {
-        "readText": true
-      },
       "dialog": {
         "open": true
       },

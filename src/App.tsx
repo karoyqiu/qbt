@@ -17,6 +17,7 @@ import {
   type TorrentFilter,
   type TorrentInfo,
 } from './lib/qBittorrentTypes';
+import useClipboard from './lib/useClipboard';
 import AddDialog from './ui/AddDialog';
 import LoginDialog, { type Credentials } from './ui/LoginDialog';
 import SettingsDialog from './ui/SettingsDialog';
@@ -58,6 +59,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const refreshInterval = useReadLocalStorage<number>('refreshInterval') ?? 1000;
   const smallFileThreshold = useReadLocalStorage<number>('smallFileThreshold') ?? 200 * 1024 * 1024;
+  const watchClipboard = useReadLocalStorage<boolean>('watchClipboard') ?? false;
 
   const qbt = useRef<QBittorrent>();
   const metas = useRef<TorrentInfo[]>([]);
@@ -184,6 +186,15 @@ function App() {
     },
     showLogin ? null : refreshInterval,
   );
+
+  const onClipboard = useCallback((text: string) => {
+    qbt.current?.add(text);
+  }, []);
+
+  useClipboard({
+    enabled: watchClipboard,
+    onTextChange: onClipboard,
+  });
 
   return (
     <div className="flex h-full w-full flex-col">

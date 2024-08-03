@@ -716,7 +716,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tauri-apps/api@npm:^1":
+"@tauri-apps/api@npm:^1, @tauri-apps/api@npm:^1.0.0":
   version: 1.6.0
   resolution: "@tauri-apps/api@npm:1.6.0"
   checksum: f99cdb6c7ed01b78995cb936a31dde09f04b34a2317a1c6833969f6cc2f7de577ab1464f9cdecf9e96aab070c16a5526a3a0efcda04fa35960e487eb20653ee0
@@ -3745,6 +3745,7 @@ __metadata:
     react-hook-form: ^7.52.1
     tailwind-merge: ^2.4.0
     tailwindcss: ^3.4.7
+    tauri-plugin-clipboard-api: ^1
     tough-cookie: ^4.1.4
     typescript: ^5.2.2
     usehooks-ts: ^3.1.0
@@ -4421,6 +4422,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"tauri-plugin-clipboard-api@npm:^1":
+  version: 1.1.3
+  resolution: "tauri-plugin-clipboard-api@npm:1.1.3"
+  dependencies:
+    "@tauri-apps/api": ^1.0.0
+    tslib: ^2.1.0
+    zod: ^3.22.4
+  checksum: 5e5e42b149d01592e8f0668cad27f6e229c1f9248fb79bd35b2f37082dbccabdc20c2b91773b930b78621b42eaf13aca95c714772789f31b941db1d7e1288910
+  languageName: node
+  linkType: hard
+
 "text-table@npm:^0.2.0":
   version: 0.2.0
   resolution: "text-table@npm:0.2.0"
@@ -4487,6 +4499,13 @@ __metadata:
   version: 0.1.13
   resolution: "ts-interface-checker@npm:0.1.13"
   checksum: 20c29189c2dd6067a8775e07823ddf8d59a33e2ffc47a1bd59a5cb28bb0121a2969a816d5e77eda2ed85b18171aa5d1c4005a6b88ae8499ec7cc49f78571cb5e
+  languageName: node
+  linkType: hard
+
+"tslib@npm:^2.1.0":
+  version: 2.6.3
+  resolution: "tslib@npm:2.6.3"
+  checksum: 74fce0e100f1ebd95b8995fbbd0e6c91bdd8f4c35c00d4da62e285a3363aaa534de40a80db30ecfd388ed7c313c42d930ee0eaf108e8114214b180eec3dbe6f5
   languageName: node
   linkType: hard
 
@@ -4838,7 +4857,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod@npm:^3.23.8":
+"zod@npm:^3.22.4, zod@npm:^3.23.8":
   version: 3.23.8
   resolution: "zod@npm:3.23.8"
   checksum: 15949ff82118f59c893dacd9d3c766d02b6fa2e71cf474d5aa888570c469dbf5446ac5ad562bb035bf7ac9650da94f290655c194f4a6de3e766f43febd432c5c
