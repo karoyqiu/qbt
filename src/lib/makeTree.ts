@@ -35,7 +35,7 @@ const finalize = (
   for (const child of parent.children) {
     const { checked, size } = finalize(child, selected, expanded);
 
-    if (checked?.checked) {
+    if (checked.checked || checked.partialChecked) {
       checkedCount++;
       parent.data.size += size;
     }
@@ -53,7 +53,7 @@ const finalize = (
     expanded[parent.key!] = true;
   }
 
-  return { checked, size: parent.data.size, expanded };
+  return { checked, size: parent.data.size };
 };
 
 const makeTree = (content: TorrentContent[]) => {
