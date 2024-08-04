@@ -1,51 +1,294 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/tauri";
-import "./App.css";
+import { appWindow } from '@tauri-apps/api/window';
+import { PrimeIcons } from 'primereact/api';
+import { IconField } from 'primereact/iconfield';
+import { InputIcon } from 'primereact/inputicon';
+import { InputText } from 'primereact/inputtext';
+import { Menubar } from 'primereact/menubar';
+import type { MenuItem } from 'primereact/menuitem';
+import { TabMenu } from 'primereact/tabmenu';
+import type { TreeTableExpandedKeysType, TreeTableSelectionKeysType } from 'primereact/treetable';
+import { diff, fork } from 'radashi';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useInterval, useLocalStorage, useReadLocalStorage } from 'usehooks-ts';
+import makeTree from './lib/makeTree';
+import QBittorrent from './lib/QBittorrent';
+import {
+  TorrentContentPriority,
+  type TorrentFilter,
+  type TorrentInfo,
+} from './lib/qBittorrentTypes';
+import useClipboard from './lib/useClipboard';
+import AddDialog from './ui/AddDialog';
+import LoginDialog, { type Credentials } from './ui/LoginDialog';
+import SettingsDialog from './ui/SettingsDialog';
+import TorrentDialog, { TorrentNode } from './ui/TorrentDialog';
+import TorrentTable from './ui/TorrentTable';
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+const collectChildIndexes = (node: TorrentNode) => {
+  const indexes: number[] = [];
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    setGreetMsg(await invoke("greet", { name }));
+  if (node.children) {
+    for (const child of node.children) {
+      if (child.data.index === -1) {
+        indexes.push(...collectChildIndexes(child));
+      } else {
+        indexes.push(child.data.index);
+      }
+    }
   }
 
+  return indexes;
+};
+
+function App() {
+  const [credentials, setCredentials] = useLocalStorage<Credentials>('credentials', {
+    url: '',
+    username: '',
+    password: '',
+  });
+  const [showLogin, setShowLogin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<TorrentFilter>('downloading');
+  const [search, setSearch] = useState('');
+  const [torrents, setTorrents] = useState<TorrentInfo[]>([]);
+  const [selected, setSelected] = useState<TorrentInfo[]>([]);
+  const [currentHash, setCurrentHash] = useState('');
+  const [nodes, setNodes] = useState<TorrentNode[]>([]);
+  const [selectedNodes, setSelectedNodes] = useState<TreeTableSelectionKeysType>({});
+  const [expanded, setExpanded] = useState<TreeTableExpandedKeysType>({});
+  const [showAdd, setShowAdd] = useState(false);
+  const [showTorrent, setShowTorrent] = useState(false);
+  const [contentLoading, setContentLoading] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
+  const refreshInterval = useReadLocalStorage<number>('refreshInterval') ?? 1000;
+  const smallFileThreshold = useReadLocalStorage<number>('smallFileThreshold') ?? 200 * 1024 * 1024;
+  const watchClipboard = useReadLocalStorage<boolean>('watchClipboard') ?? false;
+
+  const qbt = useRef<QBittorrent>();
+  const metas = useRef<TorrentInfo[]>([]);
+
+  const buttons = useMemo<MenuItem[]>(
+    () => [
+      { label: 'Add', icon: PrimeIcons.PLUS, command: () => setShowAdd(true) },
+      {
+        label: 'Pause',
+        icon: PrimeIcons.PAUSE,
+        disabled: selected.length === 0,
+        command: () => qbt.current?.pause(selected.map((s) => s.hash)),
+      },
+      {
+        label: 'Resume',
+        icon: PrimeIcons.PLAY,
+        disabled: selected.length === 0,
+        command: () => qbt.current?.resume(selected.map((s) => s.hash)),
+      },
+      {
+        label: 'Delete',
+        icon: PrimeIcons.TRASH,
+        disabled: selected.length === 0,
+        command: () => qbt.current?.delete(selected.map((s) => s.hash)),
+      },
+      { label: 'Settings', icon: PrimeIcons.COG, command: () => setShowSettings(true) },
+    ],
+    [selected],
+  );
+  const tabs = useMemo<MenuItem[]>(
+    () => [
+      {
+        label: 'All',
+        icon: PrimeIcons.LIST,
+        data: 'all',
+      },
+      {
+        label: 'Downloading',
+        icon: PrimeIcons.DOWNLOAD,
+        data: 'downloading',
+      },
+      {
+        label: 'Completed',
+        icon: PrimeIcons.CHECK,
+        data: 'completed',
+      },
+    ],
+    [],
+  );
+
+  const refresh = useCallback(async () => {
+    if (!qbt.current) {
+      return;
+    }
+
+    const ts = await qbt.current.getTorrentList({
+      filter,
+      sort: filter === 'completed' ? 'completion_on' : 'added_on',
+    });
+
+    setTorrents(ts);
+    setLoading(false);
+
+    const hashes = ts.map((item) => item.hash);
+    setSelected((old) => old.filter((item) => hashes.includes(item.hash)));
+
+    const newMetas = ts.filter((v) => v.state === 'metaDL');
+    const noLongers = diff(metas.current, newMetas);
+    metas.current = newMetas;
+
+    await Promise.all(
+      noLongers.map(async (m) => {
+        if (!qbt.current) {
+          return;
+        }
+
+        const content = await qbt.current.getTorrentContent(m.hash);
+        const [larges, smalls] = fork(content, (item) => item.size >= smallFileThreshold);
+
+        await Promise.all([
+          qbt.current.setFilePriority(
+            m.hash,
+            larges.map((item) => item.index),
+            TorrentContentPriority.NORMAL,
+          ),
+          qbt.current.setFilePriority(
+            m.hash,
+            smalls.map((item) => item.index),
+            TorrentContentPriority.DO_NOT_DOWNLOAD,
+          ),
+        ]);
+      }),
+    );
+  }, [filter, smallFileThreshold]);
+
+  const select = useCallback(
+    async (node: TorrentNode) => {
+      let indexes = node.data.index === -1 ? collectChildIndexes(node) : node.data.index;
+      await qbt.current?.setFilePriority(currentHash, indexes, TorrentContentPriority.NORMAL);
+    },
+    [currentHash],
+  );
+
+  const unselect = useCallback(
+    async (node: TorrentNode) => {
+      let indexes = node.data.index === -1 ? collectChildIndexes(node) : node.data.index;
+      await qbt.current?.setFilePriority(
+        currentHash,
+        indexes,
+        TorrentContentPriority.DO_NOT_DOWNLOAD,
+      );
+    },
+    [currentHash],
+  );
+
+  useEffect(() => {
+    appWindow.show();
+    appWindow.maximize();
+  }, []);
+
+  useEffect(() => {
+    qbt.current = new QBittorrent(credentials.url);
+    qbt.current
+      .login(credentials.username, credentials.password)
+      .then((ok) => {
+        setShowLogin(!ok);
+      })
+      .catch((e) => {
+        console.error('Failed to login', e);
+        setShowLogin(true);
+      });
+  }, [credentials]);
+
+  useInterval(
+    () => {
+      refresh().catch(console.error);
+    },
+    showLogin ? null : refreshInterval,
+  );
+
+  const onClipboard = useCallback((text: string) => {
+    qbt.current?.add(text);
+  }, []);
+
+  useClipboard({
+    enabled: watchClipboard,
+    onTextChange: onClipboard,
+  });
+
   return (
-    <div className="container">
-      <h1>Welcome to Tauri!</h1>
-
-      <div className="row">
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
+    <div className="flex h-full w-full flex-col">
+      <div className="card flex gap-4">
+        <Menubar className="border-none bg-transparent" model={buttons} />
+        <IconField className="grow self-center" iconPosition="left">
+          <InputIcon className={PrimeIcons.SEARCH} />
+          <InputText
+            className="w-full"
+            type="search"
+            placeholder="Search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </IconField>
+        <TabMenu
+          className="pb-1"
+          model={tabs}
+          activeIndex={tabs.findIndex((tab) => tab.data === filter)}
+          onTabChange={(e) => {
+            setLoading(true);
+            setFilter(e.value.data as TorrentFilter);
+          }}
         />
-        <button type="submit">Greet</button>
-      </form>
+      </div>
+      <TorrentTable
+        {...{ loading, filter, search, torrents }}
+        selection={selected}
+        onSelectionChange={setSelected}
+        onClick={async (hash) => {
+          if (!qbt.current) {
+            return;
+          }
 
-      <p>{greetMsg}</p>
+          setCurrentHash(hash);
+          setContentLoading(true);
+          setNodes([]);
+          setShowTorrent(true);
+
+          const content = await qbt.current.getTorrentContent(hash);
+          const { nodes, selected, expanded } = makeTree(content);
+
+          setNodes(nodes);
+          setSelectedNodes(selected);
+          setExpanded(expanded);
+          setContentLoading(false);
+        }}
+      />
+      <LoginDialog
+        open={showLogin}
+        onLogin={(data) => {
+          if (data) {
+            setCredentials(data);
+          }
+        }}
+      />
+      <AddDialog
+        open={showAdd}
+        onClose={(urls) => {
+          setShowAdd(false);
+
+          if (urls) {
+            qbt.current?.add(urls);
+          }
+        }}
+      />
+      <TorrentDialog
+        open={showTorrent}
+        onClose={() => setShowTorrent(false)}
+        loading={contentLoading}
+        nodes={nodes}
+        selected={selectedNodes}
+        onSelectedChange={setSelectedNodes}
+        onSelect={select}
+        onUnselect={unselect}
+        expanded={expanded}
+      />
+      <SettingsDialog open={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 }
