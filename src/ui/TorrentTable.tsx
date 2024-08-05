@@ -85,33 +85,33 @@ export default function TorrentTable(props: TorrentTableProps) {
           bodyClassName="font-mono"
           body={(torrent: TorrentInfo) => formatSize(torrent.size)}
         />
-        {filter === 'downloading' && (
-          <Column
-            field="dlspeed"
-            header="Download speed"
-            align="right"
-            bodyClassName="font-mono"
-            body={(torrent: TorrentInfo) => formatSpeed(torrent.dlspeed)}
-          />
-        )}
-        <Column
-          field="progress"
-          header="Progress"
-          align="right"
-          bodyClassName="font-mono"
-          body={(torrent: TorrentInfo) => (
-            <div className="flex flex-col">
-              <span>{formatPercent(torrent.progress)}</span>
-              <ProgressBar value={torrent.progress * 100} showValue={false} className="h-1" />
-            </div>
-          )}
-        />
         {filter !== 'completed' && (
-          <Column
-            field="added_on"
-            header="Added at"
-            body={(torrent: TorrentInfo) => new Date(torrent.added_on * 1000).toLocaleString()}
-          />
+          <>
+            <Column
+              field="dlspeed"
+              header="Download speed"
+              align="right"
+              bodyClassName="font-mono"
+              body={(torrent: TorrentInfo) => formatSpeed(torrent.dlspeed)}
+            />
+            <Column
+              field="progress"
+              header="Progress"
+              align="right"
+              bodyClassName="font-mono"
+              body={(torrent: TorrentInfo) => (
+                <div className="flex flex-col">
+                  <span>{formatPercent(torrent.progress)}</span>
+                  <ProgressBar value={torrent.progress * 100} showValue={false} className="h-1" />
+                </div>
+              )}
+            />
+            <Column
+              field="added_on"
+              header="Added at"
+              body={(torrent: TorrentInfo) => new Date(torrent.added_on * 1000).toLocaleString()}
+            />
+          </>
         )}
         {filter !== 'downloading' && (
           <Column
