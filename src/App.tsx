@@ -7,7 +7,7 @@ import { Menubar } from 'primereact/menubar';
 import type { MenuItem } from 'primereact/menuitem';
 import { TabMenu } from 'primereact/tabmenu';
 import type { TreeTableExpandedKeysType, TreeTableSelectionKeysType } from 'primereact/treetable';
-import { diff, fork } from 'radashi';
+import { diff, fork, merge } from 'radashi';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useInterval, useLocalStorage, useReadLocalStorage } from 'usehooks-ts';
 import makeTree from './lib/makeTree';
@@ -65,7 +65,7 @@ function App() {
   const watchClipboard = useReadLocalStorage<boolean>('watchClipboard') ?? false;
 
   const qbt = useRef<QBittorrent>();
-  const metas = useRef<TorrentInfo[]>([]);
+  const metas = useRef<readonly TorrentInfo[]>([]);
 
   const buttons = useMemo<MenuItem[]>(
     () => [
@@ -129,9 +129,10 @@ function App() {
     const hashes = ts.map((item) => item.hash);
     setSelected((old) => old.filter((item) => hashes.includes(item.hash)));
 
-    const newMetas = ts.filter((v) => v.state === 'metaDL');
-    const noLongers = diff(metas.current, newMetas);
-    metas.current = newMetas;
+    const newMetas = ts.filter((item) => item.state === 'metaDL');
+    const noLongers = diff(metas.current, newMetas, (item) => item.hash);
+    const rest = diff(metas.current, noLongers, (item) => item.hash);
+    metas.current = merge(rest, newMetas, (item) => item.hash);
 
     await Promise.all(
       noLongers.map(async (m) => {
