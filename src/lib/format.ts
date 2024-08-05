@@ -20,7 +20,7 @@ const speedFormatters = Object.freeze(
 );
 const percentFormatter = new Intl.NumberFormat(undefined, {
   style: 'percent',
-  minimumFractionDigits: 2,
+  minimumFractionDigits: 1,
 });
 
 const formatWith = (value: number, formatters: readonly Intl.NumberFormat[]) => {
