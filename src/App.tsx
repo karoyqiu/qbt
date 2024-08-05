@@ -284,10 +284,48 @@ function App() {
         loading={contentLoading}
         nodes={nodes}
         selected={selectedNodes}
+        expanded={expanded}
         onSelectedChange={setSelectedNodes}
         onSelect={select}
         onUnselect={unselect}
-        expanded={expanded}
+        onMagnetToTorrent={async () => {
+          setShowTorrent(false);
+          await qbt.current?.delete(currentHash);
+          await qbt.current?.add(`https://itorrents.org/torrent/${currentHash}.torrent`);
+        }}
+        onAutoSelect={async () => {
+          if (qbt.current) {
+            const content = await qbt.current.getTorrentContent(currentHash);
+            const [larges, smalls] = fork(content, (item) => item.size >= smallFileThreshold);
+
+            await Promise.all([
+              qbt.current.setFilePriority(
+                currentHash,
+                larges.map((item) => item.index),
+                TorrentContentPriority.NORMAL,
+              ),
+              qbt.current.setFilePriority(
+                currentHash,
+                smalls.map((item) => item.index),
+                TorrentContentPriority.DO_NOT_DOWNLOAD,
+              ),
+            ]);
+
+            for (const item of larges) {
+              item.priority = TorrentContentPriority.NORMAL;
+            }
+
+            for (const item of smalls) {
+              item.priority = TorrentContentPriority.DO_NOT_DOWNLOAD;
+            }
+
+            const { nodes, selected, expanded } = makeTree(content);
+
+            setNodes(nodes);
+            setSelectedNodes(selected);
+            setExpanded(expanded);
+          }
+        }}
       />
       <SettingsDialog open={showSettings} onClose={() => setShowSettings(false)} />
     </div>

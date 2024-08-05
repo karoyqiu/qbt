@@ -1,5 +1,6 @@
 import { join } from '@tauri-apps/api/path';
 import { open as shellOpen } from '@tauri-apps/api/shell';
+import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { Dialog } from 'primereact/dialog';
 import { ProgressBar } from 'primereact/progressbar';
@@ -25,10 +26,12 @@ type TorrentDialogProps = {
   loading?: boolean;
   nodes: TorrentNode[];
   selected: TreeTableSelectionKeysType;
+  expanded: TreeTableExpandedKeysType;
   onSelectedChange: (value: TreeTableSelectionKeysType) => void;
   onSelect: (node: TorrentNode) => void;
   onUnselect: (node: TorrentNode) => void;
-  expanded: TreeTableExpandedKeysType;
+  onMagnetToTorrent: () => void;
+  onAutoSelect: () => void;
 };
 
 export default function TorrentDialog(props: TorrentDialogProps) {
@@ -38,10 +41,12 @@ export default function TorrentDialog(props: TorrentDialogProps) {
     loading,
     nodes,
     selected,
+    expanded,
     onSelectedChange,
     onSelect,
     onUnselect,
-    expanded,
+    onMagnetToTorrent,
+    onAutoSelect,
   } = props;
   const [expandedKeys, setExpandedKeys] = useState<TreeTableExpandedKeysType>({});
   const localDownloadDir = useReadLocalStorage<string>('localDownloadDir');
@@ -54,6 +59,15 @@ export default function TorrentDialog(props: TorrentDialogProps) {
       visible={open}
       onHide={onClose}
       className="w-[calc(100vw-16rem)] max-w-screen-lg"
+      footer={
+        <div className="pt-6">
+          {nodes.length === 0 ? (
+            <Button label="Magnet to torrent" onClick={onMagnetToTorrent} />
+          ) : (
+            <Button label="Auto select" onClick={onAutoSelect} />
+          )}
+        </div>
+      }
       dismissableMask
     >
       <TreeTable
