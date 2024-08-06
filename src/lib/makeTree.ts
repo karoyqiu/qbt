@@ -26,20 +26,24 @@ const finalize = (
   expanded: TreeTableExpandedKeysType,
 ) => {
   if (!parent.children || parent.children.length === 0) {
-    return { checked: { checked: !!selected[parent.key!]?.checked }, size: parent.data.size };
+    return { checked: !!selected[parent.key!]?.checked };
   }
 
   let checkedCount = 0;
+  let downloaded = 0;
   parent.data.size = 0;
 
   for (const child of parent.children) {
-    const { checked, size } = finalize(child, selected, expanded);
+    const checked = finalize(child, selected, expanded);
 
     if (checked.checked || checked.partialChecked) {
       checkedCount++;
-      parent.data.size += size;
+      downloaded += child.data.size * child.data.progress;
+      parent.data.size += child.data.size;
     }
   }
+
+  parent.data.progress = parent.data.size > 0 ? downloaded / parent.data.size : 0;
 
   const checked: TreeTableCheckboxSelectionKeyType =
     checkedCount === 0
@@ -53,7 +57,7 @@ const finalize = (
     expanded[parent.key!] = true;
   }
 
-  return { checked, size: parent.data.size };
+  return checked;
 };
 
 const makeTree = (content: TorrentContent[]) => {

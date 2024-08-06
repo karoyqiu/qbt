@@ -7,7 +7,7 @@ import { Menubar } from 'primereact/menubar';
 import type { MenuItem } from 'primereact/menuitem';
 import { TabMenu } from 'primereact/tabmenu';
 import type { TreeTableExpandedKeysType, TreeTableSelectionKeysType } from 'primereact/treetable';
-import { diff, fork } from 'radashi';
+import { diff, fork, unique } from 'radashi';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useInterval, useLocalStorage, useReadLocalStorage } from 'usehooks-ts';
 import makeTree from './lib/makeTree';
@@ -39,6 +39,17 @@ const collectChildIndexes = (node: TorrentNode) => {
 
   return indexes;
 };
+
+function remove<T>(list: T[], value: T, toKey: (item: T) => number | string | symbol) {
+  const key = toKey(value);
+  const index = list.findIndex((v) => toKey(v) === key);
+
+  if (index >= 0) {
+    list.splice(index, 1);
+  }
+
+  return list;
+}
 
 function App() {
   const [credentials, setCredentials] = useLocalStorage<Credentials>('credentials', {
@@ -86,7 +97,13 @@ function App() {
         label: 'Delete',
         icon: PrimeIcons.TRASH,
         disabled: selected.length === 0,
-        command: () => qbt.current?.delete(selected.map((s) => s.hash)),
+        command: () => {
+          for (const sel of selected) {
+            remove(metas.current, sel, (item) => item.hash);
+          }
+
+          qbt.current?.delete(selected.map((s) => s.hash));
+        },
       },
       { label: 'Settings', icon: PrimeIcons.COG, command: () => setShowSettings(true) },
     ],
@@ -129,33 +146,51 @@ function App() {
     const hashes = ts.map((item) => item.hash);
     setSelected((old) => old.filter((item) => hashes.includes(item.hash)));
 
-    const newMetas = ts.filter((v) => v.state === 'metaDL');
-    const noLongers = diff(metas.current, newMetas);
-    metas.current = newMetas;
+    const newMetas = ts.filter((item) => item.state === 'metaDL');
+    const noLongers = diff(metas.current, newMetas, (item) => item.hash);
+    const rest = diff(metas.current, noLongers, (item) => item.hash);
+    metas.current = unique([...rest, ...newMetas], (item) => item.hash);
 
-    await Promise.all(
-      noLongers.map(async (m) => {
-        if (!qbt.current) {
-          return;
-        }
+    if (noLongers.length > 0) {
+      await Promise.all(
+        noLongers.map(async (m) => {
+          if (!qbt.current) {
+            return;
+          }
 
-        const content = await qbt.current.getTorrentContent(m.hash);
-        const [larges, smalls] = fork(content, (item) => item.size >= smallFileThreshold);
+          const content = await qbt.current.getTorrentContent(m.hash);
 
-        await Promise.all([
-          qbt.current.setFilePriority(
-            m.hash,
-            larges.map((item) => item.index),
-            TorrentContentPriority.NORMAL,
-          ),
-          qbt.current.setFilePriority(
-            m.hash,
-            smalls.map((item) => item.index),
-            TorrentContentPriority.DO_NOT_DOWNLOAD,
-          ),
-        ]);
-      }),
-    );
+          if (Array.isArray(content) && content.length > 0) {
+            const [larges, smalls] = fork(content, (item) => item.size >= smallFileThreshold);
+            const promises: Promise<unknown>[] = [];
+
+            if (larges.length > 0) {
+              promises.push(
+                qbt.current.setFilePriority(
+                  m.hash,
+                  larges.map((item) => item.index),
+                  TorrentContentPriority.NORMAL,
+                ),
+              );
+            }
+
+            if (smalls.length > 0) {
+              promises.push(
+                qbt.current.setFilePriority(
+                  m.hash,
+                  smalls.map((item) => item.index),
+                  TorrentContentPriority.DO_NOT_DOWNLOAD,
+                ),
+              );
+            }
+
+            if (promises.length > 0) {
+              await Promise.all(promises);
+            }
+          }
+        }),
+      );
+    }
   }, [filter, smallFileThreshold]);
 
   const select = useCallback(
@@ -283,10 +318,48 @@ function App() {
         loading={contentLoading}
         nodes={nodes}
         selected={selectedNodes}
+        expanded={expanded}
         onSelectedChange={setSelectedNodes}
         onSelect={select}
         onUnselect={unselect}
-        expanded={expanded}
+        onMagnetToTorrent={async () => {
+          setShowTorrent(false);
+          await qbt.current?.delete(currentHash);
+          await qbt.current?.add(`https://itorrents.org/torrent/${currentHash}.torrent`);
+        }}
+        onAutoSelect={async () => {
+          if (qbt.current) {
+            const content = await qbt.current.getTorrentContent(currentHash);
+            const [larges, smalls] = fork(content, (item) => item.size >= smallFileThreshold);
+
+            await Promise.all([
+              qbt.current.setFilePriority(
+                currentHash,
+                larges.map((item) => item.index),
+                TorrentContentPriority.NORMAL,
+              ),
+              qbt.current.setFilePriority(
+                currentHash,
+                smalls.map((item) => item.index),
+                TorrentContentPriority.DO_NOT_DOWNLOAD,
+              ),
+            ]);
+
+            for (const item of larges) {
+              item.priority = TorrentContentPriority.NORMAL;
+            }
+
+            for (const item of smalls) {
+              item.priority = TorrentContentPriority.DO_NOT_DOWNLOAD;
+            }
+
+            const { nodes, selected, expanded } = makeTree(content);
+
+            setNodes(nodes);
+            setSelectedNodes(selected);
+            setExpanded(expanded);
+          }
+        }}
       />
       <SettingsDialog open={showSettings} onClose={() => setShowSettings(false)} />
     </div>
