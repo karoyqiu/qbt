@@ -7,13 +7,14 @@ import { Menubar } from 'primereact/menubar';
 import type { MenuItem } from 'primereact/menuitem';
 import { TabMenu } from 'primereact/tabmenu';
 import type { TreeTableExpandedKeysType, TreeTableSelectionKeysType } from 'primereact/treetable';
-import { diff, fork, unique } from 'radashi';
+import { diff, fork, max, unique } from 'radashi';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useInterval, useLocalStorage, useReadLocalStorage } from 'usehooks-ts';
 import makeTree from './lib/makeTree';
 import QBittorrent from './lib/QBittorrent';
 import {
   TorrentContentPriority,
+  type TorrentContent,
   type TorrentFilter,
   type TorrentInfo,
 } from './lib/qBittorrentTypes';
@@ -128,6 +129,46 @@ function App() {
       },
     ],
     [],
+  );
+
+  const autoSelect = useCallback(
+    async (hash: string, content: TorrentContent[]) => {
+      if (!qbt.current) {
+        return;
+      }
+
+      const [larges, smalls] = fork(content, (item) => item.size >= smallFileThreshold);
+
+      if (larges.length === 0) {
+        const largest = max(smalls, (item) => item.size);
+
+        if (largest) {
+          larges.push(largest);
+          remove(smalls, largest, (item) => item.index);
+        }
+      }
+
+      const promises = [
+        qbt.current.setFilePriority(
+          hash,
+          larges.map((item) => item.index),
+          TorrentContentPriority.NORMAL,
+        ),
+      ];
+
+      if (smalls.length > 0) {
+        promises.push(
+          qbt.current.setFilePriority(
+            hash,
+            smalls.map((item) => item.index),
+            TorrentContentPriority.DO_NOT_DOWNLOAD,
+          ),
+        );
+      }
+
+      await Promise.all(promises);
+    },
+    [smallFileThreshold],
   );
 
   const refresh = useCallback(async () => {
@@ -330,31 +371,9 @@ function App() {
         onAutoSelect={async () => {
           if (qbt.current) {
             const content = await qbt.current.getTorrentContent(currentHash);
-            const [larges, smalls] = fork(content, (item) => item.size >= smallFileThreshold);
-
-            await Promise.all([
-              qbt.current.setFilePriority(
-                currentHash,
-                larges.map((item) => item.index),
-                TorrentContentPriority.NORMAL,
-              ),
-              qbt.current.setFilePriority(
-                currentHash,
-                smalls.map((item) => item.index),
-                TorrentContentPriority.DO_NOT_DOWNLOAD,
-              ),
-            ]);
-
-            for (const item of larges) {
-              item.priority = TorrentContentPriority.NORMAL;
-            }
-
-            for (const item of smalls) {
-              item.priority = TorrentContentPriority.DO_NOT_DOWNLOAD;
-            }
+            await autoSelect(currentHash, content);
 
             const { nodes, selected, expanded } = makeTree(content);
-
             setNodes(nodes);
             setSelectedNodes(selected);
             setExpanded(expanded);
