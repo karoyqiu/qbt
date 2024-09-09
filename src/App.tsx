@@ -172,7 +172,7 @@ function App() {
   );
 
   const refresh = useCallback(async () => {
-    if (!qbt.current) {
+    if (!qbt.current?.hasLoggedIn) {
       return;
     }
 
