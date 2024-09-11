@@ -14,7 +14,6 @@ import makeTree from './lib/makeTree';
 import QBittorrent from './lib/QBittorrent';
 import {
   TorrentContentPriority,
-  type TorrentContent,
   type TorrentFilter,
   type TorrentInfo,
 } from './lib/qBittorrentTypes';
@@ -132,11 +131,12 @@ function App() {
   );
 
   const autoSelect = useCallback(
-    async (hash: string, content: TorrentContent[]) => {
+    async (hash: string) => {
       if (!qbt.current) {
-        return;
+        return [];
       }
 
+      const content = await qbt.current.getTorrentContent(hash);
       const [larges, smalls] = fork(content, (item) => item.size >= smallFileThreshold);
 
       if (larges.length === 0) {
@@ -167,6 +167,11 @@ function App() {
       }
 
       await Promise.all(promises);
+
+      return [
+        ...larges.map((c) => ({ ...c, priority: TorrentContentPriority.NORMAL })),
+        ...smalls.map((c) => ({ ...c, priority: TorrentContentPriority.DO_NOT_DOWNLOAD })),
+      ];
     },
     [smallFileThreshold],
   );
@@ -193,44 +198,7 @@ function App() {
     metas.current = unique([...rest, ...newMetas], (item) => item.hash);
 
     if (noLongers.length > 0) {
-      await Promise.all(
-        noLongers.map(async (m) => {
-          if (!qbt.current) {
-            return;
-          }
-
-          const content = await qbt.current.getTorrentContent(m.hash);
-
-          if (Array.isArray(content) && content.length > 0) {
-            const [larges, smalls] = fork(content, (item) => item.size >= smallFileThreshold);
-            const promises: Promise<unknown>[] = [];
-
-            if (larges.length > 0) {
-              promises.push(
-                qbt.current.setFilePriority(
-                  m.hash,
-                  larges.map((item) => item.index),
-                  TorrentContentPriority.NORMAL,
-                ),
-              );
-            }
-
-            if (smalls.length > 0) {
-              promises.push(
-                qbt.current.setFilePriority(
-                  m.hash,
-                  smalls.map((item) => item.index),
-                  TorrentContentPriority.DO_NOT_DOWNLOAD,
-                ),
-              );
-            }
-
-            if (promises.length > 0) {
-              await Promise.all(promises);
-            }
-          }
-        }),
-      );
+      await Promise.all(noLongers.map((m) => autoSelect(m.hash)));
     }
   }, [filter, smallFileThreshold]);
 
@@ -370,8 +338,7 @@ function App() {
         }}
         onAutoSelect={async () => {
           if (qbt.current) {
-            const content = await qbt.current.getTorrentContent(currentHash);
-            await autoSelect(currentHash, content);
+            const content = await autoSelect(currentHash);
 
             const { nodes, selected, expanded } = makeTree(content);
             setNodes(nodes);
