@@ -10,9 +10,9 @@ import type {
 class QBittorrent {
   private url: string;
   private jar = new CookieJar();
+  private loggedIn = false;
 
   constructor(url: string) {
-    console.debug('Constructing qBittorrent', url);
     this.url = url;
   }
 
@@ -23,9 +23,14 @@ class QBittorrent {
    * @returns 是否登录成功
    */
   async login(username: string, password: string) {
-    console.debug('Logging in', username);
     const res = await this.post('auth', 'login', { username, password });
-    return res === 'Ok.';
+    this.loggedIn = res === 'Ok.';
+    return this.loggedIn;
+  }
+
+  /** 是否已登录 */
+  get hasLoggedIn() {
+    return this.loggedIn;
   }
 
   getTorrentList(params?: {
