@@ -8,6 +8,8 @@ export const torrentStates = [
   'uploading',
   /** Torrent is paused and has finished downloading */
   'pausedUP',
+  /** Torrent is stopped and has finished downloading? */
+  'stoppedUP',
   /** Queuing is enabled and torrent is queued for upload */
   'queuedUP',
   /** Torrent is being seeded, but no connection were made */

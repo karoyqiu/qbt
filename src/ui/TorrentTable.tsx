@@ -26,6 +26,7 @@ const getStateIcon = (state: TorrentState) => {
     case 'pausedDL':
       return PrimeIcons.PAUSE;
     case 'pausedUP':
+    case 'stoppedUP':
       return PrimeIcons.CHECK;
     default:
       return PrimeIcons.TIMES_CIRCLE;
