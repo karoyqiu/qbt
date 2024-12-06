@@ -16,19 +16,19 @@ const getStateIcon = (state: TorrentState) => {
     case 'stalledDL':
     case 'checkingDL':
     case 'forcedDL':
-      return PrimeIcons.DOWNLOAD;
+      return PrimeIcons.ARROW_CIRCLE_DOWN;
     case 'uploading':
     case 'queuedUP':
     case 'stalledUP':
     case 'checkingUP':
     case 'forcedUP':
-      return PrimeIcons.UPLOAD;
-    case 'pausedDL':
-      return PrimeIcons.PAUSE;
-    case 'pausedUP':
+      return PrimeIcons.ARROW_CIRCLE_UP;
+    case 'stoppedDL':
+      return PrimeIcons.STOP_CIRCLE;
     case 'stoppedUP':
-      return PrimeIcons.CHECK;
+      return PrimeIcons.CHECK_CIRCLE;
     default:
+      console.warn(`Unknown state: ${state}`);
       return PrimeIcons.TIMES_CIRCLE;
   }
 };

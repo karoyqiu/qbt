@@ -1,6 +1,6 @@
 [package]
 name = "qbt"
-version = "0.2.2"
+version = "0.2.3"
 description = "qBittorrent"
 authors = ["karoyqiu@gmail.com"]
 edition = "2021"

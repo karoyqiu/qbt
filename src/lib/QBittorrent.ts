@@ -67,11 +67,11 @@ class QBittorrent {
   }
 
   async pause(hashes: string | string[]) {
-    await this.post('torrents', 'pause', { hashes: QBittorrent.joinHashes(hashes) });
+    await this.post('torrents', 'stop', { hashes: QBittorrent.joinHashes(hashes) });
   }
 
   async resume(hashes: string | string[]) {
-    await this.post('torrents', 'resume', { hashes: QBittorrent.joinHashes(hashes) });
+    await this.post('torrents', 'start', { hashes: QBittorrent.joinHashes(hashes) });
   }
 
   async delete(hashes: string | string[], deleteFiles = true) {

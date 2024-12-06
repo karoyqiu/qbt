@@ -6,9 +6,7 @@ export const torrentStates = [
   'missingFiles',
   /** Torrent is being seeded and data is being transferred */
   'uploading',
-  /** Torrent is paused and has finished downloading */
-  'pausedUP',
-  /** Torrent is stopped and has finished downloading? */
+  /** Torrent is stopped and has finished downloading */
   'stoppedUP',
   /** Queuing is enabled and torrent is queued for upload */
   'queuedUP',
@@ -24,8 +22,8 @@ export const torrentStates = [
   'downloading',
   /** Torrent has just started downloading and is fetching metadata */
   'metaDL',
-  /** Torrent is paused and has NOT finished downloading */
-  'pausedDL',
+  /** Torrent is stopped and has NOT finished downloading */
+  'stoppedDL',
   /** Queuing is enabled and torrent is queued for download */
   'queuedDL',
   /** Torrent is being downloaded, but no connection were made */
@@ -49,10 +47,10 @@ export const torrentFilters = [
   'downloading',
   'seeding',
   'completed',
-  'paused',
+  'stopped',
   'active',
   'inactive',
-  'resumed',
+  'running',
   'stalled',
   'stalled_uploading',
   'stalled_downloading',

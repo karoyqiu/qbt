@@ -82,13 +82,13 @@ function App() {
     () => [
       { label: 'Add', icon: PrimeIcons.PLUS, command: () => setShowAdd(true) },
       {
-        label: 'Pause',
-        icon: PrimeIcons.PAUSE,
+        label: 'Stop',
+        icon: PrimeIcons.STOP,
         disabled: selected.length === 0,
         command: () => qbt.current?.pause(selected.map((s) => s.hash)),
       },
       {
-        label: 'Resume',
+        label: 'Start',
         icon: PrimeIcons.PLAY,
         disabled: selected.length === 0,
         command: () => qbt.current?.resume(selected.map((s) => s.hash)),
@@ -118,12 +118,12 @@ function App() {
       },
       {
         label: 'Downloading',
-        icon: PrimeIcons.DOWNLOAD,
+        icon: PrimeIcons.ARROW_CIRCLE_DOWN,
         data: 'downloading',
       },
       {
         label: 'Completed',
-        icon: PrimeIcons.CHECK,
+        icon: PrimeIcons.CHECK_CIRCLE,
         data: 'completed',
       },
     ],
