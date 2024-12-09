@@ -126,6 +126,11 @@ function App() {
         icon: PrimeIcons.CHECK_CIRCLE,
         data: 'completed',
       },
+      {
+        label: 'Error',
+        icon: PrimeIcons.TIMES_CIRCLE,
+        data: 'errored',
+      },
     ],
     [],
   );
