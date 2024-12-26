@@ -1,10 +1,12 @@
 import { appWindow } from '@tauri-apps/api/window';
 import { PrimeIcons } from 'primereact/api';
+import { Button } from 'primereact/button';
 import { IconField } from 'primereact/iconfield';
 import { InputIcon } from 'primereact/inputicon';
 import { InputText } from 'primereact/inputtext';
 import { Menubar } from 'primereact/menubar';
 import type { MenuItem } from 'primereact/menuitem';
+import { Sidebar } from 'primereact/sidebar';
 import { TabMenu } from 'primereact/tabmenu';
 import type { TreeTableExpandedKeysType, TreeTableSelectionKeysType } from 'primereact/treetable';
 import { diff, fork, max, unique } from 'radashi';
@@ -71,6 +73,7 @@ function App() {
   const [showTorrent, setShowTorrent] = useState(false);
   const [contentLoading, setContentLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   const refreshInterval = useReadLocalStorage<number>('refreshInterval') ?? 1000;
   const smallFileThreshold = useReadLocalStorage<number>('smallFileThreshold') ?? 200 * 1024 * 1024;
   const watchClipboard = useReadLocalStorage<boolean>('watchClipboard') ?? false;
@@ -264,7 +267,11 @@ function App() {
   return (
     <div className="flex h-full w-full flex-col">
       <div className="card flex gap-4">
-        <Menubar className="border-none bg-transparent" model={buttons} />
+        <Menubar
+          className="border-none bg-transparent"
+          model={buttons}
+          start={<Button icon={PrimeIcons.BARS} text onClick={() => setShowSidebar(true)} />}
+        />
         <IconField className="grow self-center" iconPosition="left">
           <InputIcon className={PrimeIcons.SEARCH} />
           <InputText
@@ -284,6 +291,7 @@ function App() {
             setFilter(e.value.data as TorrentFilter);
           }}
         />
+        <Button icon={PrimeIcons.BARS} text />
       </div>
       <TorrentTable
         {...{ loading, filter, search, torrents }}
@@ -353,6 +361,14 @@ function App() {
         }}
       />
       <SettingsDialog open={showSettings} onClose={() => setShowSettings(false)} />
+      <Sidebar visible={showSidebar} onHide={() => setShowSidebar(false)}>
+        <h2>Sidebar</h2>
+        <p>
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt
+          ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+          ullamco laboris nisi ut aliquip ex ea commodo consequat.
+        </p>
+      </Sidebar>
     </div>
   );
 }
