@@ -1,3 +1,77 @@
+/** Main data */
+export interface MainData {
+  full_update: boolean;
+  rid: number;
+  server_state: ServerState;
+}
+
+export interface ServerState {
+  alltime_dl: number;
+  alltime_ul: number;
+  average_time_queue: number;
+  /** Connection status */
+  connection_status: 'connected' | 'firewalled' | 'disconnected';
+  /** DHT nodes connected to */
+  dht_nodes: number;
+  /** Data downloaded this session (bytes) */
+  dl_info_data: number;
+  /** Global download rate (bytes/s) */
+  dl_info_speed: number;
+  /** Download rate limit (bytes/s) */
+  dl_rate_limit: number;
+  free_space_on_disk: number;
+  global_ratio: string;
+  queued_io_jobs: number;
+  /** True if torrent queueing is enabled */
+  queueing: boolean;
+  read_cache_hits: string;
+  read_cache_overload: string;
+  /** Transfer list refresh interval (milliseconds) */
+  refresh_interval: number;
+  total_buffers_size: number;
+  total_peer_connections: number;
+  total_queued_size: number;
+  total_wasted_session: number;
+  /** Data uploaded this session (bytes) */
+  up_info_data: number;
+  /** Global upload rate (bytes/s) */
+  up_info_speed: number;
+  /** Upload rate limit (bytes/s) */
+  up_rate_limit: number;
+  /** True if alternative speed limits are enabled */
+  use_alt_speed_limits: boolean;
+  use_subcategories: boolean;
+  write_cache_overload: string;
+}
+
+export const defaultServerState = Object.freeze<ServerState>({
+  alltime_dl: 0,
+  alltime_ul: 0,
+  average_time_queue: 0,
+  connection_status: 'disconnected',
+  dht_nodes: 0,
+  dl_info_data: 0,
+  dl_info_speed: 0,
+  dl_rate_limit: 0,
+  free_space_on_disk: 0,
+  global_ratio: '',
+  queued_io_jobs: 0,
+  queueing: false,
+  read_cache_hits: '',
+  read_cache_overload: '',
+  refresh_interval: 0,
+  total_buffers_size: 0,
+  total_peer_connections: 0,
+  total_queued_size: 0,
+  total_wasted_session: 0,
+  up_info_data: 0,
+  up_info_speed: 0,
+  up_rate_limit: 0,
+  use_alt_speed_limits: false,
+  use_subcategories: false,
+  write_cache_overload: '',
+});
+
 /** Torrent states */
 export const torrentStates = [
   /** Some error occurred, applies to paused torrents */

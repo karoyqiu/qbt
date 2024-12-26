@@ -12,9 +12,11 @@ import type { TreeTableExpandedKeysType, TreeTableSelectionKeysType } from 'prim
 import { diff, fork, max, unique } from 'radashi';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useInterval, useLocalStorage, useReadLocalStorage } from 'usehooks-ts';
+import { formatSize, formatSpeed } from './lib/format';
 import makeTree from './lib/makeTree';
 import QBittorrent from './lib/QBittorrent';
 import {
+  defaultServerState,
   TorrentContentPriority,
   type TorrentFilter,
   type TorrentInfo,
@@ -74,12 +76,15 @@ function App() {
   const [contentLoading, setContentLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [mainData, setMainData] = useState(defaultServerState);
   const refreshInterval = useReadLocalStorage<number>('refreshInterval') ?? 1000;
   const smallFileThreshold = useReadLocalStorage<number>('smallFileThreshold') ?? 200 * 1024 * 1024;
   const watchClipboard = useReadLocalStorage<boolean>('watchClipboard') ?? false;
 
   const qbt = useRef<QBittorrent>();
   const metas = useRef<TorrentInfo[]>([]);
+
+  const maxRefreshInterval = Math.max(refreshInterval, mainData.refresh_interval);
 
   const buttons = useMemo<MenuItem[]>(
     () => [
@@ -252,7 +257,17 @@ function App() {
     () => {
       refresh().catch(console.error);
     },
-    showLogin ? null : refreshInterval,
+    showLogin ? null : maxRefreshInterval,
+  );
+
+  useInterval(
+    async () => {
+      if (qbt.current) {
+        const data = await qbt.current.getMainData();
+        setMainData(data);
+      }
+    },
+    showSidebar ? maxRefreshInterval : null,
   );
 
   const onClipboard = useCallback((text: string) => {
@@ -270,7 +285,7 @@ function App() {
         <Menubar
           className="border-none bg-transparent"
           model={buttons}
-          start={<Button icon={PrimeIcons.BARS} text onClick={() => setShowSidebar(true)} />}
+          start={<Button icon={PrimeIcons.BARS} text plain onClick={() => setShowSidebar(true)} />}
         />
         <IconField className="grow self-center" iconPosition="left">
           <InputIcon className={PrimeIcons.SEARCH} />
@@ -291,7 +306,6 @@ function App() {
             setFilter(e.value.data as TorrentFilter);
           }}
         />
-        <Button icon={PrimeIcons.BARS} text />
       </div>
       <TorrentTable
         {...{ loading, filter, search, torrents }}
@@ -362,12 +376,22 @@ function App() {
       />
       <SettingsDialog open={showSettings} onClose={() => setShowSettings(false)} />
       <Sidebar visible={showSidebar} onHide={() => setShowSidebar(false)}>
-        <h2>Sidebar</h2>
-        <p>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt
-          ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-          ullamco laboris nisi ut aliquip ex ea commodo consequat.
-        </p>
+        <div className="grid grid-cols-2 gap-y-2">
+          <span>DHT nodes</span>
+          <span className="text-end font-mono">{mainData.dht_nodes}</span>
+          <span>Data downloaded</span>
+          <span className="text-end font-mono">{formatSize(mainData.dl_info_data)}</span>
+          <span>Download speed</span>
+          <span className="text-end font-mono">{formatSpeed(mainData.dl_info_speed)}</span>
+          <span>Data uploaded</span>
+          <span className="text-end font-mono">{formatSize(mainData.up_info_data)}</span>
+          <span>Upload speed</span>
+          <span className="text-end font-mono">{formatSpeed(mainData.up_info_speed)}</span>
+          <span>Free disk space</span>
+          <span className="text-end font-mono">{formatSize(mainData.free_space_on_disk)}</span>
+          <span>Speed limited</span>
+          <span className="text-end">{mainData.use_alt_speed_limits ? 'Yes' : 'No'}</span>
+        </div>
       </Sidebar>
     </div>
   );

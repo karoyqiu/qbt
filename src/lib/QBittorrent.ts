@@ -1,16 +1,20 @@
 import { Body, fetch, ResponseType } from '@tauri-apps/api/http';
 import { CookieJar } from 'tough-cookie';
-import type {
-  TorrentContent,
-  TorrentContentPriority,
-  TorrentFilter,
-  TorrentInfo,
+import {
+  defaultServerState,
+  type MainData,
+  type ServerState,
+  type TorrentContent,
+  type TorrentContentPriority,
+  type TorrentFilter,
+  type TorrentInfo,
 } from './qBittorrentTypes';
 
 class QBittorrent {
   private url: string;
   private jar = new CookieJar();
   private loggedIn = false;
+  private mainData: MainData = { full_update: false, rid: 0, server_state: defaultServerState };
 
   constructor(url: string) {
     this.url = url;
@@ -31,6 +35,31 @@ class QBittorrent {
   /** 是否已登录 */
   get hasLoggedIn() {
     return this.loggedIn;
+  }
+
+  getGlobalTransferInfo() {
+    return this.getObject<ServerState>('transfer', 'info');
+  }
+
+  async getMainData() {
+    const data = await this.getObject<MainData>('sync', 'maindata', {
+      rid: this.mainData.rid.toString(),
+    });
+
+    if (data.full_update) {
+      this.mainData = data;
+    } else {
+      this.mainData = {
+        full_update: data.full_update,
+        rid: data.rid,
+        server_state: {
+          ...this.mainData.server_state,
+          ...data.server_state,
+        },
+      };
+    }
+
+    return this.mainData.server_state;
   }
 
   getTorrentList(params?: {
