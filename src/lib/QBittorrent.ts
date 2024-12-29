@@ -1,7 +1,8 @@
 import { Body, fetch, ResponseType } from '@tauri-apps/api/http';
+import { assign } from 'radashi';
 import { CookieJar } from 'tough-cookie';
 import {
-  defaultServerState,
+  defaultMainData,
   type MainData,
   type ServerState,
   type TorrentContent,
@@ -14,7 +15,7 @@ class QBittorrent {
   private url: string;
   private jar = new CookieJar();
   private loggedIn = false;
-  private mainData: MainData = { full_update: false, rid: 0, server_state: defaultServerState };
+  private mainData: MainData = defaultMainData;
 
   constructor(url: string) {
     this.url = url;
@@ -49,17 +50,18 @@ class QBittorrent {
     if (data.full_update) {
       this.mainData = data;
     } else {
-      this.mainData = {
-        full_update: data.full_update,
-        rid: data.rid,
-        server_state: {
-          ...this.mainData.server_state,
-          ...data.server_state,
-        },
-      };
+      if (data.torrents_removed) {
+        for (const t of data.torrents_removed) {
+          delete this.mainData.torrents[t];
+        }
+
+        delete data.torrents_removed;
+      }
+
+      this.mainData = assign(this.mainData, data);
     }
 
-    return this.mainData.server_state;
+    return this.mainData;
   }
 
   getTorrentList(params?: {

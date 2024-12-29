@@ -33,6 +33,35 @@ const getStateIcon = (state: TorrentState) => {
   }
 };
 
+const filterTorrents = (torrents: TorrentInfo[], filter: TorrentFilter) => {
+  let states: TorrentState[] = [];
+
+  switch (filter) {
+    case 'downloading':
+      states = [
+        'downloading',
+        'metaDL',
+        'allocating',
+        'forcedDL',
+        'queuedDL',
+        'stalledDL',
+        'stoppedDL',
+        'checkingDL',
+      ];
+      break;
+    case 'completed':
+      states = ['uploading', 'forcedUP', 'queuedUP', 'stalledUP', 'stoppedUP', 'checkingUP'];
+      break;
+    case 'errored':
+      states = ['error', 'missingFiles'];
+      break;
+    default:
+      return torrents;
+  }
+
+  return torrents.filter((t) => states.includes(t.state));
+};
+
 type TorrentTableProps = {
   loading?: boolean;
   filter: TorrentFilter;
@@ -45,6 +74,13 @@ type TorrentTableProps = {
 
 export default function TorrentTable(props: TorrentTableProps) {
   const { loading, filter, search, torrents, selection, onSelectionChange, onClick } = props;
+  const filtered = filterTorrents(torrents, filter).sort((a, b) => {
+    if (a.completion_on === b.completion_on) {
+      return a.added_on - b.added_on;
+    }
+
+    return a.completion_on - b.completion_on;
+  });
 
   const columns = useMemo(() => {
     const cols = [];
@@ -78,7 +114,7 @@ export default function TorrentTable(props: TorrentTableProps) {
       );
     }
 
-    if (filter !== 'downloading') {
+    if (filter === 'completed') {
       cols.push(
         <Column
           field="completion_on"
@@ -99,7 +135,7 @@ export default function TorrentTable(props: TorrentTableProps) {
     <div className="min-h-0 grow">
       <DataTable
         loading={loading}
-        value={torrents}
+        value={filtered}
         dataKey="hash"
         stripedRows
         scrollable
@@ -107,7 +143,7 @@ export default function TorrentTable(props: TorrentTableProps) {
         selectionMode="checkbox"
         selection={selection}
         onSelectionChange={(e) => onSelectionChange(e.value)}
-        emptyMessage="No torrents"
+        emptyMessage="No torrent"
         globalFilterFields={['name']}
         globalFilter={search}
       >

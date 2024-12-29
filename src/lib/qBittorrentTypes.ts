@@ -3,6 +3,8 @@ export interface MainData {
   full_update: boolean;
   rid: number;
   server_state: ServerState;
+  torrents: Record<string, TorrentInfo>;
+  torrents_removed?: string[];
 }
 
 export interface ServerState {
@@ -59,7 +61,7 @@ export const defaultServerState = Object.freeze<ServerState>({
   queueing: false,
   read_cache_hits: '',
   read_cache_overload: '',
-  refresh_interval: 0,
+  refresh_interval: 1500,
   total_buffers_size: 0,
   total_peer_connections: 0,
   total_queued_size: 0,
@@ -70,6 +72,13 @@ export const defaultServerState = Object.freeze<ServerState>({
   use_alt_speed_limits: false,
   use_subcategories: false,
   write_cache_overload: '',
+});
+
+export const defaultMainData = Object.freeze<MainData>({
+  full_update: false,
+  rid: 0,
+  server_state: defaultServerState,
+  torrents: {},
 });
 
 /** Torrent states */
