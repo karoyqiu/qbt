@@ -19,6 +19,7 @@ const getUnit = (unit: string) => {
   const u = parts.find((p) => p.type === 'unit');
   return u ? u.value : unit;
 };
+const MB = ` ${getUnit('megabyte')}`;
 
 type SettingsDialogProps = {
   open: boolean;
@@ -27,7 +28,6 @@ type SettingsDialogProps = {
 
 export default function SettingsDialog(props: SettingsDialogProps) {
   const { open, onClose } = props;
-  const [refreshInterval, setRefreshInterval] = useLocalStorage('refreshInterval', 1000);
   const [smallFileThreshold, setSmallFileThreshold] = useLocalStorage(
     'smallFileThreshold',
     200 * 1024 * 1024,
@@ -46,26 +46,13 @@ export default function SettingsDialog(props: SettingsDialogProps) {
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-auto flex-col gap-1">
-          <label htmlFor={`${id}ri`}>Refresh interval</label>
-          <InputNumber
-            id={`${id}ri`}
-            autoFocus
-            allowEmpty={false}
-            inputClassName="w-full font-mono text-end"
-            inputMode="numeric"
-            suffix={` ${getUnit('millisecond')}`}
-            value={refreshInterval}
-            onValueChange={(e) => setRefreshInterval(e.value ?? 1000)}
-          />
-        </div>
-        <div className="flex flex-auto flex-col gap-1">
           <label htmlFor={`${id}smt`}>Small file threshold</label>
           <InputNumber
             id={`${id}smt`}
             allowEmpty={false}
             inputClassName="w-full font-mono text-end"
             inputMode="numeric"
-            suffix={` ${getUnit('megabyte')}`}
+            suffix={MB}
             value={smallFileThreshold / 1024 / 1024}
             onValueChange={(e) => setSmallFileThreshold((e.value ?? 200) * 1024 * 1024)}
           />
