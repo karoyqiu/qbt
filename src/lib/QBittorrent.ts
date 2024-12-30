@@ -47,6 +47,10 @@ class QBittorrent {
       rid: this.mainData.rid.toString(),
     });
 
+    if (this.mainData.rid === 0) {
+      console.log(data);
+    }
+
     if (data.full_update) {
       this.mainData = data;
     } else {

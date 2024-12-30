@@ -33,7 +33,7 @@ const getStateIcon = (state: TorrentState) => {
   }
 };
 
-const filterTorrents = (torrents: TorrentInfo[], filter: TorrentFilter) => {
+const is = (torrent: TorrentInfo, filter: TorrentFilter) => {
   let states: TorrentState[] = [];
 
   switch (filter) {
@@ -56,11 +56,17 @@ const filterTorrents = (torrents: TorrentInfo[], filter: TorrentFilter) => {
       states = ['error', 'missingFiles'];
       break;
     default:
-      return torrents;
+      return true;
   }
 
-  return torrents.filter((t) => states.includes(t.state));
+  return states.includes(torrent.state);
 };
+
+const filterTorrents = (torrents: TorrentInfo[], filter: TorrentFilter) =>
+  torrents.filter((t) => is(t, filter));
+
+const adjustCompletionOn = (torrent: TorrentInfo) =>
+  is(torrent, 'completed') ? torrent.completion_on : Number.MAX_SAFE_INTEGER;
 
 type TorrentTableProps = {
   loading?: boolean;
@@ -75,11 +81,14 @@ type TorrentTableProps = {
 export default function TorrentTable(props: TorrentTableProps) {
   const { loading, filter, search, torrents, selection, onSelectionChange, onClick } = props;
   const filtered = filterTorrents(torrents, filter).sort((a, b) => {
-    if (a.completion_on === b.completion_on) {
+    const ac = adjustCompletionOn(a);
+    const bc = adjustCompletionOn(b);
+
+    if (ac === bc) {
       return a.added_on - b.added_on;
     }
 
-    return a.completion_on - b.completion_on;
+    return ac - bc;
   });
 
   const columns = useMemo(() => {
