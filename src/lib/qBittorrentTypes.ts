@@ -171,7 +171,8 @@ export interface TorrentInfo {
   /** True if force start is enabled for this torrent */
   force_start: boolean;
   /** Torrent hash */
-  hash: string;
+  infohash_v1: string;
+  infohash_v2: string;
   /** Last time (Unix Epoch) when a chunk was downloaded/uploaded */
   last_activity: number;
   /** Magnet URI corresponding to this torrent */

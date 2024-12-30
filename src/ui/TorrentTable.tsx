@@ -145,7 +145,7 @@ export default function TorrentTable(props: TorrentTableProps) {
       <DataTable
         loading={loading}
         value={filtered}
-        dataKey="hash"
+        dataKey="infohash_v1"
         stripedRows
         scrollable
         scrollHeight="flex"
@@ -166,7 +166,7 @@ export default function TorrentTable(props: TorrentTableProps) {
                 'cursor-pointer text-[--primary-color] underline-offset-4 hover:underline',
                 getStateIcon(torrent.state),
               )}
-              onClick={() => onClick(torrent.hash)}
+              onClick={() => onClick(torrent.infohash_v1)}
             >
               &nbsp;
               {torrent.name}

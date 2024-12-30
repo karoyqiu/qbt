@@ -91,13 +91,13 @@ function App() {
         label: 'Stop',
         icon: PrimeIcons.STOP,
         disabled: selected.length === 0,
-        command: () => qbt.current?.pause(selected.map((s) => s.hash)),
+        command: () => qbt.current?.pause(selected.map((s) => s.infohash_v1)),
       },
       {
         label: 'Start',
         icon: PrimeIcons.PLAY,
         disabled: selected.length === 0,
-        command: () => qbt.current?.resume(selected.map((s) => s.hash)),
+        command: () => qbt.current?.resume(selected.map((s) => s.infohash_v1)),
       },
       {
         label: 'Delete',
@@ -105,10 +105,10 @@ function App() {
         disabled: selected.length === 0,
         command: () => {
           for (const sel of selected) {
-            remove(metas.current, sel, (item) => item.hash);
+            remove(metas.current, sel, (item) => item.infohash_v1);
           }
 
-          qbt.current?.delete(selected.map((s) => s.hash));
+          qbt.current?.delete(selected.map((s) => s.infohash_v1));
         },
       },
       { label: 'Settings', icon: PrimeIcons.COG, command: () => setShowSettings(true) },
@@ -197,16 +197,16 @@ function App() {
     setLoading(false);
 
     const ts = Object.values(data.torrents);
-    const hashes = ts.map((item) => item.hash);
-    setSelected((old) => old.filter((item) => hashes.includes(item.hash)));
+    const hashes = ts.map((item) => item.infohash_v1);
+    setSelected((old) => old.filter((item) => hashes.includes(item.infohash_v1)));
 
     const newMetas = ts.filter((item) => item.state === 'metaDL');
-    const noLongers = diff(metas.current, newMetas, (item) => item.hash);
-    const rest = diff(metas.current, noLongers, (item) => item.hash);
-    metas.current = unique([...rest, ...newMetas], (item) => item.hash);
+    const noLongers = diff(metas.current, newMetas, (item) => item.infohash_v1);
+    const rest = diff(metas.current, noLongers, (item) => item.infohash_v1);
+    metas.current = unique([...rest, ...newMetas], (item) => item.infohash_v1);
 
     if (noLongers.length > 0) {
-      await Promise.all(noLongers.map((m) => autoSelect(m.hash)));
+      await Promise.all(noLongers.map((m) => autoSelect(m.infohash_v1)));
     }
   }, [filter, smallFileThreshold]);
 
