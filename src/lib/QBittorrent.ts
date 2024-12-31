@@ -1,4 +1,4 @@
-import { Body, fetch, ResponseType } from '@tauri-apps/api/http';
+import { Body, fetch, ResponseType } from '@tauri-apps/plugin-http';
 import { assign } from 'radashi';
 import { CookieJar } from 'tough-cookie';
 import {

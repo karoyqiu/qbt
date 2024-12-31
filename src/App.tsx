@@ -1,4 +1,4 @@
-import { appWindow } from '@tauri-apps/api/window';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { PrimeIcons } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { IconField } from 'primereact/iconfield';
@@ -28,6 +28,7 @@ import LoginDialog, { type Credentials } from './ui/LoginDialog';
 import SettingsDialog from './ui/SettingsDialog';
 import TorrentDialog, { TorrentNode } from './ui/TorrentDialog';
 import TorrentTable from './ui/TorrentTable';
+const appWindow = getCurrentWebviewWindow()
 
 const collectChildIndexes = (node: TorrentNode) => {
   const indexes: number[] = [];

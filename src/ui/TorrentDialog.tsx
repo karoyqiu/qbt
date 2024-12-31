@@ -1,5 +1,5 @@
 import { join } from '@tauri-apps/api/path';
-import { open as shellOpen } from '@tauri-apps/api/shell';
+import { open as shellOpen } from '@tauri-apps/plugin-shell';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { Dialog } from 'primereact/dialog';

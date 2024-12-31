@@ -1,9 +1,14 @@
 /** Main data */
 export interface MainData {
+  /** Whether the response contains all the data or partial data */
   full_update: boolean;
+  /** Response ID */
   rid: number;
+  /** Global transfer info */
   server_state: ServerState;
+  /** Property: torrent hash, value: same as torrent list */
   torrents: Record<string, TorrentInfo>;
+  /** List of hashes of torrents removed since last request */
   torrents_removed?: string[];
 }
 

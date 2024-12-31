@@ -1,4 +1,4 @@
-import { open as openDialog } from '@tauri-apps/api/dialog';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { PrimeIcons } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
