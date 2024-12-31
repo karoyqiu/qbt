@@ -47,10 +47,6 @@ class QBittorrent {
       rid: this.mainData.rid.toString(),
     });
 
-    if (this.mainData.rid === 0) {
-      console.log(data);
-    }
-
     if (data.full_update) {
       this.mainData = data;
     } else {
@@ -114,6 +110,10 @@ class QBittorrent {
       hashes: QBittorrent.joinHashes(hashes),
       deleteFiles,
     });
+  }
+
+  async recheck(hashes: string | string[]) {
+    await this.post('torrents', 'recheck', { hashes: QBittorrent.joinHashes(hashes) });
   }
 
   /**

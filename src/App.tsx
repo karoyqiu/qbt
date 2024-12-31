@@ -17,6 +17,7 @@ import makeTree from './lib/makeTree';
 import QBittorrent from './lib/QBittorrent';
 import {
   defaultMainData,
+  matchTorrent,
   TorrentContentPriority,
   type TorrentFilter,
   type TorrentInfo,
@@ -55,6 +56,9 @@ function remove<T>(list: T[], value: T, toKey: (item: T) => number | string | sy
   return list;
 }
 
+const getInfoHash = (torrent: TorrentInfo) => torrent.infohash_v1;
+const getInfoHashes = (torrents: TorrentInfo[]) => torrents.map(getInfoHash);
+
 function App() {
   const [credentials, setCredentials] = useLocalStorage<Credentials>('credentials', {
     url: '',
@@ -91,13 +95,21 @@ function App() {
         label: 'Stop',
         icon: PrimeIcons.STOP,
         disabled: selected.length === 0,
-        command: () => qbt.current?.pause(selected.map((s) => s.infohash_v1)),
+        command: () => qbt.current?.pause(getInfoHashes(selected)),
       },
       {
         label: 'Start',
         icon: PrimeIcons.PLAY,
         disabled: selected.length === 0,
-        command: () => qbt.current?.resume(selected.map((s) => s.infohash_v1)),
+        command: async () => {
+          await qbt.current?.resume(getInfoHashes(selected));
+
+          const errored = selected.filter((s) => matchTorrent(s, 'errored'));
+
+          if (errored.length > 0) {
+            await qbt.current?.recheck(getInfoHashes(errored));
+          }
+        },
       },
       {
         label: 'Delete',
@@ -105,10 +117,10 @@ function App() {
         disabled: selected.length === 0,
         command: () => {
           for (const sel of selected) {
-            remove(metas.current, sel, (item) => item.infohash_v1);
+            remove(metas.current, sel, getInfoHash);
           }
 
-          qbt.current?.delete(selected.map((s) => s.infohash_v1));
+          qbt.current?.delete(getInfoHashes(selected));
         },
       },
       { label: 'Settings', icon: PrimeIcons.COG, command: () => setShowSettings(true) },
@@ -197,13 +209,13 @@ function App() {
     setLoading(false);
 
     const ts = Object.values(data.torrents);
-    const hashes = ts.map((item) => item.infohash_v1);
+    const hashes = getInfoHashes(ts);
     setSelected((old) => old.filter((item) => hashes.includes(item.infohash_v1)));
 
     const newMetas = ts.filter((item) => item.state === 'metaDL');
-    const noLongers = diff(metas.current, newMetas, (item) => item.infohash_v1);
-    const rest = diff(metas.current, noLongers, (item) => item.infohash_v1);
-    metas.current = unique([...rest, ...newMetas], (item) => item.infohash_v1);
+    const noLongers = diff(metas.current, newMetas, getInfoHash);
+    const rest = diff(metas.current, noLongers, getInfoHash);
+    metas.current = unique([...rest, ...newMetas], getInfoHash);
 
     if (noLongers.length > 0) {
       await Promise.all(noLongers.map((m) => autoSelect(m.infohash_v1)));

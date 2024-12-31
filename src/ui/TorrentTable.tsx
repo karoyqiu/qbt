@@ -5,7 +5,12 @@ import { ProgressBar } from 'primereact/progressbar';
 import { useMemo } from 'react';
 import cn from '../lib/cn';
 import { formatPercent, formatSize, formatSpeed } from '../lib/format';
-import type { TorrentFilter, TorrentInfo, TorrentState } from '../lib/qBittorrentTypes';
+import {
+  matchTorrent,
+  type TorrentFilter,
+  type TorrentInfo,
+  type TorrentState,
+} from '../lib/qBittorrentTypes';
 
 const getStateIcon = (state: TorrentState) => {
   switch (state) {
@@ -33,40 +38,11 @@ const getStateIcon = (state: TorrentState) => {
   }
 };
 
-const is = (torrent: TorrentInfo, filter: TorrentFilter) => {
-  let states: TorrentState[] = [];
-
-  switch (filter) {
-    case 'downloading':
-      states = [
-        'downloading',
-        'metaDL',
-        'allocating',
-        'forcedDL',
-        'queuedDL',
-        'stalledDL',
-        'stoppedDL',
-        'checkingDL',
-      ];
-      break;
-    case 'completed':
-      states = ['uploading', 'forcedUP', 'queuedUP', 'stalledUP', 'stoppedUP', 'checkingUP'];
-      break;
-    case 'errored':
-      states = ['error', 'missingFiles'];
-      break;
-    default:
-      return true;
-  }
-
-  return states.includes(torrent.state);
-};
-
 const filterTorrents = (torrents: TorrentInfo[], filter: TorrentFilter) =>
-  torrents.filter((t) => is(t, filter));
+  torrents.filter((t) => matchTorrent(t, filter));
 
 const adjustCompletionOn = (torrent: TorrentInfo) =>
-  is(torrent, 'completed') ? torrent.completion_on : Number.MAX_SAFE_INTEGER;
+  matchTorrent(torrent, 'completed') ? torrent.completion_on : Number.MAX_SAFE_INTEGER;
 
 type TorrentTableProps = {
   loading?: boolean;

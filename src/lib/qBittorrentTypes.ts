@@ -262,3 +262,32 @@ export interface TorrentContent {
   /* Percentage of file pieces currently available */
   availability: number;
 }
+
+export const matchTorrent = (torrent: TorrentInfo, filter: TorrentFilter) => {
+  let states: TorrentState[] = [];
+
+  switch (filter) {
+    case 'downloading':
+      states = [
+        'downloading',
+        'metaDL',
+        'allocating',
+        'forcedDL',
+        'queuedDL',
+        'stalledDL',
+        'stoppedDL',
+        'checkingDL',
+      ];
+      break;
+    case 'completed':
+      states = ['uploading', 'forcedUP', 'queuedUP', 'stalledUP', 'stoppedUP', 'checkingUP'];
+      break;
+    case 'errored':
+      states = ['error', 'missingFiles'];
+      break;
+    default:
+      return true;
+  }
+
+  return states.includes(torrent.state);
+};
