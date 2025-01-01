@@ -53,6 +53,13 @@ export const defaultMainData = Object.freeze<RequiredMainData>({
   torrents_removed: [],
 });
 
+export const TorrentContentPriority = {
+  DO_NOT_DOWNLOAD: 0,
+  NORMAL: 1,
+  HIGH: 6,
+  MAXIMUM: 7,
+} as const;
+
 export const torrentFilters = [
   'all',
   'downloading',

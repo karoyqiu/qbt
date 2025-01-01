@@ -5,6 +5,7 @@ import type {
 
 import type { TorrentNode } from '../ui/TorrentDialog';
 import type { TorrentContent } from './bindings';
+import { TorrentContentPriority } from './qBittorrentTypes';
 
 const findChild = (parent: TorrentNode, childName: string) => {
   if (parent.children) {
@@ -18,7 +19,8 @@ const findChild = (parent: TorrentNode, childName: string) => {
   return null;
 };
 
-const isSelected = (child: TorrentNode) => child.data.priority !== 'DoNotDownload';
+const isSelected = (child: TorrentNode) =>
+  child.data.priority !== TorrentContentPriority.DO_NOT_DOWNLOAD;
 
 const finalize = (
   parent: TorrentNode,
@@ -68,9 +70,9 @@ const makeTree = (content: TorrentContent[]) => {
       name: '',
       fullPath: '',
       size: 0,
-      priority: 'DoNotDownload',
+      priority: TorrentContentPriority.DO_NOT_DOWNLOAD,
       progress: 0,
-      is_seed: false,
+      //is_seed: false,
       piece_range: [],
       availability: 0,
     },
@@ -111,7 +113,7 @@ const makeTree = (content: TorrentContent[]) => {
       if (parts.length > 0) {
         // 这是个文件夹
         child.data.index = -1;
-        child.data.priority = 'DoNotDownload';
+        child.data.priority = TorrentContentPriority.DO_NOT_DOWNLOAD;
       } else if (isSelected(child)) {
         selected[child.key! as string] = { checked: true };
       }

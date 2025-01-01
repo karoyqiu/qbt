@@ -57,7 +57,7 @@ async recheck(hashes: string[]) : Promise<null> {
 /**
  * 设置文件优先级
  */
-async setFilePriority(hash: string, indexes: number[], priority: TorrentContentPriority) : Promise<null> {
+async setFilePriority(hash: string, indexes: number[], priority: number) : Promise<null> {
     return await TAURI_INVOKE("set_file_priority", { hash, indexes, priority });
 },
 /**
@@ -171,7 +171,7 @@ progress: number;
 /**
  * File priority
  */
-priority: TorrentContentPriority; 
+priority: number; 
 /**
  * True if file is seeding/complete
  * The first number is the starting piece index and the second number is the ending piece index (inclusive)
@@ -181,23 +181,6 @@ piece_range: number[];
  * Percentage of file pieces currently available
  */
 availability: number }
-export type TorrentContentPriority = 
-/**
- * Do not download
- */
-"DoNotDownload" | 
-/**
- * Normal priority
- */
-"Normal" | 
-/**
- * High priority
- */
-"High" | 
-/**
- * Maximal priority
- */
-"Maximum"
 export type TorrentInfo = { 
 /**
  * Time (Unix Epoch) when the torrent was added to the client

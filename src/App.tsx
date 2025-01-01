@@ -19,6 +19,7 @@ import { formatSize, formatSpeed } from './lib/format';
 import makeTree from './lib/makeTree';
 import {
   type RequiredTorrentInfo,
+  TorrentContentPriority,
   type TorrentFilter,
   defaultMainData,
   getInfoHash,
@@ -178,7 +179,7 @@ function App() {
         commands.setFilePriority(
           hash,
           larges.map((item) => item.index),
-          'Normal',
+          TorrentContentPriority.NORMAL,
         ),
       ];
 
@@ -187,7 +188,7 @@ function App() {
           commands.setFilePriority(
             hash,
             smalls.map((item) => item.index),
-            'DoNotDownload',
+            TorrentContentPriority.DO_NOT_DOWNLOAD,
           ),
         );
       }
@@ -195,8 +196,13 @@ function App() {
       await Promise.all(promises);
 
       return [
-        ...larges.map((c) => ({ ...c, priority: 'Normal' }) satisfies TorrentContent),
-        ...smalls.map((c) => ({ ...c, priority: 'DoNotDownload' }) satisfies TorrentContent),
+        ...larges.map(
+          (c) => ({ ...c, priority: TorrentContentPriority.NORMAL }) satisfies TorrentContent,
+        ),
+        ...smalls.map(
+          (c) =>
+            ({ ...c, priority: TorrentContentPriority.DO_NOT_DOWNLOAD }) satisfies TorrentContent,
+        ),
       ];
     },
     [smallFileThreshold],
@@ -226,7 +232,7 @@ function App() {
   const select = useCallback(
     async (node: TorrentNode) => {
       let indexes = node.data.index === -1 ? collectChildIndexes(node) : [node.data.index];
-      await commands.setFilePriority(currentHash, indexes, 'Normal');
+      await commands.setFilePriority(currentHash, indexes, TorrentContentPriority.NORMAL);
     },
     [currentHash],
   );
@@ -234,7 +240,7 @@ function App() {
   const unselect = useCallback(
     async (node: TorrentNode) => {
       let indexes = node.data.index === -1 ? collectChildIndexes(node) : [node.data.index];
-      await commands.setFilePriority(currentHash, indexes, 'DoNotDownload');
+      await commands.setFilePriority(currentHash, indexes, TorrentContentPriority.DO_NOT_DOWNLOAD);
     },
     [currentHash],
   );

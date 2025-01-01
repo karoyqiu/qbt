@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use log::debug;
 use reqwest::{multipart, Client, Proxy};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
 use specta::Type;
 use tauri::{async_runtime::Mutex, State};
@@ -103,19 +102,6 @@ pub struct TorrentInfo {
   upspeed: Option<u64>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr, Type)]
-#[repr(u8)]
-pub enum TorrentContentPriority {
-  /// Do not download
-  DoNotDownload = 0,
-  /// Normal priority
-  Normal = 1,
-  /// High priority
-  High = 6,
-  /// Maximal priority
-  Maximum = 7,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct TorrentContent {
   /// File index
@@ -127,7 +113,7 @@ pub struct TorrentContent {
   /// File progress (percentage/100)
   progress: f32,
   /// File priority
-  priority: TorrentContentPriority,
+  priority: i32,
   /// True if file is seeding/complete
   //is_seed: bool,
   /// The first number is the starting piece index and the second number is the ending piece index (inclusive)
@@ -468,7 +454,7 @@ pub async fn set_file_priority(
   state: State<'_, QBittorrentState>,
   hash: String,
   indexes: Vec<usize>,
-  priority: TorrentContentPriority,
+  priority: i32,
 ) -> Result<()> {
   let id = indexes
     .into_iter()
@@ -484,7 +470,7 @@ pub async fn set_file_priority(
       &[
         ("hash", hash.as_str()),
         ("id", id.as_str()),
-        ("priority", (priority as u8).to_string().as_str()),
+        ("priority", priority.to_string().as_str()),
       ],
     )
     .await?;
