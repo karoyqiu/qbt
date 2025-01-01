@@ -2,10 +2,5 @@
   "identifier": "main-capability",
   "description": "Capability for the main window",
   "windows": ["main"],
-  "permissions": [
-    "clipboard:allow-start-monitor",
-    "clipboard:monitor-all",
-    "log:allow-log",
-    "log:default"
-  ]
+  "permissions": ["log:allow-log", "log:default"]
 }

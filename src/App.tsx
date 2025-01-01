@@ -71,7 +71,7 @@ function App() {
   });
   const [showLogin, setShowLogin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<TorrentFilter>('downloading');
+  const [filter, setFilterRaw] = useState<TorrentFilter>('downloading');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<RequiredTorrentInfo[]>([]);
   const [currentHash, setCurrentHash] = useState('');
@@ -91,9 +91,14 @@ function App() {
   const torrents = Object.values(mainData.torrents);
   const refreshInterval = mainData.server_state.refresh_interval;
 
+  const setFilter = useCallback((filter: TorrentFilter) => {
+    setFilterRaw(filter);
+    setSelected([]);
+  }, []);
+
   const setMainData = useCallback(
     (delta: MainData) => setMainDataRaw((data) => mergeMainData(data, delta)),
-    [setMainDataRaw],
+    [],
   );
 
   const buttons = useMemo<MenuItem[]>(

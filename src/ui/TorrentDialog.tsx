@@ -13,7 +13,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useReadLocalStorage } from 'usehooks-ts';
 
-import type { TorrentContent } from '../lib/bindings';
+import { type TorrentContent, commands } from '../lib/bindings';
 import { formatPercent, formatSize } from '../lib/format';
 
 export type TorrentNode = Omit<TreeNode, 'data' | 'children'> & {
@@ -53,6 +53,12 @@ export default function TorrentDialog(props: TorrentDialogProps) {
   const localDownloadDir = useReadLocalStorage<string>('localDownloadDir');
 
   useEffect(() => setExpandedKeys(expanded), [expanded]);
+
+  useEffect(() => {
+    if (nodes.length > 0) {
+      commands.scrape(nodes[0].data.name);
+    }
+  }, [nodes]);
 
   return (
     <Dialog

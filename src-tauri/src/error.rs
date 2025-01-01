@@ -3,15 +3,7 @@ pub struct Error(pub anyhow::Error);
 
 impl std::fmt::Display for Error {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    #[cfg(debug_assertions)]
-    {
-      write!(f, "{:#}", self.0)
-    }
-
-    #[cfg(not(debug_assertions))]
-    {
-      write!(f, "{}", self.0)
-    }
+    write!(f, "{:#}", self.0)
   }
 }
 
@@ -57,4 +49,8 @@ impl<T> IntoResult<T> for anyhow::Error {
   fn into_result(self) -> Result<T> {
     Err(Error(self))
   }
+}
+
+pub fn err<T>(msg: &'static str) -> Result<T> {
+  Err(Error(anyhow::anyhow!(msg)))
 }

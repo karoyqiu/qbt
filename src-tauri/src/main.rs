@@ -3,12 +3,15 @@
 
 mod error;
 mod qbittorrent;
+mod scrape;
+
+use tauri_specta::{collect_commands, Builder, ErrorHandlingMode};
 
 use qbittorrent::{
   add_files, add_urls, delete, get_main_data, get_torrent_contents, initialize, login, recheck,
   set_file_priority, start, stop, QBittorrentState,
 };
-use tauri_specta::{collect_commands, Builder, ErrorHandlingMode};
+use scrape::scrape;
 
 fn main() {
   let builder = Builder::<tauri::Wry>::new()
@@ -22,6 +25,7 @@ fn main() {
       initialize,
       login,
       recheck,
+      scrape,
       set_file_priority,
       start,
       stop,
@@ -49,6 +53,7 @@ fn main() {
         .build(),
     )
     .plugin(tauri_plugin_clipboard::init())
+    .plugin(tauri_plugin_shell::init())
     .manage(QBittorrentState::default())
     .invoke_handler(builder.invoke_handler())
     .run(tauri::generate_context!())

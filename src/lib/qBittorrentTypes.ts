@@ -107,7 +107,14 @@ export const matchTorrent = (torrent: RequiredTorrentInfo, filter: TorrentFilter
 
 export const mergeMainData = (data: RequiredMainData, delta: MainData) => {
   let merged = assign(data, delta) as RequiredMainData;
-  merged.torrents_removed = delta.torrents_removed ?? [];
+
+  if (Array.isArray(delta.torrents_removed) && delta.torrents_removed.length > 0) {
+    for (const hash of delta.torrents_removed) {
+      delete merged.torrents[hash];
+    }
+  }
+
+  merged.torrents_removed = [];
   return merged;
 };
 

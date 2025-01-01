@@ -55,6 +55,12 @@ async recheck(hashes: string[]) : Promise<null> {
     return await TAURI_INVOKE("recheck", { hashes });
 },
 /**
+ * 刮削
+ */
+async scrape(filename: string) : Promise<null> {
+    return await TAURI_INVOKE("scrape", { filename });
+},
+/**
  * 设置文件优先级
  */
 async setFilePriority(hash: string, indexes: number[], priority: number) : Promise<null> {
