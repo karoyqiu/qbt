@@ -3,13 +3,14 @@ import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { ProgressBar } from 'primereact/progressbar';
 import { useMemo } from 'react';
+
+import type { TorrentState } from '../lib/bindings';
 import cn from '../lib/cn';
 import { formatPercent, formatSize, formatSpeed } from '../lib/format';
 import {
-  matchTorrent,
+  type RequiredTorrentInfo,
   type TorrentFilter,
-  type TorrentInfo,
-  type TorrentState,
+  matchTorrent,
 } from '../lib/qBittorrentTypes';
 
 const getStateIcon = (state: TorrentState) => {
@@ -38,19 +39,19 @@ const getStateIcon = (state: TorrentState) => {
   }
 };
 
-const filterTorrents = (torrents: TorrentInfo[], filter: TorrentFilter) =>
+const filterTorrents = (torrents: RequiredTorrentInfo[], filter: TorrentFilter) =>
   torrents.filter((t) => matchTorrent(t, filter));
 
-const adjustCompletionOn = (torrent: TorrentInfo) =>
+const adjustCompletionOn = (torrent: RequiredTorrentInfo) =>
   matchTorrent(torrent, 'completed') ? torrent.completion_on : Number.MAX_SAFE_INTEGER;
 
 type TorrentTableProps = {
   loading?: boolean;
   filter: TorrentFilter;
   search?: string;
-  torrents: TorrentInfo[];
-  selection: TorrentInfo[];
-  onSelectionChange: (value: TorrentInfo[]) => void;
+  torrents: RequiredTorrentInfo[];
+  selection: RequiredTorrentInfo[];
+  onSelectionChange: (value: RequiredTorrentInfo[]) => void;
   onClick: (hash: string) => void;
 };
 
@@ -77,14 +78,14 @@ export default function TorrentTable(props: TorrentTableProps) {
           header="Download speed"
           align="right"
           bodyClassName="font-mono"
-          body={(torrent: TorrentInfo) => formatSpeed(torrent.dlspeed)}
+          body={(torrent: RequiredTorrentInfo) => formatSpeed(torrent.dlspeed)}
         />,
         <Column
           field="progress"
           header="Progress"
           align="right"
           bodyClassName="font-mono"
-          body={(torrent: TorrentInfo) => (
+          body={(torrent: RequiredTorrentInfo) => (
             <div className="flex flex-col">
               <span>{formatPercent(torrent.progress)}</span>
               <ProgressBar value={torrent.progress * 100} showValue={false} className="h-1" />
@@ -94,7 +95,9 @@ export default function TorrentTable(props: TorrentTableProps) {
         <Column
           field="added_on"
           header="Added at"
-          body={(torrent: TorrentInfo) => new Date(torrent.added_on * 1000).toLocaleString()}
+          body={(torrent: RequiredTorrentInfo) =>
+            new Date(torrent.added_on * 1000).toLocaleString()
+          }
         />,
       );
     }
@@ -104,7 +107,7 @@ export default function TorrentTable(props: TorrentTableProps) {
         <Column
           field="completion_on"
           header="Completed at"
-          body={(torrent: TorrentInfo) =>
+          body={(torrent: RequiredTorrentInfo) =>
             torrent.completion_on > 0
               ? new Date(torrent.completion_on * 1000).toLocaleString()
               : null
@@ -136,7 +139,7 @@ export default function TorrentTable(props: TorrentTableProps) {
         <Column
           field="name"
           header="Name"
-          body={(torrent: TorrentInfo) => (
+          body={(torrent: RequiredTorrentInfo) => (
             <span
               className={cn(
                 'cursor-pointer text-[--primary-color] underline-offset-4 hover:underline',
@@ -154,7 +157,7 @@ export default function TorrentTable(props: TorrentTableProps) {
           header="Size"
           align="right"
           bodyClassName="font-mono"
-          body={(torrent: TorrentInfo) => formatSize(torrent.size)}
+          body={(torrent: RequiredTorrentInfo) => formatSize(torrent.size)}
         />
         {...columns}
       </DataTable>

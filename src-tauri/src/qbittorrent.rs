@@ -1,103 +1,110 @@
 use std::collections::HashMap;
 
-use serde::Deserialize;
+use log::debug;
+use reqwest::{multipart, Client, Proxy};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
+use serde_with::skip_serializing_none;
 use specta::Type;
 use tauri::{async_runtime::Mutex, State};
+use url::Url;
 
-use crate::error::Result;
+use crate::error::{IntoResult, Result};
 
-#[derive(Debug, Clone, Deserialize, Type)]
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct TorrentInfo {
   /// Time (Unix Epoch) when the torrent was added to the client
-  added_on: i64,
+  added_on: Option<i64>,
   /// Amount of data left to download (bytes)
-  amount_left: u64,
+  amount_left: Option<u64>,
   /// Whether this torrent is managed by Automatic Torrent Management
-  auto_tmm: bool,
+  auto_tmm: Option<bool>,
   /// Percentage of file pieces currently available
-  availability: f64,
+  availability: Option<f64>,
   /// Category of the torrent
-  category: String,
+  category: Option<String>,
   /// Amount of transfer data completed (bytes)
-  completed: u64,
+  completed: Option<u64>,
   /// Time (Unix Epoch) when the torrent completed
-  completion_on: i64,
+  completion_on: Option<i64>,
   /// Torrent download speed limit (bytes/s). -1 if unlimited.
-  dl_limit: i64,
+  dl_limit: Option<i64>,
   /// Torrent download speed (bytes/s)
-  dlspeed: u64,
+  dlspeed: Option<u64>,
   /// Amount of data downloaded
-  downloaded: u64,
+  downloaded: Option<u64>,
   /// Amount of data downloaded this session
-  downloaded_session: u64,
+  downloaded_session: Option<u64>,
   /// Torrent ETA (seconds)
-  eta: i64,
+  eta: Option<i64>,
   /// True if first last piece are prioritized
-  f_l_piece_prio: bool,
+  f_l_piece_prio: Option<bool>,
   /// True if force start is enabled for this torrent
-  force_start: bool,
+  force_start: Option<bool>,
   /// Torrent hash
-  infohash_v1: String,
-  infohash_v2: String,
+  infohash_v1: Option<String>,
+  infohash_v2: Option<String>,
   /// Last time (Unix Epoch) when a chunk was downloaded/uploaded
-  last_activity: i64,
+  last_activity: Option<i64>,
   /// Magnet URI corresponding to this torrent
-  magnet_uri: String,
+  magnet_uri: Option<String>,
   /// Maximum share ratio until torrent is stopped from seeding/uploading
-  max_ratio: f64,
+  max_ratio: Option<f64>,
   /// Maximum seeding time (seconds) until torrent is stopped from seeding
-  max_seeding_time: i64,
+  max_seeding_time: Option<i64>,
   /// Torrent name
-  name: String,
+  name: Option<String>,
   /// Number of seeds in the swarm
-  num_complete: u64,
+  num_complete: Option<u64>,
   /// Number of leechers in the swarm
-  num_incomplete: u64,
+  num_incomplete: Option<u64>,
   /// Number of leechers connected to
-  num_leechs: u64,
+  num_leechs: Option<u64>,
   /// Number of seeds connected to
-  num_seeds: u64,
+  num_seeds: Option<u64>,
   /// Torrent priority. Returns -1 if queuing is disabled or torrent is in seed mode
-  priority: i64,
+  priority: Option<i64>,
   /// Torrent progress (percentage/100)
-  progress: f64,
+  progress: Option<f64>,
   /// Torrent share ratio. Max ratio value: 9999.
-  ratio: f64,
+  ratio: Option<f64>,
   /// TODO (what is different from max_ratio?)
-  ratio_limit: f64,
+  ratio_limit: Option<f64>,
   /// Path where this torrent's data is stored
-  save_path: String,
+  save_path: Option<String>,
   /// TODO (what is different from max_seeding_time?)
-  seeding_time_limit: i64,
+  seeding_time_limit: Option<i64>,
   /// Time (Unix Epoch) when this torrent was last seen complete
-  seen_complete: i64,
+  seen_complete: Option<i64>,
   /// True if sequential download is enabled
-  seq_dl: bool,
+  seq_dl: Option<bool>,
   /// Total size (bytes) of files selected for download
-  size: u64,
+  size: Option<u64>,
   /// Torrent state
-  state: String,
+  state: Option<TorrentState>,
   /// True if super seeding is enabled
-  super_seeding: bool,
+  super_seeding: Option<bool>,
   /// Comma-concatenated tag list of the torrent
-  tags: String,
+  tags: Option<String>,
   /// Total active time (seconds)
-  time_active: i64,
+  time_active: Option<i64>,
   /// Total size (bytes) of all file in this torrent (including unselected ones)
-  total_size: u64,
+  total_size: Option<u64>,
   /// The first tracker with working status. Returns empty string if no tracker is working.
-  tracker: String,
+  tracker: Option<String>,
   /// Torrent upload speed limit (bytes/s). -1 if unlimited.
-  up_limit: i64,
+  up_limit: Option<i64>,
   /// Amount of data uploaded
-  uploaded: u64,
+  uploaded: Option<u64>,
   /// Amount of data uploaded this session
-  uploaded_session: u64,
+  uploaded_session: Option<u64>,
   /// Torrent upload speed (bytes/s)
-  upspeed: u64,
+  upspeed: Option<u64>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr, Type)]
+#[repr(u8)]
 pub enum TorrentContentPriority {
   /// Do not download
   DoNotDownload = 0,
@@ -109,7 +116,7 @@ pub enum TorrentContentPriority {
   Maximum = 7,
 }
 
-#[derive(Debug, Clone, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct TorrentContent {
   /// File index
   index: usize,
@@ -122,92 +129,79 @@ pub struct TorrentContent {
   /// File priority
   priority: TorrentContentPriority,
   /// True if file is seeding/complete
-  is_seed: bool,
+  //is_seed: bool,
   /// The first number is the starting piece index and the second number is the ending piece index (inclusive)
   piece_range: Vec<usize>,
   /// Percentage of file pieces currently available
   availability: f32,
 }
 
-// pub const TORRENT_STATES: &[&str] = &[
-//   "error",
-//   "missingFiles",
-//   "uploading",
-//   "stoppedUP",
-//   "queuedUP",
-//   "stalledUP",
-//   "checkingUP",
-//   "forcedUP",
-//   "allocating",
-//   "downloading",
-//   "metaDL",
-//   "stoppedDL",
-//   "queuedDL",
-//   "stalledDL",
-//   "checkingDL",
-//   "forcedDL",
-//   "checkingResumeData",
-//   "moving",
-//   "unknown",
-// ];
-
-// pub type TorrentState = &'static str;
-
-#[derive(Debug, Clone, Deserialize, Type)]
-pub struct MainData {
-  /// Whether the response contains all the data or partial data
-  pub full_update: bool,
-  /// Response ID
-  pub rid: u32,
-  /// Global transfer info
-  pub server_state: ServerState,
-  /// Property: torrent hash, value: same as torrent list
-  pub torrents: HashMap<String, TorrentInfo>,
-  /// List of hashes of torrents removed since last request
-  pub torrents_removed: Option<Vec<String>>,
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub enum TorrentState {
+  Error,
+  MissingFiles,
+  Uploading,
+  StoppedUP,
+  QueuedUP,
+  StalledUP,
+  CheckingUP,
+  ForcedUP,
+  Allocating,
+  Downloading,
+  MetaDL,
+  StoppedDL,
+  QueuedDL,
+  StalledDL,
+  CheckingDL,
+  ForcedDL,
+  CheckingResumeData,
+  Moving,
+  Unknown,
 }
 
-#[derive(Debug, Clone, Deserialize, Type)]
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct ServerState {
-  pub alltime_dl: u64,
-  pub alltime_ul: u64,
-  pub average_time_queue: u64,
+  pub alltime_dl: Option<u64>,
+  pub alltime_ul: Option<u64>,
+  pub average_time_queue: Option<u64>,
   /// Connection status
-  pub connection_status: ConnectionStatus,
+  pub connection_status: Option<ConnectionStatus>,
   /// DHT nodes connected to
-  pub dht_nodes: u32,
+  pub dht_nodes: Option<u32>,
   /// Data downloaded this session (bytes)
-  pub dl_info_data: u64,
+  pub dl_info_data: Option<u64>,
   /// Global download rate (bytes/s)
-  pub dl_info_speed: u64,
+  pub dl_info_speed: Option<u64>,
   /// Download rate limit (bytes/s)
-  pub dl_rate_limit: u64,
-  pub free_space_on_disk: u64,
-  pub global_ratio: String,
-  pub queued_io_jobs: u32,
+  pub dl_rate_limit: Option<u64>,
+  pub free_space_on_disk: Option<u64>,
+  pub global_ratio: Option<String>,
+  pub queued_io_jobs: Option<u32>,
   /// True if torrent queueing is enabled
-  pub queueing: bool,
-  pub read_cache_hits: String,
-  pub read_cache_overload: String,
+  pub queueing: Option<bool>,
+  pub read_cache_hits: Option<String>,
+  pub read_cache_overload: Option<String>,
   /// Transfer list refresh interval (milliseconds)
-  pub refresh_interval: u64,
-  pub total_buffers_size: u64,
-  pub total_peer_connections: u32,
-  pub total_queued_size: u64,
-  pub total_wasted_session: u64,
+  pub refresh_interval: Option<u64>,
+  pub total_buffers_size: Option<u64>,
+  pub total_peer_connections: Option<u32>,
+  pub total_queued_size: Option<u64>,
+  pub total_wasted_session: Option<u64>,
   /// Data uploaded this session (bytes)
-  pub up_info_data: u64,
+  pub up_info_data: Option<u64>,
   /// Global upload rate (bytes/s)
-  pub up_info_speed: u64,
+  pub up_info_speed: Option<u64>,
   /// Upload rate limit (bytes/s)
-  pub up_rate_limit: u64,
+  pub up_rate_limit: Option<u64>,
   /// True if alternative speed limits are enabled
-  pub use_alt_speed_limits: bool,
-  pub use_subcategories: bool,
-  pub write_cache_overload: String,
+  pub use_alt_speed_limits: Option<bool>,
+  pub use_subcategories: Option<bool>,
+  pub write_cache_overload: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "lowercase")]
 pub enum ConnectionStatus {
   Connected,
@@ -215,9 +209,81 @@ pub enum ConnectionStatus {
   Disconnected,
 }
 
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct MainData {
+  /// Whether the response contains all the data or partial data
+  #[serde(default)]
+  pub full_update: bool,
+  /// Response ID
+  pub rid: u32,
+  /// Global transfer info
+  pub server_state: Option<ServerState>,
+  /// Property: torrent hash, value: same as torrent list
+  pub torrents: Option<HashMap<String, TorrentInfo>>,
+  /// List of hashes of torrents removed since last request
+  pub torrents_removed: Option<Vec<String>>,
+}
+
 #[derive(Default)]
 pub struct QBittorrentStateInner {
-  url: String,
+  url: Option<Url>,
+  /// HTTP 客户端
+  client: Option<Client>,
+  rid: u32,
+}
+
+impl QBittorrentStateInner {
+  fn get_url(&self, api_name: &str, method_name: &str) -> Result<Url> {
+    let url = self.url.as_ref().unwrap();
+    let path = format!("/api/v2/{}/{}", api_name, method_name);
+    debug!("Path: {}", path);
+    url.join(&path).into_result()
+  }
+
+  async fn get<F, T>(&self, api_name: &str, method_name: &str, query: Option<&F>) -> Result<T>
+  where
+    F: Serialize + ?Sized,
+    T: DeserializeOwned,
+  {
+    debug!("Getting {}/{}", api_name, method_name);
+    let mut url = self.get_url(api_name, method_name)?;
+
+    if let Some(query) = query {
+      let query = serde_urlencoded::to_string(query).into_result()?;
+      url.set_query(Some(&query));
+    }
+
+    let client = self.client.as_ref().unwrap();
+    let res = client.get(url).send().await.into_result()?;
+    //res.json().await.into_result()
+    let text = res.text().await.into_result()?;
+    match serde_json::from_str(&text) {
+      Ok(data) => Ok(data),
+      Err(e) => {
+        debug!("Error: {}", e);
+        debug!("Text: {}", text);
+        anyhow::anyhow!(e).into_result()
+      }
+    }
+  }
+
+  async fn post<F: Serialize + ?Sized>(
+    &self,
+    api_name: &str,
+    method_name: &str,
+    body: &F,
+  ) -> Result<String> {
+    debug!("Posting {}/{}", api_name, method_name);
+    let client = self.client.as_ref().unwrap();
+    let res = client
+      .post(self.get_url(api_name, method_name)?)
+      .form(body)
+      .send()
+      .await
+      .into_result()?;
+    res.text().await.into_result()
+  }
 }
 
 pub type QBittorrentState = Mutex<QBittorrentStateInner>;
@@ -225,8 +291,202 @@ pub type QBittorrentState = Mutex<QBittorrentStateInner>;
 /// 设置 URL
 #[tauri::command]
 #[specta::specta]
-pub async fn set_url(state: State<'_, QBittorrentState>, value: String) -> Result<()> {
+pub async fn initialize(
+  state: State<'_, QBittorrentState>,
+  url: String,
+  proxy: Option<String>,
+) -> Result<()> {
   let mut state = state.lock().await;
-  state.url = value;
+  state.url = Some(Url::parse(&url).into_result()?);
+
+  let mut builder = Client::builder().cookie_store(true);
+
+  if let Some(proxy) = proxy {
+    if proxy.is_empty() {
+      builder = builder.no_proxy();
+    } else {
+      builder = builder.proxy(Proxy::all(proxy).into_result()?);
+    }
+  }
+
+  state.client = Some(builder.build().into_result()?);
+  Ok(())
+}
+
+/// 登录
+#[tauri::command]
+#[specta::specta]
+pub async fn login(
+  state: State<'_, QBittorrentState>,
+  username: String,
+  password: String,
+) -> Result<bool> {
+  let state = state.lock().await;
+  let result = state
+    .post(
+      "auth",
+      "login",
+      &[
+        ("username", username.as_str()),
+        ("password", password.as_str()),
+      ],
+    )
+    .await?;
+  Ok(result == "Ok.")
+}
+
+/// 获取主要数据
+#[tauri::command]
+#[specta::specta]
+pub async fn get_main_data(state: State<'_, QBittorrentState>) -> Result<MainData> {
+  let mut state = state.lock().await;
+  let data: MainData = state
+    .get(
+      "sync",
+      "maindata",
+      Some(&[("rid", state.rid.to_string().as_str())]),
+    )
+    .await?;
+  state.rid = data.rid;
+  Ok(data)
+}
+
+/// 获取种子内容
+#[tauri::command]
+#[specta::specta]
+pub async fn get_torrent_contents(
+  state: State<'_, QBittorrentState>,
+  hash: String,
+) -> Result<Vec<TorrentContent>> {
+  let state = state.lock().await;
+  state
+    .get("torrents", "files", Some(&[("hash", hash.as_str())]))
+    .await
+}
+
+/// 添加链接
+#[tauri::command]
+#[specta::specta]
+pub async fn add_urls(state: State<'_, QBittorrentState>, urls: String) -> Result<()> {
+  let state = state.lock().await;
+  state
+    .post(
+      "torrents",
+      "add",
+      &[("urls", urls.as_str()), ("root_folder", "true")],
+    )
+    .await?;
+  Ok(())
+}
+
+/// 添加文件
+#[tauri::command]
+#[specta::specta]
+pub async fn add_files(state: State<'_, QBittorrentState>, paths: Vec<String>) -> Result<()> {
+  let mut form = multipart::Form::new()
+    .text("paused", "true")
+    .text("root_folder", "true");
+
+  for path in paths {
+    form = form.file("torrents", path).await.into_result()?;
+  }
+
+  let state = state.lock().await;
+  let client = state.client.as_ref().unwrap();
+  client
+    .post(state.get_url("torrents", "add")?)
+    .multipart(form)
+    .send()
+    .await
+    .into_result()?;
+  Ok(())
+}
+
+/// 开始
+#[tauri::command]
+#[specta::specta]
+pub async fn start(state: State<'_, QBittorrentState>, hashes: Vec<String>) -> Result<()> {
+  let state = state.lock().await;
+  state
+    .post(
+      "torrents",
+      "start",
+      &[("hashes", hashes.join("|").as_str())],
+    )
+    .await?;
+  Ok(())
+}
+
+/// 停止
+#[tauri::command]
+#[specta::specta]
+pub async fn stop(state: State<'_, QBittorrentState>, hashes: Vec<String>) -> Result<()> {
+  let state = state.lock().await;
+  state
+    .post("torrents", "stop", &[("hashes", hashes.join("|").as_str())])
+    .await?;
+  Ok(())
+}
+
+/// 重新校验
+#[tauri::command]
+#[specta::specta]
+pub async fn recheck(state: State<'_, QBittorrentState>, hashes: Vec<String>) -> Result<()> {
+  let state = state.lock().await;
+  state
+    .post(
+      "torrents",
+      "recheck",
+      &[("hashes", hashes.join("|").as_str())],
+    )
+    .await?;
+  Ok(())
+}
+
+/// 删除
+#[tauri::command]
+#[specta::specta]
+pub async fn delete(state: State<'_, QBittorrentState>, hashes: Vec<String>) -> Result<()> {
+  let state = state.lock().await;
+  state
+    .post(
+      "torrents",
+      "delete",
+      &[
+        ("hashes", hashes.join("|").as_str()),
+        ("deleteFiles", "true"),
+      ],
+    )
+    .await?;
+  Ok(())
+}
+
+/// 设置文件优先级
+#[tauri::command]
+#[specta::specta]
+pub async fn set_file_priority(
+  state: State<'_, QBittorrentState>,
+  hash: String,
+  indexes: Vec<usize>,
+  priority: TorrentContentPriority,
+) -> Result<()> {
+  let id = indexes
+    .into_iter()
+    .map(|i| i.to_string())
+    .collect::<Vec<String>>()
+    .join("|");
+
+  let state = state.lock().await;
+  state
+    .post(
+      "torrents",
+      "filePrio",
+      &[
+        ("hash", hash.as_str()),
+        ("id", id.as_str()),
+        ("priority", (priority as u8).to_string().as_str()),
+      ],
+    )
+    .await?;
   Ok(())
 }

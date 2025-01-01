@@ -12,8 +12,9 @@ import {
 } from 'primereact/treetable';
 import { useEffect, useState } from 'react';
 import { useReadLocalStorage } from 'usehooks-ts';
+
+import type { TorrentContent } from '../lib/bindings';
 import { formatPercent, formatSize } from '../lib/format';
-import type { TorrentContent } from '../lib/qBittorrentTypes';
 
 export type TorrentNode = Omit<TreeNode, 'data' | 'children'> & {
   data: TorrentContent & { fullPath: string };

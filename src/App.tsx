@@ -1,4 +1,5 @@
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { debug, error } from '@tauri-apps/plugin-log';
 import { PrimeIcons } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { IconField } from 'primereact/iconfield';
@@ -12,15 +13,18 @@ import type { TreeTableExpandedKeysType, TreeTableSelectionKeysType } from 'prim
 import { diff, fork, max, unique } from 'radashi';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useInterval, useLocalStorage, useReadLocalStorage } from 'usehooks-ts';
+
+import { type MainData, type TorrentContent, commands } from './lib/bindings';
 import { formatSize, formatSpeed } from './lib/format';
 import makeTree from './lib/makeTree';
-import QBittorrent from './lib/QBittorrent';
 import {
-  defaultMainData,
-  matchTorrent,
-  TorrentContentPriority,
+  type RequiredTorrentInfo,
   type TorrentFilter,
-  type TorrentInfo,
+  defaultMainData,
+  getInfoHash,
+  getInfoHashes,
+  matchTorrent,
+  mergeMainData,
 } from './lib/qBittorrentTypes';
 import useClipboard from './lib/useClipboard';
 import AddDialog from './ui/AddDialog';
@@ -28,7 +32,8 @@ import LoginDialog, { type Credentials } from './ui/LoginDialog';
 import SettingsDialog from './ui/SettingsDialog';
 import TorrentDialog, { TorrentNode } from './ui/TorrentDialog';
 import TorrentTable from './ui/TorrentTable';
-const appWindow = getCurrentWebviewWindow()
+
+const appWindow = getCurrentWebviewWindow();
 
 const collectChildIndexes = (node: TorrentNode) => {
   const indexes: number[] = [];
@@ -57,9 +62,6 @@ function remove<T>(list: T[], value: T, toKey: (item: T) => number | string | sy
   return list;
 }
 
-const getInfoHash = (torrent: TorrentInfo) => torrent.infohash_v1;
-const getInfoHashes = (torrents: TorrentInfo[]) => torrents.map(getInfoHash);
-
 function App() {
   const [credentials, setCredentials] = useLocalStorage<Credentials>('credentials', {
     url: '',
@@ -70,7 +72,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<TorrentFilter>('downloading');
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<TorrentInfo[]>([]);
+  const [selected, setSelected] = useState<RequiredTorrentInfo[]>([]);
   const [currentHash, setCurrentHash] = useState('');
   const [nodes, setNodes] = useState<TorrentNode[]>([]);
   const [selectedNodes, setSelectedNodes] = useState<TreeTableSelectionKeysType>({});
@@ -80,14 +82,18 @@ function App() {
   const [contentLoading, setContentLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
-  const [mainData, setMainData] = useState(defaultMainData);
+  const [mainData, setMainDataRaw] = useState(defaultMainData);
   const smallFileThreshold = useReadLocalStorage<number>('smallFileThreshold') ?? 200 * 1024 * 1024;
   const watchClipboard = useReadLocalStorage<boolean>('watchClipboard') ?? false;
 
-  const qbt = useRef<QBittorrent>();
-  const metas = useRef<TorrentInfo[]>([]);
+  const metas = useRef<RequiredTorrentInfo[]>([]);
   const torrents = Object.values(mainData.torrents);
   const refreshInterval = mainData.server_state.refresh_interval;
+
+  const setMainData = useCallback(
+    (delta: MainData) => setMainDataRaw((data) => mergeMainData(data, delta)),
+    [setMainDataRaw],
+  );
 
   const buttons = useMemo<MenuItem[]>(
     () => [
@@ -96,19 +102,19 @@ function App() {
         label: 'Stop',
         icon: PrimeIcons.STOP,
         disabled: selected.length === 0,
-        command: () => qbt.current?.pause(getInfoHashes(selected)),
+        command: () => commands.stop(getInfoHashes(selected)),
       },
       {
         label: 'Start',
         icon: PrimeIcons.PLAY,
         disabled: selected.length === 0,
         command: async () => {
-          await qbt.current?.resume(getInfoHashes(selected));
+          await commands.start(getInfoHashes(selected));
 
           const errored = selected.filter((s) => matchTorrent(s, 'errored'));
 
           if (errored.length > 0) {
-            await qbt.current?.recheck(getInfoHashes(errored));
+            await commands.recheck(getInfoHashes(errored));
           }
         },
       },
@@ -121,7 +127,7 @@ function App() {
             remove(metas.current, sel, getInfoHash);
           }
 
-          qbt.current?.delete(getInfoHashes(selected));
+          commands.delete(getInfoHashes(selected));
         },
       },
       { label: 'Settings', icon: PrimeIcons.COG, command: () => setShowSettings(true) },
@@ -156,11 +162,7 @@ function App() {
 
   const autoSelect = useCallback(
     async (hash: string) => {
-      if (!qbt.current) {
-        return [];
-      }
-
-      const content = await qbt.current.getTorrentContent(hash);
+      const content = await commands.getTorrentContents(hash);
       const [larges, smalls] = fork(content, (item) => item.size >= smallFileThreshold);
 
       if (larges.length === 0) {
@@ -173,19 +175,19 @@ function App() {
       }
 
       const promises = [
-        qbt.current.setFilePriority(
+        commands.setFilePriority(
           hash,
           larges.map((item) => item.index),
-          TorrentContentPriority.NORMAL,
+          'Normal',
         ),
       ];
 
       if (smalls.length > 0) {
         promises.push(
-          qbt.current.setFilePriority(
+          commands.setFilePriority(
             hash,
             smalls.map((item) => item.index),
-            TorrentContentPriority.DO_NOT_DOWNLOAD,
+            'DoNotDownload',
           ),
         );
       }
@@ -193,23 +195,21 @@ function App() {
       await Promise.all(promises);
 
       return [
-        ...larges.map((c) => ({ ...c, priority: TorrentContentPriority.NORMAL })),
-        ...smalls.map((c) => ({ ...c, priority: TorrentContentPriority.DO_NOT_DOWNLOAD })),
+        ...larges.map((c) => ({ ...c, priority: 'Normal' }) satisfies TorrentContent),
+        ...smalls.map((c) => ({ ...c, priority: 'DoNotDownload' }) satisfies TorrentContent),
       ];
     },
     [smallFileThreshold],
   );
 
   const refresh = useCallback(async () => {
-    if (!qbt.current?.hasLoggedIn) {
-      return;
-    }
-
-    const data = await qbt.current.getMainData();
+    const data = await commands.getMainData();
     setMainData(data);
     setLoading(false);
+  }, [setMainData, setLoading]);
 
-    const ts = Object.values(data.torrents);
+  useEffect(() => {
+    const ts = Object.values(mainData.torrents);
     const hashes = getInfoHashes(ts);
     setSelected((old) => old.filter((item) => hashes.includes(item.infohash_v1)));
 
@@ -219,26 +219,22 @@ function App() {
     metas.current = unique([...rest, ...newMetas], getInfoHash);
 
     if (noLongers.length > 0) {
-      await Promise.all(noLongers.map((m) => autoSelect(m.infohash_v1)));
+      Promise.all(noLongers.map((m) => autoSelect(m.infohash_v1))).catch(() => {});
     }
-  }, [filter, smallFileThreshold]);
+  }, [mainData.torrents, autoSelect]);
 
   const select = useCallback(
     async (node: TorrentNode) => {
-      let indexes = node.data.index === -1 ? collectChildIndexes(node) : node.data.index;
-      await qbt.current?.setFilePriority(currentHash, indexes, TorrentContentPriority.NORMAL);
+      let indexes = node.data.index === -1 ? collectChildIndexes(node) : [node.data.index];
+      await commands.setFilePriority(currentHash, indexes, 'Normal');
     },
     [currentHash],
   );
 
   const unselect = useCallback(
     async (node: TorrentNode) => {
-      let indexes = node.data.index === -1 ? collectChildIndexes(node) : node.data.index;
-      await qbt.current?.setFilePriority(
-        currentHash,
-        indexes,
-        TorrentContentPriority.DO_NOT_DOWNLOAD,
-      );
+      let indexes = node.data.index === -1 ? collectChildIndexes(node) : [node.data.index];
+      await commands.setFilePriority(currentHash, indexes, 'DoNotDownload');
     },
     [currentHash],
   );
@@ -249,18 +245,20 @@ function App() {
   }, []);
 
   useEffect(() => {
-    qbt.current = new QBittorrent(credentials.url);
-    qbt.current
-      .login(credentials.username, credentials.password)
+    commands
+      .initialize(credentials.url, null)
+      .then(() => commands.login(credentials.username, credentials.password))
       .then((ok) => {
         setShowLogin(!ok);
-        return qbt.current!.getMainData();
+        debug('Getting main data');
+        return commands.getMainData();
       })
       .then((data) => {
+        debug('Setting main data');
         setMainData(data);
       })
       .catch((e) => {
-        console.error('Failed to login', e);
+        error(`Failed to login: ${e}`);
         setShowLogin(true);
       });
   }, [credentials]);
@@ -273,7 +271,7 @@ function App() {
   );
 
   const onClipboard = useCallback((text: string) => {
-    qbt.current?.add(text);
+    commands.addUrls(text);
   }, []);
 
   useClipboard({
@@ -313,7 +311,7 @@ function App() {
         selection={selected}
         onSelectionChange={setSelected}
         onClick={async (hash) => {
-          if (!qbt.current) {
+          if (!commands) {
             return;
           }
 
@@ -322,7 +320,7 @@ function App() {
           setNodes([]);
           setShowTorrent(true);
 
-          const content = await qbt.current.getTorrentContent(hash);
+          const content = await commands.getTorrentContents(hash);
           const { nodes, selected, expanded } = makeTree(content);
 
           setNodes(nodes);
@@ -345,7 +343,7 @@ function App() {
           setShowAdd(false);
 
           if (urls) {
-            qbt.current?.add(urls);
+            commands.addUrls(urls);
           }
         }}
       />
@@ -361,11 +359,11 @@ function App() {
         onUnselect={unselect}
         onMagnetToTorrent={async () => {
           setShowTorrent(false);
-          await qbt.current?.delete(currentHash);
-          await qbt.current?.add(`https://itorrents.org/torrent/${currentHash}.torrent`);
+          await commands.delete([currentHash]);
+          await commands.addUrls(`https://itorrents.org/torrent/${currentHash}.torrent`);
         }}
         onAutoSelect={async () => {
-          if (qbt.current) {
+          if (commands) {
             const content = await autoSelect(currentHash);
 
             const { nodes, selected, expanded } = makeTree(content);

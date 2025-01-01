@@ -12,16 +12,22 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 anyhow = "1.0.86"
-reqwest = { version = "0.12.9", features = ["gzip", "deflate", "brotli", "cookies", "json", "http2", "multipart", "zstd"] }
+log = "0.4.22"
+reqwest = { version = "0.12.11", features = ["gzip", "deflate", "brotli", "cookies", "json", "http2", "multipart", "zstd"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_repr = "0.1.19"
+serde_urlencoded = "0.7.1"
+serde_with = "3.12.0"
 specta = "=2.0.0-rc.20"
 specta-typescript = "0.0.7"
 tauri = { version = "2", features = [] }
-tauri-plugin-clipboard-manager = "2"
+tauri-plugin-clipboard = "2.1.11"
 tauri-plugin-dialog = "2"
+tauri-plugin-log = "2"
 tauri-plugin-shell = "2"
 tauri-specta = { version = "=2.0.0-rc.20", features = ["typescript"] }
+url = "2.5.2"
 
 [features]
 # This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!

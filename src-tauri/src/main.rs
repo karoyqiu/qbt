@@ -4,13 +4,29 @@
 mod error;
 mod qbittorrent;
 
-use qbittorrent::{set_url, QBittorrentState};
-use tauri_specta::{collect_commands, Builder};
+use qbittorrent::{
+  add_files, add_urls, delete, get_main_data, get_torrent_contents, initialize, login, recheck,
+  set_file_priority, start, stop, QBittorrentState,
+};
+use tauri_specta::{collect_commands, Builder, ErrorHandlingMode};
 
 fn main() {
   let builder = Builder::<tauri::Wry>::new()
     // Then register them (separated by a comma)
-    .commands(collect_commands![set_url,]);
+    .commands(collect_commands![
+      add_files,
+      add_urls,
+      delete,
+      get_main_data,
+      get_torrent_contents,
+      initialize,
+      login,
+      recheck,
+      set_file_priority,
+      start,
+      stop,
+    ])
+    .error_handling(ErrorHandlingMode::Throw);
 
   #[cfg(debug_assertions)] // <- Only export on non-release builds
   {
@@ -24,8 +40,17 @@ fn main() {
   }
 
   tauri::Builder::default()
-    .plugin(tauri_plugin_clipboard_manager::init())
+    .plugin(
+      tauri_plugin_log::Builder::new()
+        .clear_targets()
+        .target(tauri_plugin_log::Target::new(
+          tauri_plugin_log::TargetKind::Stdout,
+        ))
+        .build(),
+    )
+    .plugin(tauri_plugin_clipboard::init())
     .manage(QBittorrentState::default())
+    .invoke_handler(builder.invoke_handler())
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

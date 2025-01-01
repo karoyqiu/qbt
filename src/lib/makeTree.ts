@@ -2,8 +2,9 @@ import type {
   TreeTableCheckboxSelectionKeyType,
   TreeTableExpandedKeysType,
 } from 'primereact/treetable';
+
 import type { TorrentNode } from '../ui/TorrentDialog';
-import { type TorrentContent, TorrentContentPriority } from './qBittorrentTypes';
+import type { TorrentContent } from './bindings';
 
 const findChild = (parent: TorrentNode, childName: string) => {
   if (parent.children) {
@@ -17,8 +18,7 @@ const findChild = (parent: TorrentNode, childName: string) => {
   return null;
 };
 
-const isSelected = (child: TorrentNode) =>
-  child.data.priority !== TorrentContentPriority.DO_NOT_DOWNLOAD;
+const isSelected = (child: TorrentNode) => child.data.priority !== 'DoNotDownload';
 
 const finalize = (
   parent: TorrentNode,
@@ -68,7 +68,7 @@ const makeTree = (content: TorrentContent[]) => {
       name: '',
       fullPath: '',
       size: 0,
-      priority: TorrentContentPriority.DO_NOT_DOWNLOAD,
+      priority: 'DoNotDownload',
       progress: 0,
       is_seed: false,
       piece_range: [],
@@ -111,7 +111,7 @@ const makeTree = (content: TorrentContent[]) => {
       if (parts.length > 0) {
         // 这是个文件夹
         child.data.index = -1;
-        child.data.priority = TorrentContentPriority.DO_NOT_DOWNLOAD;
+        child.data.priority = 'DoNotDownload';
       } else if (isSelected(child)) {
         selected[child.key! as string] = { checked: true };
       }
