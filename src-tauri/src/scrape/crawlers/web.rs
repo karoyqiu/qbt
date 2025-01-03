@@ -1,11 +1,26 @@
+use std::{
+  collections::HashMap,
+  sync::{Arc, Mutex},
+};
+
+use lazy_static::lazy_static;
 use log::{debug, trace};
-use reqwest::{ClientBuilder, Proxy};
+use reqwest::{ClientBuilder, Proxy, Response};
+use scraper::Selector;
+use serde::Serialize;
 use tauri_plugin_store::StoreExt;
 
 use crate::{
   app_handle::get_app_handle,
   error::{err, Error, IntoResult, Result},
 };
+
+lazy_static! {
+  pub static ref DIV_SELECTOR: Selector = Selector::parse("div").unwrap();
+  pub static ref A_SELECTOR: Selector = Selector::parse("A").unwrap();
+  pub static ref H3_SELECTOR: Selector = Selector::parse("h3").unwrap();
+  static ref SELECTORS: Mutex<HashMap<&'static str, Arc<Selector>>> = Mutex::new(HashMap::new());
+}
 
 #[derive(Debug, serde::Deserialize)]
 struct StringValue {
@@ -55,6 +70,24 @@ pub async fn get_html(url: &str) -> Result<String> {
   }
 
   let res = req.send().await.into_result()?;
+  handle_response(res).await
+}
+
+pub async fn post_html<F>(url: &str, form: &F) -> Result<String>
+where
+  F: Serialize + ?Sized,
+{
+  debug!("Posting HTML to {}", url);
+  let client = apply_proxy(ClientBuilder::new().cookie_store(true))?
+    .build()
+    .into_result()?;
+
+  let resp = client.post(url).form(form).send().await.into_result()?;
+
+  handle_response(resp).await
+}
+
+async fn handle_response(res: Response) -> Result<String> {
   let status = res.status();
   let body = res.text().await.into_result()?;
 
@@ -63,5 +96,17 @@ pub async fn get_html(url: &str) -> Result<String> {
   } else {
     trace!("Failed to get HTML: {}, {}", status, body);
     err("Failed to get HTML")
+  }
+}
+
+pub fn get_selector(selector: &'static str) -> Result<Arc<Selector>> {
+  let mut selectors = SELECTORS.lock().unwrap();
+
+  if let Some(sel) = selectors.get(selector) {
+    Ok(sel.clone())
+  } else {
+    let sel = Arc::new(Selector::parse(selector).unwrap());
+    selectors.insert(selector, sel.clone());
+    Ok(sel)
   }
 }

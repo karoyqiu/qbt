@@ -6,6 +6,7 @@ mod error;
 mod qbittorrent;
 mod scrape;
 
+use log::LevelFilter;
 use tauri_specta::{collect_commands, Builder, ErrorHandlingMode};
 
 use qbittorrent::{
@@ -52,6 +53,8 @@ fn main() {
         .target(tauri_plugin_log::Target::new(
           tauri_plugin_log::TargetKind::Stdout,
         ))
+        .level(LevelFilter::Warn)
+        .level_for("qbt", LevelFilter::Trace)
         .build(),
     )
     .plugin(tauri_plugin_clipboard::init())

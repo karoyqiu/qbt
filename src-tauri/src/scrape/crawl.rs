@@ -6,7 +6,11 @@ use regex::Regex;
 
 use crate::error::{err, Result};
 
-use super::{code::is_uncensored, crawlers::officials, VideoInfo};
+use super::{
+  code::is_uncensored,
+  crawlers::{javbus, officials},
+  VideoInfo,
+};
 
 lazy_static! {
   static ref EU_RE: Regex = Regex::new(r"[^.]+\.\d{2}\.\d{2}\.\d{2}").unwrap();
@@ -319,6 +323,7 @@ async fn crawl_websites(code: &String, websites: &Vec<&'static str>) -> Result<V
   let mut cache = HashMap::new();
 
   for (field, name, websites) in requested_fields {
+    debug!("Crawl {}: {:?}", name, websites);
     let crawled = call_crawlers(code, &websites, &mut cache).await?;
     info.apply(crawled);
   }
@@ -429,6 +434,7 @@ async fn call_crawlers(
     let result = match website {
       // 官方网站
       "official" => officials::crawl(code).await,
+      "javbus" => javbus::crawl(code).await,
       _ => err("Unknown website"),
     };
 

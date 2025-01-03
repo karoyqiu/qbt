@@ -6,7 +6,9 @@ use scraper::{ElementRef, Html, Selector};
 
 use crate::{
   error::{err, IntoResult, Result},
-  scrape::{code::get_code_prefix, TranslatedText, VideoInfo, VideoInfoBuilder},
+  scrape::{
+    code::get_code_prefix, crawlers::web::DIV_SELECTOR, TranslatedText, VideoInfo, VideoInfoBuilder,
+  },
 };
 
 use super::web::get_html;
@@ -64,9 +66,6 @@ lazy_static! {
   static ref OUTLINE_SELECTOR: Selector = Selector::parse("p.p-workPage__text").unwrap();
   static ref ACTRESS_SELECTOR: Selector = Selector::parse("a.c-tag.c-main-bg-hover.c-main-font.c-main-bd").unwrap();
 
-  static ref DIV_SELECTOR: Selector = Selector::parse("div").unwrap();
-  static ref P_SELECTOR: Selector = Selector::parse("p").unwrap();
-  static ref A_SELECTOR: Selector = Selector::parse("a").unwrap();
   static ref FIRST_DIV_SELECTOR: Selector = Selector::parse("div:first-of-type").unwrap();
   static ref DIV_A_SELECTOR: Selector = Selector::parse("div:first-of-type > a").unwrap();
   static ref DIV_DIV_A_SELECTOR: Selector = Selector::parse("div:first-of-type > div > a").unwrap();
