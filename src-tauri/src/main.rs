@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod app_handle;
 mod error;
 mod qbittorrent;
 mod scrape;
@@ -57,6 +58,11 @@ fn main() {
     .plugin(tauri_plugin_shell::init())
     .manage(QBittorrentState::default())
     .invoke_handler(builder.invoke_handler())
+    .setup(|app| {
+      let handle = app.handle();
+      app_handle::set_app_handle(handle);
+      Ok(())
+    })
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

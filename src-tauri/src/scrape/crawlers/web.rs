@@ -1,11 +1,42 @@
-use crate::error::{err, IntoResult, Result};
+use log::{debug, trace};
+use reqwest::{ClientBuilder, Proxy};
+use tauri_plugin_store::StoreExt;
 
+use crate::{
+  app_handle::get_app_handle,
+  error::{err, Error, IntoResult, Result},
+};
+
+#[derive(Debug, serde::Deserialize)]
+struct StringValue {
+  value: String,
+}
+
+fn apply_proxy(builder: ClientBuilder) -> Result<ClientBuilder> {
+  let app = get_app_handle().ok_or(Error(anyhow::anyhow!("App handle not found")))?;
+  let store = app.store("settings.json").into_result()?;
+  let proxy = store.get("proxy");
+
+  if let Some(proxy) = proxy {
+    let proxy: StringValue = serde_json::from_value(proxy).into_result()?;
+    let proxy = proxy.value;
+
+    match proxy.as_str() {
+      "<system>" | "" => Ok(builder),
+      "<direct>" => Ok(builder.no_proxy()),
+      _ => Ok(builder.proxy(Proxy::all(&proxy).into_result()?)),
+    }
+  } else {
+    Ok(builder)
+  }
+}
+
+/// 获取HTML
 pub async fn get_html(url: &str) -> Result<String> {
-  let mut builder = reqwest::Client::builder().cookie_store(true);
-
-  // TODO: Proxy
-
-  let client = builder.build().into_result()?;
+  debug!("Getting HTML from {}", url);
+  let client = apply_proxy(ClientBuilder::new().cookie_store(true))?
+    .build()
+    .into_result()?;
   let mut req = client.get(url);
 
   if url.contains("getchu") {
@@ -24,10 +55,13 @@ pub async fn get_html(url: &str) -> Result<String> {
   }
 
   let res = req.send().await.into_result()?;
+  let status = res.status();
+  let body = res.text().await.into_result()?;
 
-  if res.status().is_success() {
-    res.text().await.into_result()
+  if status.is_success() {
+    Ok(body)
   } else {
+    trace!("Failed to get HTML: {}, {}", status, body);
     err("Failed to get HTML")
   }
 }

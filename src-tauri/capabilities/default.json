@@ -2,5 +2,5 @@
   "identifier": "main-capability",
   "description": "Capability for the main window",
   "windows": ["main"],
-  "permissions": ["log:allow-log", "log:default"]
+  "permissions": ["log:allow-log", "log:default", "store:allow-load", "store:default"]
 }
