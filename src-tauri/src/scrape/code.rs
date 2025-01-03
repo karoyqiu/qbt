@@ -1,9 +1,5 @@
 use lazy_static::lazy_static;
-use log::debug;
 use regex::Regex;
-use tauri::AppHandle;
-
-use crate::error::Result;
 
 lazy_static! {
   /// xxx-CD1
@@ -18,7 +14,7 @@ lazy_static! {
   static ref MD_RE: Regex = Regex::new(r"([^A-Z]|^)(MD[A-Z-]*\d{4,}(-\d)?)").unwrap();
   static ref OUMEI_RE: Regex = Regex::new(r"([A-Z0-9_]{2,})[-.]2?0?(\d{2}[-.]\d{2}[-.]\d{2})").unwrap();
   static ref XXX_AV_RE: Regex = Regex::new(r"XXX-AV-\d{4,}").unwrap();
-  static ref MKY_RE: Regex = Regex::new(r"MKY-[A-Z]+-\d{3,}").unwrap();
+  static ref MKY_RE: Regex = Regex::new(r"(MKY-[A-Z]+)-\d{3,}").unwrap();
   static ref FC2_RE: Regex = Regex::new(r"FC2-\d{5,}").unwrap();
   static ref HEYZO_RE: Regex = Regex::new(r"HEYZO-\d{3,}").unwrap();
   static ref H4610_RE: Regex = Regex::new(r"(H4610|C0930|H0930)-[A-Z]+\d{4,}").unwrap();
@@ -37,19 +33,14 @@ lazy_static! {
   static ref H_RE: Regex = Regex::new(r"H_\d{3,}([A-Z]{2,})(\d{2,})").unwrap();
   static ref AZ3_NUM2_RE: Regex = Regex::new(r"([A-Z]{3,}).*?(\d{2,})").unwrap();
   static ref AZ2_NUM3_RE: Regex = Regex::new(r"([A-Z]{2,}).*?(\d{3,})").unwrap();
-}
-
-/// 刮削
-#[tauri::command]
-#[specta::specta]
-pub async fn scrape(_app: AppHandle, filename: String) -> Result<()> {
-  let movie_code = get_movie_code(&filename);
-  debug!("code: {:?}", movie_code);
-  Ok(())
+  static ref NXXXX_RE: Regex = Regex::new(r"n\d{4}").unwrap();
+  static ref UNSENSORED_RE: Regex = Regex::new(r"[^.]+\.\d{2}\.\d{2}\.\d{2}").unwrap();
+  static ref PREFIX_RE:Regex = Regex::new(r"([A-Za-z0-9-.]{3,})[-_. ]\d{2}\.\d{2}\.\d{2}").unwrap();
+  static ref ALLCODE_RE:Regex = Regex::new(r"(\d*[A-Za-z]+)\d*").unwrap();
 }
 
 /// 获取番号
-fn get_movie_code(name: &String) -> Option<String> {
+pub fn get_movie_code(name: &String) -> Option<String> {
   // 去除多余字符
   static USELESS_WORDS: &[&str] = &[
     "h_720",
@@ -226,4 +217,60 @@ fn extract_movie_code(filename: &str) -> Option<String> {
   }
 
   None
+}
+
+pub fn is_uncensored(code: &String) -> bool {
+  if NXXXX_RE.is_match(code) || UNSENSORED_RE.is_match(code) {
+    return true;
+  }
+
+  // 无码车牌
+  static KEY_START_WORD: &[&str] = &[
+    "BT-", "CT-", "EMP-", "CCDV-", "CWP-", "CWPBD-", "DSAM-", "DRC-", "DRG-", "GACHI-", "heydouga",
+    "JAV-", "LAF-", "LAFBD-", "HEYZO-", "KTG-", "KP-", "KG-", "LLDV-", "MCDV-", "MKD-", "MKBD-",
+    "MMDV-", "NIP-", "PB-", "PT-", "QE-", "RED-", "RHJ-", "S2M-", "SKY-", "SKYHD-", "SMD-",
+    "SSDV-", "SSKP-", "TRG-", "TS-", "XXX-AV-", "YKB-", "BIRD", "BOUGA",
+  ];
+
+  for word in KEY_START_WORD {
+    if code.starts_with(word) {
+      return true;
+    }
+  }
+
+  false
+}
+
+pub fn get_code_prefix(code: &String) -> Option<String> {
+  if let Some(prefix) = PREFIX_RE.captures(code) {
+    Some(prefix.get(1)?.as_str().to_string())
+  } else if code.starts_with("FC2") {
+    Some("FC2".to_string())
+  } else if code.starts_with("Mywife") {
+    Some("Mywife".to_string())
+  } else if code.starts_with("FC2") {
+    Some("FC2".to_string())
+  } else if code.starts_with("KIN8") {
+    Some("KIN8".to_string())
+  } else if code.starts_with("S2M") {
+    Some("S2M".to_string())
+  } else if code.starts_with("T28") {
+    Some("T28".to_string())
+  } else if code.starts_with("TH101") {
+    Some("TH101".to_string())
+  } else if code.starts_with("XXX-AV") {
+    Some("XXX-AV".to_string())
+  } else if let Some(prefix) = MKY_RE.captures(code) {
+    Some(prefix.get(1)?.as_str().to_string())
+  } else if CW3D2D_RE.is_match(code) {
+    Some("CW3D2D".to_string())
+  } else if MCB3D_RE.is_match(code) {
+    Some("MCB3D".to_string())
+  } else if let Some(prefix) = H4610_RE.captures(code) {
+    Some(prefix.get(1)?.as_str().to_string())
+  } else if let Some(prefix) = ALLCODE_RE.captures(code) {
+    Some(prefix.get(1)?.as_str().to_string())
+  } else {
+    None
+  }
 }
