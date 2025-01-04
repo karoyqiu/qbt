@@ -14,6 +14,11 @@ pub trait Crawler {
   /** 网站地址 */
   fn get_url(&self, code: &String) -> Result<String>;
 
+  /** 下一步地址 */
+  fn get_next_url(&self, _code: &String, _html: &String) -> Option<String> {
+    None
+  }
+
   /** 标题 */
   fn get_title(&self, doc: &Html) -> Result<String>;
 
@@ -99,7 +104,36 @@ pub trait Crawler {
   }
 }
 
-pub(crate) fn convert_date_string_to_epoch(text: &str) -> Option<i64> {
+pub async fn crawl<T>(crawler: &T, code: &String) -> Result<VideoInfo>
+where
+  T: Crawler + ?Sized,
+{
+  info!("Crawling {} for {}", crawler.get_name(), code);
+  let url = crawler.get_url(code)?;
+  let mut html = get_html(&url).await?;
+
+  while let Some(next_url) = crawler.get_next_url(code, &html) {
+    html = get_html(&next_url).await?;
+  }
+
+  let doc = Html::parse_document(&html);
+  let title = crawler.get_title(&doc)?;
+
+  let info = crawler
+    .get_info_builder(&doc)
+    .code(code.clone())
+    .title(TranslatedText {
+      text: title,
+      translated: None,
+    })
+    .build()
+    .into_result()?;
+
+  info!("Crawled {} for {}: {:?}", crawler.get_name(), code, info);
+  Ok(info)
+}
+
+pub fn convert_date_string_to_epoch(text: &str) -> Option<i64> {
   let date = NaiveDate::parse_from_str(text, "%Y-%m-%d");
 
   date.ok().map(|d| {
@@ -112,7 +146,7 @@ pub(crate) fn convert_date_string_to_epoch(text: &str) -> Option<i64> {
   })?
 }
 
-pub(crate) fn convert_duration_string_to_seconds(text: &str) -> Option<i64> {
+pub fn convert_duration_string_to_seconds(text: &str) -> Option<i64> {
   let parts: Vec<&str> = text.split(':').collect();
   match parts.len() {
     2 => {
@@ -162,28 +196,4 @@ mod tests {
     let duration = convert_duration_string_to_seconds("00:00");
     assert_eq!(duration, Some(0));
   }
-}
-
-pub async fn crawl<T>(crawler: &T, code: &String) -> Result<VideoInfo>
-where
-  T: Crawler + ?Sized,
-{
-  info!("Crawling {} for {}", crawler.get_name(), code);
-  let url = crawler.get_url(code)?;
-  let html = get_html(&url).await?;
-  let doc = Html::parse_document(&html);
-  let title = crawler.get_title(&doc)?;
-
-  let info = crawler
-    .get_info_builder(&doc)
-    .code(code.clone())
-    .title(TranslatedText {
-      text: title,
-      translated: None,
-    })
-    .build()
-    .into_result()?;
-
-  info!("Crawled {} for {}: {:?}", crawler.get_name(), code, info);
-  Ok(info)
 }
