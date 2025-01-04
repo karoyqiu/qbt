@@ -57,7 +57,7 @@ async recheck(hashes: string[]) : Promise<null> {
 /**
  * 刮削
  */
-async scrape(filename: string) : Promise<null> {
+async scrape(filename: string) : Promise<VideoInfo> {
     return await TAURI_INVOKE("scrape", { filename });
 },
 /**
@@ -361,6 +361,67 @@ uploaded_session?: number | null;
  */
 upspeed?: number | null }
 export type TorrentState = "error" | "missingFiles" | "uploading" | "stoppedUP" | "queuedUP" | "stalledUP" | "checkingUP" | "forcedUP" | "allocating" | "downloading" | "metaDL" | "stoppedDL" | "queuedDL" | "stalledDL" | "checkingDL" | "forcedDL" | "checkingResumeData" | "moving" | "unknown"
+export type TranslatedText = { text: string; translated: string | null }
+/**
+ * 视频信息
+ */
+export type VideoInfo = { 
+/**
+ * 番号
+ */
+code: string; 
+/**
+ * 标题
+ */
+title: TranslatedText; 
+/**
+ * 海报
+ */
+poster: string | null; 
+/**
+ * 封面
+ */
+cover: string | null; 
+/**
+ * 简介
+ */
+outline: TranslatedText | null; 
+/**
+ * 演员列表
+ */
+actresses: string[] | null; 
+/**
+ * 演员头像列表
+ */
+actress_photos: string[] | null; 
+/**
+ * 标签列表
+ */
+tags: string[] | null; 
+/**
+ * 系列
+ */
+series: string | null; 
+/**
+ * 片商
+ */
+studio: string | null; 
+/**
+ * 发行商
+ */
+publisher: string | null; 
+/**
+ * 导演
+ */
+director: string | null; 
+/**
+ * 时长（秒）
+ */
+duration: number | null; 
+/**
+ * 发布日期（Unix epoch）
+ */
+release_date: number | null }
 
 /** tauri-specta globals **/
 

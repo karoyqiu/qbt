@@ -246,217 +246,62 @@ lazy_static! {
   };
 }
 
-pub async fn crawl(code: &String) -> Result<()> {
+pub async fn crawl(code: &String) -> Result<VideoInfo> {
   // TODO: 先判断是不是国产，避免浪费时间
 
   if code.starts_with("FC2") {
     // FC2: FC2-111111
-    crawl_websites(code, &FC2_WEBSITES).await?;
+    crawl_websites(code, &FC2_WEBSITES).await
   } else if code.starts_with("KIN8") {
     // kin8
-    crawl_website(code, "kin8").await?;
+    crawl_website(code, "kin8").await
   } else if code.starts_with("DLID") {
     // 同人
-    crawl_website(code, "getchu").await?;
+    crawl_website(code, "getchu").await
   } else if code.contains("GETCHU") {
     // 里番
-    crawl_website(code, "getchu_dmm").await?;
+    crawl_website(code, "getchu_dmm").await
   } else if code.starts_with("Mywife") {
     // Mywife No.1111
-    crawl_website(code, "mywife").await?;
+    crawl_website(code, "mywife").await
   } else if EU_RE.is_match(code) {
     // 欧美: sexart.15.06.14
-    crawl_websites(code, &EU_WEBSITES).await?;
+    crawl_websites(code, &EU_WEBSITES).await
   } else if is_uncensored(code) {
     // 无码
-    crawl_websites(code, &UNCENSORED_WEBSITES).await?;
-  }
-  if code.starts_with("SIRO") {
+    crawl_websites(code, &UNCENSORED_WEBSITES).await
+  } else if code.starts_with("SIRO") {
     // 素人
     // TODO: 259LUXU-1111
-    crawl_websites(code, &AMATEUR_WEBSITES).await?;
+    crawl_websites(code, &AMATEUR_WEBSITES).await
   } else if DMM_RE.is_match(code) && !code.contains("-") && !code.contains("_") {
     // DMM: 00ID-111
-    crawl_websites(code, &DMM_WEBSITES).await?;
+    crawl_websites(code, &DMM_WEBSITES).await
   } else {
     // 有碼
-    crawl_websites(code, &CENSORED_WEBSITES).await?;
+    crawl_websites(code, &CENSORED_WEBSITES).await
   }
-
-  Ok(())
 }
 
-async fn crawl_website(code: &String, website: &str) -> Result<()> {
-  Ok(())
+async fn crawl_website(code: &String, website: &str) -> Result<VideoInfo> {
+  if let Some(crawler) = CRAWLERS.get(website) {
+    crawler::crawl(crawler.as_ref(), code).await
+  } else {
+    err("Crawler not found")
+  }
 }
 
 /// 获取一组网站的数据：按照设置的网站组，请求各字段数据，并返回最终的数据
 async fn crawl_websites(code: &String, websites: &Vec<&'static str>) -> Result<VideoInfo> {
-  // 获取使用的网站
-  let mut titles = get_websites(&TITLE_WEBSITE, websites, code, "title");
-  titles.insert(0, "official");
-  let title_zh = get_websites(&TITLE_ZH_WEBSITE, websites, code, "title_zh");
-  let outlines = get_websites(&OUTLINE_WEBSITE, websites, code, "outline");
-  let outline_zh = get_websites(&OUTLINE_ZH_WEBSITE, websites, code, "outline_zh");
-  let actresses = get_websites(&ACTRESS_WEBSITE, websites, code, "actress");
-  let thumbs = get_websites(&THUMB_WEBSITE, websites, code, "thumb");
-  let posters = get_websites(&POSTER_WEBSITE, websites, code, "poster");
-  let extrafanarts = get_websites(&EXTRAFANART_WEBSITE, websites, code, "extrafanart");
-  let trailers = get_websites(&TRAILER_WEBSITE, websites, code, "trailer");
-  let tags = get_websites(&TAG_WEBSITE, websites, code, "tag");
-  let releases = get_websites(&RELEASE_WEBSITE, websites, code, "release");
-  let durations = get_websites(&DURATION_WEBSITE, websites, code, "duration");
-  let scores = get_websites(&SCORE_WEBSITE, websites, code, "score");
-  let directors = get_websites(&DIRECTOR_WEBSITE, websites, code, "director");
-  let series = get_websites(&SERIES_WEBSITE, websites, code, "series");
-  let studios = get_websites(&STUDIO_WEBSITE, websites, code, "studio");
-  let publishers = get_websites(&PUBLISHER_WEBSITE, websites, code, "publisher");
-
-  let requested_fields = [
-    ("title", "标题", titles),
-    ("title_zh", "中文标题", title_zh),
-    ("outline", "简介", outlines),
-    ("outline_zh", "中文简介", outline_zh),
-    ("actress", "演员", actresses),
-    ("cover", "封面", thumbs),
-    ("poster", "海报", posters),
-    ("extrafanart", "剧照", extrafanarts),
-    ("tag", "标签", tags),
-    ("release", "发行日期", releases),
-    ("duration", "时长", durations),
-    ("score", "评分", scores),
-    ("director", "导演", directors),
-    ("series", "系列", series),
-    ("studio", "片商", studios),
-    ("publisher", "发行商", publishers),
-    ("trailer", "预告片", trailers),
-  ];
-
+  debug!("Crawl websites: {:?}", websites);
   let mut info = VideoInfo::default();
-  let mut cache = HashMap::new();
 
-  for (field, name, websites) in requested_fields {
-    debug!("Crawl {}: {:?}", name, websites);
-
-    if let Some(crawled) = call_crawlers(code, &websites, &mut cache).await? {
-      info.apply(crawled);
+  for &website in websites {
+    if let Ok(result) = crawl_website(code, website).await {
+      info.apply(result);
     }
   }
 
   debug!("Video info: {:?}", info);
-  Ok(info)
-}
-
-fn get_websites(
-  field_websites: &Vec<&'static str>,
-  video_websites: &Vec<&'static str>,
-  code: &String,
-  field: &str,
-) -> Vec<&'static str> {
-  // 取交集
-  let mut websites = intersect(field_websites, video_websites);
-
-  // 取剩余未相交网站， trailer 不取未相交网站，title 默认取未相交网站
-  if field == "title" || WHOLE_FIELDS.contains(&field) {
-    if field != "trailer" {
-      let diff = sub(video_websites, field_websites);
-      websites = [websites, diff].concat();
-    }
-  }
-
-  // 根据字段排除一些不含这些字段的网站
-  if let Some(excluded) = FIELD_EXCLUDES.get(field) {
-    websites = sub(&websites, excluded);
-  }
-
-  // TODO: 素人番号检查
-
-  if FALENO_RE.is_match(&code) {
-    // faleno.jp 番号检查
-    adjust_websites(&mut websites, field, "faleno");
-  } else if code.starts_with("DLDSS") || code.starts_with("DHLA") {
-    // dahlia-av.jp 番号检查 dldss177 dhla009
-    adjust_websites(&mut websites, field, "dahlia");
-  } else if FANTASTICA_RE.is_match(&code)
-    || code.starts_with("CLASS")
-    || code.starts_with("FADRV")
-    || code.starts_with("FAPRO")
-    || code.starts_with("FAKWM")
-    || code.starts_with("PDS")
-  {
-    // fantastica 番号检查 FAVI、FAAP、FAPL、FAKG、FAHO、FAVA、FAKY、FAMI、FAIT、FAKA、FAMO、FASO、FAIH、FASH、FAKS、FAAN
-    adjust_websites(&mut websites, field, "fantastica");
-  }
-
-  websites
-}
-
-fn intersect(a: &Vec<&'static str>, b: &Vec<&'static str>) -> Vec<&'static str> {
-  a.iter()
-    .filter(|website| b.contains(website))
-    .map(|website| *website)
-    .collect()
-}
-
-fn sub(a: &Vec<&'static str>, b: &Vec<&'static str>) -> Vec<&'static str> {
-  a.iter()
-    .filter(|website| !b.contains(website))
-    .map(|website| *website)
-    .collect()
-}
-
-fn adjust_websites(websites: &mut Vec<&'static str>, field: &str, website: &'static str) {
-  if !websites.contains(&&website) {
-    websites.push(&website);
-  }
-
-  if [
-    "title",
-    "outline",
-    "thumb",
-    "poster",
-    "trailer",
-    "extrafanart",
-  ]
-  .contains(&field)
-  {
-    if let Some(index) = websites.iter().position(|&x| x == website) {
-      websites.remove(index);
-    }
-
-    websites.insert(0, &website);
-  } else if ["tag", "score", "director", "series"].contains(&field) {
-    if let Some(index) = websites.iter().position(|&x| x == website) {
-      websites.remove(index);
-    }
-  }
-}
-
-/// 按照设置的网站顺序获取各个字段信息
-async fn call_crawlers(
-  code: &String,
-  websites: &Vec<&'static str>,
-  cache: &mut HashMap<&'static str, Option<VideoInfo>>,
-) -> Result<Option<VideoInfo>> {
-  let mut info = None;
-
-  for &website in websites {
-    if let Some(cached) = cache.get(website) {
-      info = cached.clone();
-      break;
-    }
-
-    if let Some(crawler) = CRAWLERS.get(website) {
-      info = crawler::crawl(crawler.as_ref(), code).await.ok();
-      cache.insert(website, info.clone());
-
-      if info.is_some() {
-        break;
-      }
-    } else {
-      warn!("Unknown crawler: {}", website);
-    }
-  }
-
   Ok(info)
 }

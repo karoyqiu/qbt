@@ -131,7 +131,7 @@ impl VideoInfo {
 /// 刮削
 #[tauri::command]
 #[specta::specta]
-pub async fn scrape(_app: AppHandle, filename: String) -> Result<()> {
+pub async fn scrape(_app: AppHandle, filename: String) -> Result<VideoInfo> {
   info!("Scraping {}", filename);
   let code = get_movie_code(&filename);
 
