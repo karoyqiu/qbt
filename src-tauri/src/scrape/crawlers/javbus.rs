@@ -39,7 +39,7 @@ pub async fn crawl(code: &String) -> Result<VideoInfo> {
   let url = format!("https://www.javbus.com/{}", code);
   let client = get_client()?;
   let resp = client.get(&url).send().await.into_result()?;
-  let mut html = get_response_text(resp).await?;
+  let (mut html, _) = get_response_text(resp).await?;
   trace!("HTML: {}", html);
 
   if html.contains("地區年齡檢測") {
@@ -49,7 +49,7 @@ pub async fn crawl(code: &String) -> Result<VideoInfo> {
       .send()
       .await
       .into_result()?;
-    html = get_response_text(resp).await?;
+    (html, _) = get_response_text(resp).await?;
     trace!("HTML again: {}", html);
   }
 

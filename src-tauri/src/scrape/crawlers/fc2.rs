@@ -18,7 +18,7 @@ pub async fn crawl(code: &String) -> Result<VideoInfo> {
     .replace("FC2-PPV-", "")
     .replace("-", "");
   let url = format!("https://adult.contents.fc2.com/article/{}/", number);
-  let html = get_html(&url).await?;
+  let (html, _) = get_html(&url).await?;
   let doc = Html::parse_document(&html);
   let info = VideoInfo::default();
   Ok(info)

@@ -1,14 +1,13 @@
-use log::info;
 use scraper::{ElementRef, Html};
 
 use crate::{
   error::{err, Result},
-  scrape::{VideoInfo, VideoInfoBuilder},
+  scrape::VideoInfoBuilder,
 };
 
 use super::{
   crawler::{convert_date_string_to_epoch, convert_duration_string_to_seconds, Crawler},
-  web::{get_html, get_selector},
+  web::get_selector,
 };
 
 #[derive(Default)]
@@ -123,20 +122,6 @@ impl Crawler for Fc2ppvdb {
       None
     }
   }
-}
-
-pub async fn crawl(code: &String) -> Result<VideoInfo> {
-  info!("Crawling fc2 website for {}", code);
-  let number = code
-    .replace("FC2-", "")
-    .replace("FC2PPV", "")
-    .replace("FC2-PPV-", "")
-    .replace("-", "");
-  let url = format!("https://fc2ppvdb.com/articles/{}", number);
-  let html = get_html(&url).await?;
-  let doc = Html::parse_document(&html);
-  let info = VideoInfo::default();
-  Ok(info)
 }
 
 #[cfg(test)]

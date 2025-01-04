@@ -1,6 +1,7 @@
-use chrono::{Local, NaiveDate, TimeZone};
+use chrono::{Local, NaiveDate, NaiveDateTime, TimeZone};
 use log::info;
 use scraper::Html;
+use url::Url;
 
 use crate::{
   error::{IntoResult, Result},
@@ -110,16 +111,17 @@ where
 {
   info!("Crawling {} for {}", crawler.get_name(), code);
   let url = crawler.get_url(code)?;
-  let mut html = get_html(&url).await?;
+  let (mut html, mut url) = get_html(&url).await?;
 
   while let Some(next_url) = crawler.get_next_url(code, &html) {
-    html = get_html(&next_url).await?;
+    let next_url = url.join(&next_url).into_result()?.to_string();
+    (html, url) = get_html(&next_url).await?;
   }
 
   let doc = Html::parse_document(&html);
   let title = crawler.get_title(&doc)?;
 
-  let info = crawler
+  let mut info = crawler
     .get_info_builder(&doc)
     .code(code.clone())
     .title(TranslatedText {
@@ -128,6 +130,29 @@ where
     })
     .build()
     .into_result()?;
+
+  if let Some(poster) = info.poster {
+    let poster = url.join(&poster).into_result()?;
+    info.poster = Some(poster.to_string());
+  }
+
+  if let Some(cover) = info.cover {
+    let cover = url.join(&cover).into_result()?;
+    info.cover = Some(cover.to_string());
+  }
+
+  if let Some(actress_photos) = info.actress_photos {
+    let actress_photos = actress_photos
+      .into_iter()
+      .map(|photo| url.join(&photo).into_result())
+      .collect::<Result<Vec<Url>>>()?;
+    info.actress_photos = Some(
+      actress_photos
+        .into_iter()
+        .map(|url| url.to_string())
+        .collect(),
+    );
+  }
 
   info!("Crawled {} for {}: {:?}", crawler.get_name(), code, info);
   Ok(info)
@@ -143,6 +168,17 @@ pub fn convert_date_string_to_epoch(text: &str) -> Option<i64> {
         .single()
         .map(|dt| dt.timestamp())
     })?
+  })?
+}
+
+pub fn convert_datetime_string_to_epoch(text: &str, fmt: Option<&str>) -> Option<i64> {
+  let date = NaiveDateTime::parse_from_str(text, fmt.unwrap_or("%Y-%m-%d %H:%M:%S"));
+
+  date.ok().map(|d| {
+    Local
+      .from_local_datetime(&d)
+      .single()
+      .map(|dt| dt.timestamp())
   })?
 }
 
@@ -173,6 +209,12 @@ mod tests {
   #[test]
   fn test_convert_date_string_to_epoch() {
     let date = convert_date_string_to_epoch("2025-01-01");
+    assert_eq!(date, Some(1735660800));
+  }
+
+  #[test]
+  fn test_convert_datetime_string_to_epoch() {
+    let date = convert_datetime_string_to_epoch("2025-01-01 00:00:00", None);
     assert_eq!(date, Some(1735660800));
   }
 

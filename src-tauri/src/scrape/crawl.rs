@@ -1,17 +1,14 @@
-use std::{collections::HashMap, sync::LazyLock};
+use std::collections::HashMap;
 
 use lazy_static::lazy_static;
-use log::{debug, warn};
+use log::debug;
 use regex::Regex;
 
 use crate::error::{err, Result};
 
 use super::{
   code::is_uncensored,
-  crawlers::{
-    crawler::{self, Crawler},
-    fc2, fc2ppvdb, javbus, officials,
-  },
+  crawlers::{self, AiravCc, Crawler, Fc2ppvdb, JavBus, Officials},
   VideoInfo,
 };
 
@@ -56,7 +53,9 @@ lazy_static! {
   static ref CENSORED_WEBSITES: Vec<&'static str> = vec![
     "airav_cc",
     "iqqtv",
+    "avsex",
     "javbus",
+    "lulubar",
     "freejavbt",
     "jav321",
     "dmm",
@@ -64,11 +63,10 @@ lazy_static! {
     "7mmtv",
     "hdouban",
     "javdb",
-    "avsex",
-    "lulubar",
     "airav",
     "xcity",
     "avsox",
+    "officials",
   ];
   static ref DMM_WEBSITES: Vec<&'static str> = vec!["dmm"];
   static ref WHOLE_FIELDS: Vec<&'static str> =
@@ -238,10 +236,11 @@ lazy_static! {
 
   static ref CRAWLERS: HashMap<&'static str, Box<dyn Crawler + Sync + Send>> = {
     let mut m:HashMap<&'static str, Box<dyn Crawler + Sync + Send>> = HashMap::new();
-    m.insert("official", Box::new(officials::Officials::default()));
-    m.insert("javbus", Box::new(javbus::JavBus::default()));
+    m.insert("officials", Box::new(Officials::default()));
+    m.insert("javbus", Box::new(JavBus::default()));
     // //m.insert("fc2", fc2::crawl);
-    m.insert("fc2ppvdb", Box::new(fc2ppvdb::Fc2ppvdb::default()));
+    m.insert("fc2ppvdb", Box::new(Fc2ppvdb::default()));
+    m.insert("airav_cc", Box::new(AiravCc::default()));
     m
   };
 }
@@ -285,7 +284,7 @@ pub async fn crawl(code: &String) -> Result<VideoInfo> {
 
 async fn crawl_website(code: &String, website: &str) -> Result<VideoInfo> {
   if let Some(crawler) = CRAWLERS.get(website) {
-    crawler::crawl(crawler.as_ref(), code).await
+    crawlers::crawl(crawler.as_ref(), code).await
   } else {
     err("Crawler not found")
   }

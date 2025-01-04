@@ -9,6 +9,7 @@ use reqwest::{Client, ClientBuilder, Proxy, Response};
 use scraper::Selector;
 use serde::Serialize;
 use tauri_plugin_store::StoreExt;
+use url::Url;
 
 use crate::{
   app_handle::get_app_handle,
@@ -54,7 +55,7 @@ pub fn get_client() -> Result<Client> {
 }
 
 /// 获取HTML
-pub async fn get_html(url: &str) -> Result<String> {
+pub async fn get_html(url: &str) -> Result<(String, Url)> {
   debug!("Getting HTML from {}", url);
   let client = get_client()?;
   let mut req = client.get(url);
@@ -79,7 +80,7 @@ pub async fn get_html(url: &str) -> Result<String> {
 }
 
 /// 提交 HTML
-pub async fn post_html<F>(url: &str, form: &F) -> Result<String>
+pub async fn post_html<F>(url: &str, form: &F) -> Result<(String, Url)>
 where
   F: Serialize + ?Sized,
 {
@@ -90,12 +91,14 @@ where
 }
 
 /// 获取响应文本
-pub async fn get_response_text(res: Response) -> Result<String> {
+pub async fn get_response_text(res: Response) -> Result<(String, Url)> {
   let status = res.status();
+  let url = res.url().clone();
   let body = res.text().await.into_result()?;
 
   if status.is_success() {
-    Ok(body)
+    trace!("Got HTML: {} - {}", url, body);
+    Ok((body, url))
   } else {
     trace!("Failed to get HTML: {}, {}", status, body);
     err("Failed to get HTML")

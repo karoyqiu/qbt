@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use lazy_static::lazy_static;
 use log::{debug, info};
 use scraper::{ElementRef, Html, Selector};
+use url::Url;
 
 use crate::{
   error::{err, IntoResult, Result},
@@ -110,6 +111,11 @@ impl Crawler for Officials {
     Ok(url)
   }
 
+  fn get_next_url(&self, code: &String, html: &String) -> Option<String> {
+    let html = Html::parse_document(html);
+    None
+  }
+
   fn get_title(&self, doc: &Html) -> Result<String> {
     let selector = get_selector("h2.p-workPage__title");
 
@@ -146,7 +152,7 @@ pub async fn crawl(code: &String) -> Result<VideoInfo> {
   url.push_str("/search/list?keyword=");
   url.push_str(&code.replace("-", ""));
 
-  let html = get_html(&url).await?;
+  let (html, _) = get_html(&url).await?;
   let (href, poster) = {
     let doc = Html::parse_document(&html);
     get_poster(&doc, code)?
@@ -154,7 +160,7 @@ pub async fn crawl(code: &String) -> Result<VideoInfo> {
 
   debug!("Video url: {}", href);
   debug!("Poster url: {}", poster);
-  let html = get_html(&href).await?;
+  let (html, _) = get_html(&href).await?;
   let doc = Html::parse_document(&html);
 
   let mut builder = VideoInfoBuilder::default();
