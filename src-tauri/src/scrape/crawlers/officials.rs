@@ -11,7 +11,10 @@ use crate::{
   },
 };
 
-use super::{crawler::Crawler, web::get_html};
+use super::{
+  crawler::Crawler,
+  web::{get_html, get_selector},
+};
 
 lazy_static! {
   static ref OFFICIAL_WEBSITES: HashMap<&'static str, &'static &'static str> = {
@@ -73,19 +76,48 @@ lazy_static! {
 }
 
 #[derive(Default)]
-pub struct OfficialCrawler;
+pub struct Officials;
 
-impl Crawler for OfficialCrawler {
-  fn get_name() -> &'static str {
+impl Crawler for Officials {
+  fn get_name(&self) -> &'static str {
     "official"
   }
 
   fn get_url(&self, code: &String) -> Result<String> {
-    todo!()
+    let prefix = get_code_prefix(code);
+
+    if prefix.is_none() {
+      return err("Invalid code");
+    }
+
+    let prefix = prefix.unwrap();
+    debug!("Code prefix: {}", prefix);
+    let url = OFFICIAL_WEBSITES.get(prefix.as_str());
+
+    if url.is_none() {
+      return err("No official website found");
+    }
+
+    let mut url = String::from(**url.unwrap());
+
+    if url == "https://www.prestige-av.com" {
+      // TODO: Prestige
+    }
+
+    url.push_str("/search/list?keyword=");
+    url.push_str(&code.replace("-", ""));
+
+    Ok(url)
   }
 
   fn get_title(&self, doc: &Html) -> Result<String> {
-    todo!()
+    let selector = get_selector("h2.p-workPage__title");
+
+    if let Some(elem) = doc.select(&selector).next() {
+      Ok(elem.text().collect())
+    } else {
+      err("Title not found")
+    }
   }
 }
 

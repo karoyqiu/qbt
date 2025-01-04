@@ -1,38 +1,15 @@
+use chrono::{Local, NaiveDate, TimeZone};
 use log::info;
 use scraper::Html;
 
 use crate::{
-  error::{err, IntoResult, Result},
-  scrape::{
-    code::get_code_prefix,
-    crawlers::web::{get_html, post_html},
-    TranslatedText, VideoInfo, VideoInfoBuilder,
-  },
+  error::{IntoResult, Result},
+  scrape::{crawlers::web::get_html, TranslatedText, VideoInfo, VideoInfoBuilder},
 };
 
 pub trait Crawler {
-  async fn crawl(&self, code: &String) -> Result<VideoInfo> {
-    info!("Crawling {} for {}", Self::get_name(), code);
-    let url = self.get_url(code)?;
-    let html = get_html(&url).await?;
-    let doc = Html::parse_document(&html);
-    let title = self.get_title(&doc)?;
-
-    let info = self
-      .get_info_builder(&doc)
-      .code(code.clone())
-      .title(TranslatedText {
-        text: title,
-        translated: None,
-      })
-      .build()
-      .into_result()?;
-
-    Ok(info)
-  }
-
   /** 网站名称 */
-  fn get_name() -> &'static str;
+  fn get_name(&self) -> &'static str;
 
   /** 网站地址 */
   fn get_url(&self, code: &String) -> Result<String>;
@@ -120,4 +97,93 @@ pub trait Crawler {
   fn get_release_date(&self, _doc: &Html) -> Option<i64> {
     None
   }
+}
+
+pub(crate) fn convert_date_string_to_epoch(text: &str) -> Option<i64> {
+  let date = NaiveDate::parse_from_str(text, "%Y-%m-%d");
+
+  date.ok().map(|d| {
+    d.and_hms_opt(0, 0, 0).map(|ndt| {
+      Local
+        .from_local_datetime(&ndt)
+        .single()
+        .map(|dt| dt.timestamp())
+    })?
+  })?
+}
+
+pub(crate) fn convert_duration_string_to_seconds(text: &str) -> Option<i64> {
+  let parts: Vec<&str> = text.split(':').collect();
+  match parts.len() {
+    2 => {
+      let minutes = parts[0].parse::<i64>().unwrap_or(0);
+      let seconds = parts[1].parse::<i64>().unwrap_or(0);
+      Some(minutes * 60 + seconds)
+    }
+    3 => {
+      let hours = parts[0].parse::<i64>().unwrap_or(0);
+      let minutes = parts[1].parse::<i64>().unwrap_or(0);
+      let seconds = parts[2].parse::<i64>().unwrap_or(0);
+      Some(hours * 3600 + minutes * 60 + seconds)
+    }
+    _ => None,
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use pretty_assertions::assert_eq;
+
+  use super::*;
+
+  #[test]
+  fn test_convert_date_string_to_epoch() {
+    let date = convert_date_string_to_epoch("2025-01-01");
+    assert_eq!(date, Some(1735660800));
+  }
+
+  #[test]
+  fn test_convert_duration_string_to_seconds() {
+    let duration = convert_duration_string_to_seconds("01:00:00");
+    assert_eq!(duration, Some(3600));
+
+    let duration = convert_duration_string_to_seconds("00:01:00");
+    assert_eq!(duration, Some(60));
+
+    let duration = convert_duration_string_to_seconds("00:00:01");
+    assert_eq!(duration, Some(1));
+
+    let duration = convert_duration_string_to_seconds("01:00");
+    assert_eq!(duration, Some(60));
+
+    let duration = convert_duration_string_to_seconds("00:01");
+    assert_eq!(duration, Some(1));
+
+    let duration = convert_duration_string_to_seconds("00:00");
+    assert_eq!(duration, Some(0));
+  }
+}
+
+pub async fn crawl<T>(crawler: &T, code: &String) -> Result<VideoInfo>
+where
+  T: Crawler + ?Sized,
+{
+  info!("Crawling {} for {}", crawler.get_name(), code);
+  let url = crawler.get_url(code)?;
+  let html = get_html(&url).await?;
+  let doc = Html::parse_document(&html);
+  let title = crawler.get_title(&doc)?;
+
+  let info = crawler
+    .get_info_builder(&doc)
+    .code(code.clone())
+    .title(TranslatedText {
+      text: title,
+      translated: None,
+    })
+    .build()
+    .into_result()?;
+
+  info!("Crawled {} for {}: {:?}", crawler.get_name(), code, info);
+  Ok(info)
 }

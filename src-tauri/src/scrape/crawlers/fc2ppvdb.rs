@@ -1,4 +1,3 @@
-use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, TimeZone};
 use log::info;
 use scraper::{ElementRef, Html};
 
@@ -8,15 +7,15 @@ use crate::{
 };
 
 use super::{
-  crawler::Crawler,
+  crawler::{convert_date_string_to_epoch, convert_duration_string_to_seconds, Crawler},
   web::{get_html, get_selector},
 };
 
 #[derive(Default)]
-pub struct Fc2ppvdb {}
+pub struct Fc2ppvdb;
 
 impl Crawler for Fc2ppvdb {
-  fn get_name() -> &'static str {
+  fn get_name(&self) -> &'static str {
     "fc2ppvdb.com"
   }
 
@@ -138,37 +137,6 @@ pub async fn crawl(code: &String) -> Result<VideoInfo> {
   let doc = Html::parse_document(&html);
   let info = VideoInfo::default();
   Ok(info)
-}
-
-fn convert_date_string_to_epoch(text: &str) -> Option<i64> {
-  let date = NaiveDate::parse_from_str(text, "%Y-%m-%d");
-
-  date.ok().map(|d| {
-    d.and_hms_opt(0, 0, 0).map(|ndt| {
-      Local
-        .from_local_datetime(&ndt)
-        .single()
-        .map(|dt| dt.timestamp())
-    })?
-  })?
-}
-
-fn convert_duration_string_to_seconds(text: &str) -> Option<i64> {
-  let parts: Vec<&str> = text.split(':').collect();
-  match parts.len() {
-    2 => {
-      let minutes = parts[0].parse::<i64>().unwrap_or(0);
-      let seconds = parts[1].parse::<i64>().unwrap_or(0);
-      Some(minutes * 60 + seconds)
-    }
-    3 => {
-      let hours = parts[0].parse::<i64>().unwrap_or(0);
-      let minutes = parts[1].parse::<i64>().unwrap_or(0);
-      let seconds = parts[2].parse::<i64>().unwrap_or(0);
-      Some(hours * 3600 + minutes * 60 + seconds)
-    }
-    _ => None,
-  }
 }
 
 #[cfg(test)]

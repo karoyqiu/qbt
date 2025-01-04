@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::LazyLock};
 
 use lazy_static::lazy_static;
 use log::{debug, warn};
@@ -8,7 +8,10 @@ use crate::error::{err, Result};
 
 use super::{
   code::is_uncensored,
-  crawlers::{fc2, fc2ppvdb, javbus, officials},
+  crawlers::{
+    crawler::{self, Crawler},
+    fc2, fc2ppvdb, javbus, officials,
+  },
   VideoInfo,
 };
 
@@ -232,6 +235,15 @@ lazy_static! {
     );
     m
   };
+
+  static ref CRAWLERS: HashMap<&'static str, Box<dyn Crawler + Sync + Send>> = {
+    let mut m:HashMap<&'static str, Box<dyn Crawler + Sync + Send>> = HashMap::new();
+    m.insert("official", Box::new(officials::Officials::default()));
+    m.insert("javbus", Box::new(javbus::JavBus::default()));
+    // //m.insert("fc2", fc2::crawl);
+    m.insert("fc2ppvdb", Box::new(fc2ppvdb::Fc2ppvdb::default()));
+    m
+  };
 }
 
 pub async fn crawl(code: &String) -> Result<()> {
@@ -434,20 +446,15 @@ async fn call_crawlers(
       break;
     }
 
-    let result = match website {
-      // 官方网站
-      "official" => officials::crawl(code).await,
-      "javbus" => javbus::crawl(code).await,
-      "fc2" => fc2::crawl(code).await,
-      "fc2ppvdb" => fc2ppvdb::crawl(code).await,
-      _ => err("Unknown website"),
-    };
+    if let Some(crawler) = CRAWLERS.get(website) {
+      info = crawler::crawl(crawler.as_ref(), code).await.ok();
+      cache.insert(website, info.clone());
 
-    info = result.ok();
-    cache.insert(website, info.clone());
-
-    if info.is_some() {
-      break;
+      if info.is_some() {
+        break;
+      }
+    } else {
+      warn!("Unknown crawler: {}", website);
     }
   }
 

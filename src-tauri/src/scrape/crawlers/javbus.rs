@@ -6,7 +6,33 @@ use crate::{
   scrape::{TranslatedText, VideoInfo, VideoInfoBuilder},
 };
 
-use super::web::{get_client, get_response_text, get_selector};
+use super::{
+  crawler::Crawler,
+  web::{get_client, get_response_text, get_selector},
+};
+
+#[derive(Default)]
+pub struct JavBus;
+
+impl Crawler for JavBus {
+  fn get_name(&self) -> &'static str {
+    "javbus.com"
+  }
+
+  fn get_url(&self, code: &String) -> Result<String> {
+    Ok(format!("https://www.javbus.com/{}", code))
+  }
+
+  fn get_title(&self, doc: &Html) -> Result<String> {
+    let h3 = get_selector("h3");
+
+    if let Some(elem) = doc.select(&h3).next() {
+      Ok(elem.text().collect())
+    } else {
+      err("Title not found")
+    }
+  }
+}
 
 pub async fn crawl(code: &String) -> Result<VideoInfo> {
   info!("Crawling JavBus for {}", code);
