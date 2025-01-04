@@ -8,7 +8,7 @@ use crate::error::{err, Result};
 
 use super::{
   code::is_uncensored,
-  crawlers::{javbus, officials},
+  crawlers::{fc2, fc2ppvdb, javbus, officials},
   VideoInfo,
 };
 
@@ -18,6 +18,7 @@ lazy_static! {
   static ref FALENO_RE: Regex = Regex::new(r"F[A-Z]{2}SS").unwrap();
   static ref FANTASTICA_RE: Regex = Regex::new(r"FA[A-Z]{2}-?\d+").unwrap();
   static ref FC2_WEBSITES: Vec<&'static str> = vec![
+    "fc2ppvdb",
     "fc2",
     "fc2club",
     "fc2hub",
@@ -324,8 +325,10 @@ async fn crawl_websites(code: &String, websites: &Vec<&'static str>) -> Result<V
 
   for (field, name, websites) in requested_fields {
     debug!("Crawl {}: {:?}", name, websites);
-    let crawled = call_crawlers(code, &websites, &mut cache).await?;
-    info.apply(crawled);
+
+    if let Some(crawled) = call_crawlers(code, &websites, &mut cache).await? {
+      info.apply(crawled);
+    }
   }
 
   debug!("Video info: {:?}", info);
@@ -421,9 +424,9 @@ fn adjust_websites(websites: &mut Vec<&'static str>, field: &str, website: &'sta
 async fn call_crawlers(
   code: &String,
   websites: &Vec<&'static str>,
-  cache: &mut HashMap<&'static str, VideoInfo>,
-) -> Result<VideoInfo> {
-  let mut info = VideoInfo::default();
+  cache: &mut HashMap<&'static str, Option<VideoInfo>>,
+) -> Result<Option<VideoInfo>> {
+  let mut info = None;
 
   for &website in websites {
     if let Some(cached) = cache.get(website) {
@@ -435,18 +438,16 @@ async fn call_crawlers(
       // 官方网站
       "official" => officials::crawl(code).await,
       "javbus" => javbus::crawl(code).await,
+      "fc2" => fc2::crawl(code).await,
+      "fc2ppvdb" => fc2ppvdb::crawl(code).await,
       _ => err("Unknown website"),
     };
 
-    match result {
-      Ok(crawled) => {
-        cache.insert(website, crawled.clone());
-        info = crawled;
-        break;
-      }
-      Err(e) => {
-        warn!("Crawl {} failed: {}", website, e);
-      }
+    info = result.ok();
+    cache.insert(website, info.clone());
+
+    if info.is_some() {
+      break;
     }
   }
 

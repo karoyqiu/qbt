@@ -5,7 +5,7 @@ use std::{
 
 use lazy_static::lazy_static;
 use log::{debug, trace};
-use reqwest::{ClientBuilder, Proxy, Response};
+use reqwest::{Client, ClientBuilder, Proxy, Response};
 use scraper::Selector;
 use serde::Serialize;
 use tauri_plugin_store::StoreExt;
@@ -46,12 +46,17 @@ fn apply_proxy(builder: ClientBuilder) -> Result<ClientBuilder> {
   }
 }
 
+/// 获取客户端
+pub fn get_client() -> Result<Client> {
+  apply_proxy(ClientBuilder::new().cookie_store(true))?
+    .build()
+    .into_result()
+}
+
 /// 获取HTML
 pub async fn get_html(url: &str) -> Result<String> {
   debug!("Getting HTML from {}", url);
-  let client = apply_proxy(ClientBuilder::new().cookie_store(true))?
-    .build()
-    .into_result()?;
+  let client = get_client()?;
   let mut req = client.get(url);
 
   if url.contains("getchu") {
@@ -70,24 +75,22 @@ pub async fn get_html(url: &str) -> Result<String> {
   }
 
   let res = req.send().await.into_result()?;
-  handle_response(res).await
+  get_response_text(res).await
 }
 
+/// 提交 HTML
 pub async fn post_html<F>(url: &str, form: &F) -> Result<String>
 where
   F: Serialize + ?Sized,
 {
   debug!("Posting HTML to {}", url);
-  let client = apply_proxy(ClientBuilder::new().cookie_store(true))?
-    .build()
-    .into_result()?;
-
+  let client = get_client()?;
   let resp = client.post(url).form(form).send().await.into_result()?;
-
-  handle_response(resp).await
+  get_response_text(resp).await
 }
 
-async fn handle_response(res: Response) -> Result<String> {
+/// 获取响应文本
+pub async fn get_response_text(res: Response) -> Result<String> {
   let status = res.status();
   let body = res.text().await.into_result()?;
 
@@ -99,14 +102,14 @@ async fn handle_response(res: Response) -> Result<String> {
   }
 }
 
-pub fn get_selector(selector: &'static str) -> Result<Arc<Selector>> {
+pub fn get_selector(selector: &'static str) -> Arc<Selector> {
   let mut selectors = SELECTORS.lock().unwrap();
 
   if let Some(sel) = selectors.get(selector) {
-    Ok(sel.clone())
+    sel.clone()
   } else {
     let sel = Arc::new(Selector::parse(selector).unwrap());
     selectors.insert(selector, sel.clone());
-    Ok(sel)
+    sel
   }
 }

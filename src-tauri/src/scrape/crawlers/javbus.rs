@@ -1,28 +1,29 @@
-use lazy_static::lazy_static;
 use log::{debug, info, trace};
-use scraper::{ElementRef, Html, Selector};
+use scraper::Html;
 
 use crate::{
   error::{err, IntoResult, Result},
-  scrape::{
-    code::get_code_prefix, crawlers::web::post_html, TranslatedText, VideoInfo, VideoInfoBuilder,
-  },
+  scrape::{TranslatedText, VideoInfo, VideoInfoBuilder},
 };
 
-use super::web::{get_html, get_selector, H3_SELECTOR};
-
-lazy_static! {
-  static ref ACTRESS_SELECTOR: Selector = Selector::parse("div.star-name").unwrap();
-}
+use super::web::{get_client, get_response_text, get_selector};
 
 pub async fn crawl(code: &String) -> Result<VideoInfo> {
   info!("Crawling JavBus for {}", code);
   let url = format!("https://www.javbus.com/{}", code);
-  let mut html = get_html(&url).await?;
+  let client = get_client()?;
+  let resp = client.get(&url).send().await.into_result()?;
+  let mut html = get_response_text(resp).await?;
   trace!("HTML: {}", html);
 
   if html.contains("地區年齡檢測") {
-    html = post_html(&url, &[("submit", "確認")]).await?;
+    let resp = client
+      .post(url)
+      .form(&[("submit", "確認")])
+      .send()
+      .await
+      .into_result()?;
+    html = get_response_text(resp).await?;
     trace!("HTML again: {}", html);
   }
 
@@ -41,7 +42,7 @@ pub async fn crawl(code: &String) -> Result<VideoInfo> {
 }
 
 fn get_title(doc: &Html) -> Result<String> {
-  let h3 = get_selector("h3")?;
+  let h3 = get_selector("h3");
 
   if let Some(elem) = doc.select(&h3).next() {
     Ok(elem.text().collect())
@@ -51,8 +52,8 @@ fn get_title(doc: &Html) -> Result<String> {
 }
 
 fn get_actresses(doc: &Html) -> Result<Option<Vec<String>>> {
-  let selector = get_selector("div.star-name")?;
-  let a = get_selector("a")?;
+  let selector = get_selector("div.star-name");
+  let a = get_selector("a");
   let mut actresses = vec![];
 
   for elem in doc.select(&selector) {

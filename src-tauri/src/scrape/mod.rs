@@ -12,7 +12,7 @@ use crate::error::{err, Result};
 
 use code::get_movie_code;
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize, Type, Builder)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, Type)]
 pub struct TranslatedText {
   pub text: String,
   pub translated: Option<String>,
@@ -20,13 +20,14 @@ pub struct TranslatedText {
 
 /// 视频信息
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Type, Builder)]
+#[builder(default)]
 pub struct VideoInfo {
   /** 番号 */
   pub code: String,
   /** 标题 */
   pub title: TranslatedText,
   /** 海报 */
-  pub poster: String,
+  pub poster: Option<String>,
   /** 封面 */
   pub cover: Option<String>,
   /** 简介 */
@@ -67,7 +68,7 @@ impl VideoInfo {
       self.title.translated = other.title.translated;
     }
 
-    if !other.poster.is_empty() {
+    if other.poster.is_some() {
       self.poster = other.poster;
     }
 

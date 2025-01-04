@@ -11,7 +11,7 @@ use crate::{
   },
 };
 
-use super::web::get_html;
+use super::{crawler::Crawler, web::get_html};
 
 lazy_static! {
   static ref OFFICIAL_WEBSITES: HashMap<&'static str, &'static &'static str> = {
@@ -72,6 +72,23 @@ lazy_static! {
   static ref DIV_DIV_P_SELECTOR: Selector = Selector::parse("div:first-of-type > div > p").unwrap();
 }
 
+#[derive(Default)]
+pub struct OfficialCrawler;
+
+impl Crawler for OfficialCrawler {
+  fn get_name() -> &'static str {
+    "official"
+  }
+
+  fn get_url(&self, code: &String) -> Result<String> {
+    todo!()
+  }
+
+  fn get_title(&self, doc: &Html) -> Result<String> {
+    todo!()
+  }
+}
+
 pub async fn crawl(code: &String) -> Result<VideoInfo> {
   info!("Crawling official website for {}", code);
   let prefix = get_code_prefix(code);
@@ -111,7 +128,7 @@ pub async fn crawl(code: &String) -> Result<VideoInfo> {
   let mut builder = VideoInfoBuilder::default();
   builder
     .code(code.to_string())
-    .poster(poster)
+    .poster(Some(poster))
     .cover(get_cover(&doc))
     .actresses(get_actresses(&doc));
 
