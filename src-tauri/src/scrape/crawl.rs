@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use lazy_static::lazy_static;
-use log::debug;
+use log::{debug, warn};
 use regex::Regex;
 
 use crate::error::{err, Result};
@@ -296,8 +296,9 @@ async fn crawl_websites(code: &String, websites: &Vec<&'static str>) -> Result<V
   let mut info = VideoInfo::default();
 
   for &website in websites {
-    if let Ok(result) = crawl_website(code, website).await {
-      info.apply(result);
+    match crawl_website(code, website).await {
+      Ok(result) => info.apply(result),
+      Err(e) => warn!("Error: {:?}", e),
     }
   }
 

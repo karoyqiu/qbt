@@ -16,6 +16,8 @@ use crate::{
   error::{err, Error, IntoResult, Result},
 };
 
+use super::cookie_jar::CookieJar;
+
 lazy_static! {
   pub static ref DIV_SELECTOR: Selector = Selector::parse("div").unwrap();
   pub static ref A_SELECTOR: Selector = Selector::parse("A").unwrap();
@@ -49,9 +51,12 @@ fn apply_proxy(builder: ClientBuilder) -> Result<ClientBuilder> {
 
 /// 获取客户端
 pub fn get_client() -> Result<Client> {
-  apply_proxy(ClientBuilder::new().cookie_store(true))?
+  let store = Arc::new(CookieJar::new());
+  let client = apply_proxy(ClientBuilder::new().cookie_provider(store))?
     .build()
-    .into_result()
+    .into_result()?;
+
+  Ok(client)
 }
 
 /// 获取HTML
