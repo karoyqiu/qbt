@@ -2,7 +2,7 @@ use scraper::{ElementRef, Html};
 
 use crate::{
   error::{err, Result},
-  scrape::VideoInfoBuilder,
+  scrape::{Actress, VideoInfoBuilder},
 };
 
 use super::{
@@ -86,7 +86,6 @@ impl Crawler for Fc2ppvdb {
     // actresses
     {
       let mut actresses = vec![];
-      let mut photos = vec![];
       let a_selector = get_selector("a[href^='/actresses/']");
       let img_selector = get_selector("img");
 
@@ -96,16 +95,13 @@ impl Crawler for Fc2ppvdb {
 
           if !actress.is_empty() {
             let photo = img.value().attr("src").unwrap_or_default().trim();
-            actresses.push(actress.to_string());
-            photos.push(photo.to_string());
+            actresses.push(Actress::new(actress, Some(photo)));
           }
         }
       }
 
       if !actresses.is_empty() {
-        builder
-          .actresses(Some(actresses))
-          .actress_photos(Some(photos));
+        builder.actresses(Some(actresses));
       }
     }
 

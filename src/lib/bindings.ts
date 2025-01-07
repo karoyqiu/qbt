@@ -90,6 +90,7 @@ async stop(hashes: string[]) : Promise<null> {
 
 /** user-defined types **/
 
+export type Actress = { name: string; photo: string | null }
 export type ConnectionStatus = "connected" | "firewalled" | "disconnected"
 export type MainData = { 
 /**
@@ -389,11 +390,7 @@ outline: TranslatedText | null;
 /**
  * 演员列表
  */
-actresses: string[] | null; 
-/**
- * 演员头像列表
- */
-actress_photos: string[] | null; 
+actresses: Actress[] | null; 
 /**
  * 标签列表
  */

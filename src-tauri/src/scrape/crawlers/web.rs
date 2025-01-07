@@ -6,10 +6,7 @@ use std::{
 use lazy_static::lazy_static;
 use log::{debug, trace};
 use reqwest::{
-  header::{
-    ACCEPT, ACCEPT_LANGUAGE, CACHE_CONTROL, CONNECTION, DNT, PRAGMA, UPGRADE_INSECURE_REQUESTS,
-    USER_AGENT,
-  },
+  header::{ACCEPT, ACCEPT_LANGUAGE, CONNECTION, DNT, UPGRADE_INSECURE_REQUESTS},
   Client, ClientBuilder, Proxy, Response,
 };
 use scraper::Selector;

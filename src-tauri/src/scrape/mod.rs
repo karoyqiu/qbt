@@ -2,6 +2,8 @@ mod code;
 mod crawl;
 mod crawlers;
 
+use std::ops::Add;
+
 use derive_builder::Builder;
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
@@ -16,6 +18,58 @@ use code::get_movie_code;
 pub struct TranslatedText {
   pub text: String,
   pub translated: Option<String>,
+}
+
+impl TranslatedText {
+  pub fn new<N, P>(text: N, translated: Option<P>) -> Self
+  where
+    N: ToString,
+    P: ToString,
+  {
+    TranslatedText {
+      text: text.to_string(),
+      translated: translated.map(|s| s.to_string()),
+    }
+  }
+
+  pub fn text<N>(text: N) -> Self
+  where
+    N: ToString,
+  {
+    TranslatedText {
+      text: text.to_string(),
+      translated: None,
+    }
+  }
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize, Type)]
+pub struct Actress {
+  pub name: String,
+  pub photo: Option<String>,
+}
+
+impl Actress {
+  pub fn new<N, P>(name: N, photo: Option<P>) -> Self
+  where
+    N: ToString,
+    P: ToString,
+  {
+    Actress {
+      name: name.to_string(),
+      photo: photo.map(|photo| photo.to_string()),
+    }
+  }
+
+  pub fn name<N>(name: N) -> Self
+  where
+    N: ToString,
+  {
+    Actress {
+      name: name.to_string(),
+      photo: None,
+    }
+  }
 }
 
 /// 视频信息
@@ -33,9 +87,7 @@ pub struct VideoInfo {
   /** 简介 */
   pub outline: Option<TranslatedText>,
   /** 演员列表 */
-  pub actresses: Option<Vec<String>>,
-  /** 演员头像列表 */
-  pub actress_photos: Option<Vec<String>>,
+  pub actresses: Option<Vec<Actress>>,
   /** 标签列表 */
   pub tags: Option<Vec<String>>,
   /** 系列 */
@@ -92,10 +144,6 @@ impl VideoInfo {
 
     if other.actresses.is_some() {
       self.actresses = other.actresses;
-    }
-
-    if other.actress_photos.is_some() {
-      self.actress_photos = other.actress_photos;
     }
 
     if other.tags.is_some() {

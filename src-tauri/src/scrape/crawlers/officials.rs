@@ -8,7 +8,8 @@ use url::Url;
 use crate::{
   error::{err, IntoResult, Result},
   scrape::{
-    code::get_code_prefix, crawlers::web::DIV_SELECTOR, TranslatedText, VideoInfo, VideoInfoBuilder,
+    code::get_code_prefix, crawlers::web::DIV_SELECTOR, Actress, TranslatedText, VideoInfo,
+    VideoInfoBuilder,
   },
 };
 
@@ -243,13 +244,13 @@ fn get_cover(doc: &Html) -> Option<String> {
   None
 }
 
-fn get_actresses(doc: &Html) -> Option<Vec<String>> {
+fn get_actresses(doc: &Html) -> Option<Vec<Actress>> {
   let mut actresses = Vec::new();
 
   for elem in doc.select(&ACTRESS_SELECTOR) {
     if let Some(href) = elem.value().attr("href") {
       if href.contains("/actress/") {
-        actresses.push(elem.text().collect());
+        actresses.push(Actress::name(elem.text().collect::<String>()));
       }
     }
   }

@@ -1,11 +1,10 @@
 use chrono::{Local, NaiveDate, NaiveDateTime, TimeZone};
 use log::info;
 use scraper::Html;
-use url::Url;
 
 use crate::{
   error::{IntoResult, Result},
-  scrape::{crawlers::web::get_html, TranslatedText, VideoInfo, VideoInfoBuilder},
+  scrape::{crawlers::web::get_html, Actress, TranslatedText, VideoInfo, VideoInfoBuilder},
 };
 
 pub trait Crawler {
@@ -32,7 +31,6 @@ pub trait Crawler {
       .cover(self.get_cover(&doc))
       .outline(self.get_outline(&doc))
       .actresses(self.get_actresses(&doc))
-      .actress_photos(self.get_actress_photos(&doc))
       .tags(self.get_tags(&doc))
       .series(self.get_series(&doc))
       .studio(self.get_studio(&doc))
@@ -60,12 +58,7 @@ pub trait Crawler {
   }
 
   /** 演员列表 */
-  fn get_actresses(&self, _doc: &Html) -> Option<Vec<String>> {
-    None
-  }
-
-  /** 演员头像列表 */
-  fn get_actress_photos(&self, _doc: &Html) -> Option<Vec<String>> {
+  fn get_actresses(&self, _doc: &Html) -> Option<Vec<Actress>> {
     None
   }
 
@@ -141,17 +134,12 @@ where
     info.cover = Some(cover.to_string());
   }
 
-  if let Some(actress_photos) = info.actress_photos {
-    let actress_photos = actress_photos
-      .into_iter()
-      .map(|photo| url.join(&photo).into_result())
-      .collect::<Result<Vec<Url>>>()?;
-    info.actress_photos = Some(
-      actress_photos
-        .into_iter()
-        .map(|url| url.to_string())
-        .collect(),
-    );
+  if let Some(actresses) = &mut info.actresses {
+    for actress in actresses {
+      if let Some(photo) = &actress.photo {
+        actress.photo = Some(url.join(photo).into_result()?.to_string());
+      }
+    }
   }
 
   info!("Crawled {} for {}: {:?}", crawler.get_name(), code, info);

@@ -3,7 +3,7 @@ use serde::Deserialize;
 
 use crate::{
   error::{err, Result},
-  scrape::TranslatedText,
+  scrape::{Actress, TranslatedText},
 };
 
 use super::{
@@ -86,8 +86,17 @@ impl Crawler for AiravCc {
     })
   }
 
-  fn get_actresses(&self, doc: &Html) -> Option<Vec<String>> {
-    get_info_list_items(doc, "女優")
+  fn get_actresses(&self, doc: &Html) -> Option<Vec<Actress>> {
+    let actresses = get_info_list_items(doc, "女優");
+    let actresses = actresses.map(|a| {
+      a.iter()
+        .map(|a| Actress {
+          name: a.clone(),
+          photo: None,
+        })
+        .collect::<Vec<_>>()
+    });
+    actresses
   }
 
   fn get_tags(&self, doc: &Html) -> Option<Vec<String>> {
