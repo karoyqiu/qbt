@@ -37,6 +37,7 @@ tauri-plugin-log = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-store = "2"
 tauri-specta = { version = "=2.0.0-rc.20", features = ["typescript"] }
+translators = { version = "0.1.5", features = ["google", "tokio-async"] }
 url = "2.5.2"
 
 [features]

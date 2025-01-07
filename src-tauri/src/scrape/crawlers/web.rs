@@ -13,6 +13,7 @@ use scraper::Selector;
 use serde::Serialize;
 use tauri::http::{HeaderMap, HeaderName, HeaderValue};
 use tauri_plugin_store::StoreExt;
+use translators::GoogleTranslator;
 use url::Url;
 
 use crate::{
@@ -163,4 +164,21 @@ pub fn get_selector(selector: &'static str) -> Arc<Selector> {
     selectors.insert(selector, sel.clone());
     sel
   }
+}
+
+pub fn get_translator() -> Result<GoogleTranslator> {
+  let app = get_app_handle().ok_or(Error(anyhow::anyhow!("App handle not found")))?;
+  let store = app.store("settings.json").into_result()?;
+  let proxy = store.get("proxy");
+
+  if let Some(proxy) = proxy {
+    let proxy: StringValue = serde_json::from_value(proxy).into_result()?;
+    let proxy = proxy.value;
+
+    if !proxy.is_empty() && proxy != "<system>" && proxy != "<direct>" {
+      return Ok(GoogleTranslator::builder().proxy_address(proxy).build());
+    }
+  }
+
+  Ok(GoogleTranslator::builder().build())
 }

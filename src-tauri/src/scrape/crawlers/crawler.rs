@@ -1,11 +1,15 @@
 use chrono::{Local, NaiveDate, NaiveDateTime, TimeZone};
 use log::info;
 use scraper::Html;
+use translators::Translator;
 use url::Url;
 
 use crate::{
   error::{IntoResult, Result},
-  scrape::{crawlers::web::get_html, Actress, TranslatedText, VideoInfo, VideoInfoBuilder},
+  scrape::{
+    crawlers::web::{get_html, get_translator},
+    Actress, TranslatedText, VideoInfo, VideoInfoBuilder,
+  },
 };
 
 pub trait Crawler {
@@ -118,18 +122,17 @@ where
     (html, url) = get_html(&next_url).await?;
   }
 
-  let doc = Html::parse_document(&html);
-  let title = crawler.get_title(&doc)?;
+  let mut info = {
+    let doc = Html::parse_document(&html);
+    let title = crawler.get_title(&doc)?;
 
-  let mut info = crawler
-    .get_info_builder(&doc)
-    .code(code.clone())
-    .title(TranslatedText {
-      text: title,
-      translated: None,
-    })
-    .build()
-    .into_result()?;
+    crawler
+      .get_info_builder(&doc)
+      .code(code.clone())
+      .title(TranslatedText::text(title))
+      .build()
+      .into_result()?
+  };
 
   if let Some(poster) = info.poster {
     let poster = url.join(&poster).into_result()?;
@@ -146,6 +149,21 @@ where
       if let Some(photo) = &actress.photo {
         actress.photo = Some(url.join(photo).into_result()?.to_string());
       }
+    }
+  }
+
+  let translator = get_translator()?;
+  info.title.translated = translator
+    .translate_async(&info.title.text, "", "zh-CN")
+    .await
+    .ok();
+
+  if let Some(outline) = &mut info.outline {
+    if outline.translated.is_none() {
+      outline.translated = translator
+        .translate_async(&outline.text, "", "zh-CN")
+        .await
+        .ok();
     }
   }
 
