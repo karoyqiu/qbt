@@ -20,6 +20,7 @@ struct VideoObject {
 #[derive(Default)]
 pub struct AiravCc;
 
+// 现在貌似绕不过去 cloudflare 的检测
 impl Crawler for AiravCc {
   fn get_name(&self) -> &'static str {
     "airav.io"

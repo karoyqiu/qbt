@@ -5,9 +5,16 @@ use std::{
 
 use lazy_static::lazy_static;
 use log::{debug, trace};
-use reqwest::{Client, ClientBuilder, Proxy, Response};
+use reqwest::{
+  header::{
+    ACCEPT, ACCEPT_LANGUAGE, CACHE_CONTROL, CONNECTION, DNT, PRAGMA, UPGRADE_INSECURE_REQUESTS,
+    USER_AGENT,
+  },
+  Client, ClientBuilder, Proxy, Response,
+};
 use scraper::Selector;
 use serde::Serialize;
+use tauri::http::{HeaderMap, HeaderName, HeaderValue};
 use tauri_plugin_store::StoreExt;
 use url::Url;
 
@@ -51,10 +58,52 @@ fn apply_proxy(builder: ClientBuilder) -> Result<ClientBuilder> {
 
 /// 获取客户端
 pub fn get_client() -> Result<Client> {
+  let mut headers = HeaderMap::new();
+  headers.insert(ACCEPT, HeaderValue::from_static("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"));
+  headers.insert(ACCEPT_LANGUAGE, HeaderValue::from_static("zh-CN,zh;q=0.9"));
+  headers.insert(CONNECTION, HeaderValue::from_static("keep-alive"));
+  headers.insert(DNT, HeaderValue::from_static("1"));
+  headers.insert(UPGRADE_INSECURE_REQUESTS, HeaderValue::from_static("1"));
+  headers.insert(
+    HeaderName::from_static("sec-ch-ua"),
+    HeaderValue::from_static(
+      r#""Microsoft Edge";v="131", "Chromium";v="131", "Not_A Brand";v="24""#,
+    ),
+  );
+  headers.insert(
+    HeaderName::from_static("sec-ch-ua-mobile"),
+    HeaderValue::from_static("?0"),
+  );
+  headers.insert(
+    HeaderName::from_static("sec-ch-ua-platform"),
+    HeaderValue::from_static(r#""Windows""#),
+  );
+  headers.insert(
+    HeaderName::from_static("sec-fetch-dest"),
+    HeaderValue::from_static("document"),
+  );
+  headers.insert(
+    HeaderName::from_static("sec-fetch-mode"),
+    HeaderValue::from_static("navigate"),
+  );
+  headers.insert(
+    HeaderName::from_static("sec-fetch-site"),
+    HeaderValue::from_static("none"),
+  );
+  headers.insert(
+    HeaderName::from_static("sec-fetch-user"),
+    HeaderValue::from_static("?1"),
+  );
+
   let store = Arc::new(CookieJar::new());
-  let client = apply_proxy(ClientBuilder::new().cookie_provider(store))?
-    .build()
-    .into_result()?;
+  let client = apply_proxy(
+    ClientBuilder::new()
+      .cookie_provider(store)
+      .default_headers(headers)
+      .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0")
+  )?
+  .build()
+  .into_result()?;
 
   Ok(client)
 }
