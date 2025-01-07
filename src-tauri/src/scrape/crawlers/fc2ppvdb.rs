@@ -148,13 +148,10 @@ mod tests {
     assert_eq!(info.publisher, Some("ハメ撮りランキング".to_string()));
     assert_eq!(
       info.actresses,
-      Some(vec!["某高級外車ディーラーの美人受付嬢".to_string()])
-    );
-    assert_eq!(
-      info.actress_photos,
-      Some(vec![
-        "https://fc2ppvdb.com/storage/images/actress/4960.jpg".to_string()
-      ])
+      Some(vec![Actress::new(
+        "某高級外車ディーラーの美人受付嬢",
+        Some("https://fc2ppvdb.com/storage/images/actress/4960.jpg")
+      )])
     );
     assert_eq!(info.release_date, Some(1712678400));
     assert_eq!(info.duration, Some(46 * 60 + 7));

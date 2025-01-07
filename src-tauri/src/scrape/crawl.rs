@@ -300,6 +300,10 @@ async fn crawl_websites(code: &String, websites: &Vec<&'static str>) -> Result<V
       Ok(result) => info.apply(result),
       Err(e) => warn!("Error: {:?}", e),
     }
+
+    if info.is_good_enough() {
+      break;
+    }
   }
 
   debug!("Video info: {:?}", info);

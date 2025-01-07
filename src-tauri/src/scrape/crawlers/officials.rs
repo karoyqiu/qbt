@@ -23,7 +23,7 @@ lazy_static! {
     let websites = &[
       ("https://s1s1s1.com", "SIVR|SSIS|SSNI|SNIS|SOE|ONED|ONE|ONSD|OFJE|SPS|TKSOE"),  // https://s1s1s1.com/search/list?keyword=soe
       ("https://moodyz.com", "MDVR|MIDV|MIDE|MIDD|MIBD|MIMK|MIID|MIGD|MIFD|MIAE|MIAD|MIAA|MDL|MDJ|MDI|MDG|MDF|MDE|MDLD|MDED|MIZD|MIRD|MDJD|RMID|MDID|MDMD|MIMU|MDPD|MIVD|MDUD|MDGD|MDVD|MIAS|MIQD|MINT|RMPD|MDRD|TKMIDE|TKMIDD|KMIDE|TKMIGD|MDFD|RMWD|MIAB"),
-      ("https://www.madonna-av.com", "JUVR|JUSD|JUQ|JUY|JUX|JUL|JUK|JUC|JUKD|JUSD|OBA|JUFD|ROEB|ROE|URE|MDON|JFB|OBE|JUMS"),
+      ("https://madonna-av.com", "JUVR|JUSD|JUQ|JUY|JUX|JUL|JUK|JUC|JUKD|JUSD|OBA|JUFD|ROEB|ROE|URE|MDON|JFB|OBE|JUMS"),
       ("https://www.wanz-factory.com", "WAVR|WAAA|BMW|WANZ"),
       ("https://ideapocket.com", "IPVR|IPX|IPZ|IPTD|IPSD|IDBD|SUPD|IPIT|AND|HPD|TKIPZ|IPZZ|COSD|ANPD|DAN|ALAD|KIPX"),
       ("https://kirakira-av.com", "KIVR|BLK|KIBD|KIFD|KIRD|KISD|SET"),
@@ -113,8 +113,12 @@ impl Crawler for Officials {
   }
 
   fn get_next_url(&self, code: &String, html: &String) -> Option<String> {
-    let html = Html::parse_document(html);
-    None
+    let doc = Html::parse_document(html);
+    let selector = get_selector("a.img.hover");
+    doc
+      .select(&selector)
+      .next()
+      .map(|a| a.attr("href").map(String::from))?
   }
 
   fn get_title(&self, doc: &Html) -> Result<String> {

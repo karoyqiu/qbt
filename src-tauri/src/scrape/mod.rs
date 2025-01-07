@@ -2,8 +2,6 @@ mod code;
 mod crawl;
 mod crawlers;
 
-use std::ops::Add;
-
 use derive_builder::Builder;
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
@@ -14,7 +12,7 @@ use crate::error::{err, Result};
 
 use code::get_movie_code;
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Type)]
 pub struct TranslatedText {
   pub text: String,
   pub translated: Option<String>,
@@ -43,7 +41,7 @@ impl TranslatedText {
   }
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Type)]
 pub struct Actress {
   pub name: String,
   pub photo: Option<String>,
@@ -102,6 +100,8 @@ pub struct VideoInfo {
   pub duration: Option<i64>,
   /** 发布日期（Unix epoch） */
   pub release_date: Option<i64>,
+  /** 额外的插图 */
+  pub extra_fanart: Option<Vec<String>>,
 }
 
 impl VideoInfo {
@@ -173,6 +173,16 @@ impl VideoInfo {
     if other.release_date.is_some() {
       self.release_date = other.release_date;
     }
+
+    if other.extra_fanart.is_some() {
+      self.extra_fanart = other.extra_fanart;
+    }
+  }
+
+  pub fn is_good_enough(&self) -> bool {
+    self.outline.is_some()
+      && self.actresses.is_some()
+      && (self.poster.is_some() || self.cover.is_some())
   }
 }
 

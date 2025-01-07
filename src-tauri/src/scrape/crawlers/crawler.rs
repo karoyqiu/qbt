@@ -37,7 +37,8 @@ pub trait Crawler {
       .publisher(self.get_publisher(&doc))
       .director(self.get_director(&doc))
       .duration(self.get_duration(&doc))
-      .release_date(self.get_release_date(&doc));
+      .release_date(self.get_release_date(&doc))
+      .extra_fanart(self.get_extra_fanart(&doc));
 
     builder
   }
@@ -94,6 +95,11 @@ pub trait Crawler {
 
   /** 发布日期（Unix epoch） */
   fn get_release_date(&self, _doc: &Html) -> Option<i64> {
+    None
+  }
+
+  /** 额外的插图 */
+  fn get_extra_fanart(&self, _doc: &Html) -> Option<Vec<String>> {
     None
   }
 }

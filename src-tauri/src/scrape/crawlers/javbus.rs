@@ -1,14 +1,13 @@
-use log::{debug, info, trace};
 use scraper::{ElementRef, Html};
 
 use crate::{
-  error::{err, IntoResult, Result},
-  scrape::{Actress, TranslatedText, VideoInfo, VideoInfoBuilder},
+  error::{err, Result},
+  scrape::Actress,
 };
 
 use super::{
   crawler::{convert_date_string_to_epoch, Crawler},
-  web::{get_client, get_response_text, get_selector},
+  web::get_selector,
 };
 
 #[derive(Default)]
