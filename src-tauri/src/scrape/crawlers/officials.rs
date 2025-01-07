@@ -1,21 +1,19 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Mutex};
 
 use lazy_static::lazy_static;
-use log::{debug, info};
-use scraper::{ElementRef, Html, Selector};
+use log::{debug, warn};
+use regex::Regex;
+use scraper::{ElementRef, Html};
 use url::Url;
 
 use crate::{
-  error::{err, IntoResult, Result},
-  scrape::{
-    code::get_code_prefix, crawlers::web::DIV_SELECTOR, Actress, TranslatedText, VideoInfo,
-    VideoInfoBuilder,
-  },
+  error::{err, Result},
+  scrape::{code::get_code_prefix, Actress, TranslatedText, VideoInfoBuilder},
 };
 
 use super::{
-  crawler::Crawler,
-  web::{get_html, get_selector},
+  crawler::{convert_date_string_to_epoch, Crawler},
+  web::get_selector,
 };
 
 lazy_static! {
@@ -64,17 +62,10 @@ lazy_static! {
     map
   };
 
-  static ref POSTER_LINK_SELECTOR: Selector = Selector::parse("a.img.hover").unwrap();
-  static ref POSTER_IMG_SELECTOR: Selector = Selector::parse("img[data-src]").unwrap();
-  static ref TITLE_SELECTOR: Selector = Selector::parse("h2.p-workPage__title").unwrap();
-  static ref COVER_SELECTOR: Selector = Selector::parse("img.swiper-lazy").unwrap();
-  static ref OUTLINE_SELECTOR: Selector = Selector::parse("p.p-workPage__text").unwrap();
-  static ref ACTRESS_SELECTOR: Selector = Selector::parse("a.c-tag.c-main-bg-hover.c-main-font.c-main-bd").unwrap();
+  static ref LAST_POSTER: Mutex<String> = Mutex::new(String::default());
 
-  static ref FIRST_DIV_SELECTOR: Selector = Selector::parse("div:first-of-type").unwrap();
-  static ref DIV_A_SELECTOR: Selector = Selector::parse("div:first-of-type > a").unwrap();
-  static ref DIV_DIV_A_SELECTOR: Selector = Selector::parse("div:first-of-type > div > a").unwrap();
-  static ref DIV_DIV_P_SELECTOR: Selector = Selector::parse("div:first-of-type > div > p").unwrap();
+  static ref DESC_RE: Regex = Regex::new(r"【公式】([^(]+)\(([^\)]+)").unwrap();
+  static ref MINUTE_RE: Regex = Regex::new(r"([\d]+)分").unwrap();
 }
 
 #[derive(Default)]
@@ -112,167 +103,201 @@ impl Crawler for Officials {
     Ok(url)
   }
 
-  fn get_next_url(&self, code: &String, html: &String) -> Option<String> {
+  fn get_next_url(&self, url: &Url, html: &String) -> Option<String> {
+    if !url.path().contains("search") {
+      return None;
+    }
+
     let doc = Html::parse_document(html);
     let selector = get_selector("a.img.hover");
-    doc
-      .select(&selector)
-      .next()
-      .map(|a| a.attr("href").map(String::from))?
+    let img = get_selector("img");
+    let mut poster = LAST_POSTER.lock().unwrap();
+    poster.clear();
+
+    doc.select(&selector).next().map(|a| {
+      if let Some(img) = a.select(&img).next() {
+        if let Some(src) = img.attr("data-src") {
+          *poster = src.to_string();
+        }
+      }
+
+      a.attr("href").map(String::from)
+    })?
   }
 
   fn get_title(&self, doc: &Html) -> Result<String> {
     let selector = get_selector("h2.p-workPage__title");
 
     if let Some(elem) = doc.select(&selector).next() {
-      Ok(elem.text().collect())
+      let title: String = elem.text().collect();
+      Ok(title.trim().to_string())
     } else {
       err("Title not found")
     }
   }
-}
 
-pub async fn crawl(code: &String) -> Result<VideoInfo> {
-  info!("Crawling official website for {}", code);
-  let prefix = get_code_prefix(code);
+  fn get_poster(&self, _doc: &Html) -> Option<String> {
+    let mut poster = LAST_POSTER.lock().unwrap();
 
-  if prefix.is_none() {
-    return err("Invalid code");
-  }
-
-  let prefix = prefix.unwrap();
-  debug!("Code prefix: {}", prefix);
-  let url = OFFICIAL_WEBSITES.get(prefix.as_str());
-
-  if url.is_none() {
-    return err("No official website found");
-  }
-
-  let mut url = String::from(**url.unwrap());
-
-  if url == "https://www.prestige-av.com" {
-    // TODO: Prestige
-  }
-
-  url.push_str("/search/list?keyword=");
-  url.push_str(&code.replace("-", ""));
-
-  let (html, _) = get_html(&url).await?;
-  let (href, poster) = {
-    let doc = Html::parse_document(&html);
-    get_poster(&doc, code)?
-  };
-
-  debug!("Video url: {}", href);
-  debug!("Poster url: {}", poster);
-  let (html, _) = get_html(&href).await?;
-  let doc = Html::parse_document(&html);
-
-  let mut builder = VideoInfoBuilder::default();
-  builder
-    .code(code.to_string())
-    .poster(Some(poster))
-    .cover(get_cover(&doc))
-    .actresses(get_actresses(&doc));
-
-  let title = get_title(&doc)?;
-  builder.title(TranslatedText {
-    text: title,
-    translated: None,
-  });
-
-  for div in doc.select(&DIV_SELECTOR) {
-    let text: String = div.text().collect();
-    //let class = div.attr("class").unwrap_or_default();
-
-    if text.contains("製作商") {
-      builder.studio(get_text(&div, &FIRST_DIV_SELECTOR));
-    } else if text.contains("発売日") {
-      let release = get_text(&div, &DIV_DIV_A_SELECTOR);
-      debug!("Release date: {:?}", release);
-    } else if text.contains("シリーズ") {
-      builder.series(get_text(&div, &DIV_A_SELECTOR));
-    } else if text.contains("監督") {
-      builder.director(get_text(&div, &DIV_DIV_P_SELECTOR));
-    } else if text.contains("レーベル") {
-      builder.publisher(get_text(&div, &DIV_A_SELECTOR));
-    } else if text.contains("収録時間") {
-      let time = get_text(&div, &DIV_DIV_P_SELECTOR);
-      debug!("Record time: {:?}", time);
-    } else if text.contains("ジャンル") {
-      let tags: Vec<String> = div
-        .select(&DIV_DIV_A_SELECTOR)
-        .map(|a| a.text().collect())
-        .collect();
-
-      if !tags.is_empty() {
-        builder.tags(Some(tags));
-      }
+    if poster.is_empty() {
+      None
+    } else {
+      let p = poster.clone();
+      poster.clear();
+      Some(p)
     }
   }
 
-  Ok(builder.build().into_result()?)
-}
+  fn get_cover(&self, doc: &Html) -> Option<String> {
+    let img = get_selector("img.swiper-lazy");
+    doc
+      .select(&img)
+      .next()
+      .map(|e| e.attr("data-src").map(String::from))?
+  }
 
-fn get_poster(doc: &Html, code: &String) -> Result<(String, String)> {
-  for elem in doc.select(&POSTER_LINK_SELECTOR) {
-    if let Some(href) = elem.value().attr("href") {
-      if href.to_uppercase().contains(&code.replace("-", "")) {
-        if let Some(img) = elem.select(&POSTER_IMG_SELECTOR).next() {
-          if let Some(src) = img.value().attr("data-src") {
-            return Ok((href.to_string(), src.to_string()));
+  fn get_outline(&self, doc: &Html) -> Option<TranslatedText> {
+    let p = get_selector("p.p-workPage__text");
+    doc
+      .select(&p)
+      .next()
+      .map(|e| TranslatedText::text::<String>(e.text().collect()))
+  }
+
+  fn get_actresses(&self, doc: &Html) -> Option<Vec<Actress>> {
+    let a = get_selector(r#"a.c-tag.c-main-bg-hover.c-main-font.c-main-bd[href*="/actress/"]"#);
+    let actresses: Vec<_> = doc
+      .select(&a)
+      .map(|e| Actress::name::<String>(e.text().collect()))
+      .collect();
+
+    if actresses.is_empty() {
+      None
+    } else {
+      Some(actresses)
+    }
+  }
+
+  fn get_info_builder(&self, doc: &Html) -> VideoInfoBuilder {
+    let th = get_selector("div.th");
+    let a = get_selector("a");
+
+    let mut builder = VideoInfoBuilder::default();
+    builder
+      .poster(self.get_poster(doc))
+      .cover(self.get_cover(doc))
+      .outline(self.get_outline(doc))
+      .actresses(self.get_actresses(doc))
+      .extra_fanart(self.get_extra_fanart(doc));
+
+    for th in doc.select(&th) {
+      let text: String = th.text().collect();
+      let td = next_sibling_element(&th).expect("No td");
+
+      match text.as_str() {
+        "ジャンル" => {
+          let mut tags = vec![];
+
+          for a in td.select(&a) {
+            let text: String = a.text().collect();
+            tags.push(text);
+          }
+
+          if !tags.is_empty() {
+            builder.tags(Some(tags));
+          }
+        }
+
+        "シリーズ" => {
+          if let Some(a) = td.select(&a).next() {
+            let text: String = a.text().collect();
+            builder.series(Some(text));
+          }
+        }
+
+        "レーベル" => {
+          if let Some(a) = td.select(&a).next() {
+            let text: String = a.text().collect();
+            builder.publisher(Some(text));
+          }
+        }
+
+        "監督" => {
+          let text: String = td.text().collect();
+          let text = text.trim().to_string();
+          builder.director(Some(text));
+        }
+
+        "発売日" => {
+          if let Some(a) = td.select(&a).next() {
+            let text: String = a.text().collect();
+            builder.release_date(convert_date_string_to_epoch(&text, Some("%Y年%m月%d日")));
+          }
+        }
+
+        "収録時間" => {
+          let text: String = td.text().collect();
+
+          if let Some(captures) = MINUTE_RE.captures(&text) {
+            if let Some(duration) = captures.get(1) {
+              builder.duration(Some(duration.as_str().parse().unwrap()));
+            }
+          }
+        }
+
+        _ => {}
+      }
+    }
+
+    {
+      let meta = get_selector("meta[name=description]");
+
+      if let Some(meta) = doc.select(&meta).next() {
+        let content = meta.attr("content").unwrap_or_default();
+
+        if let Some(captures) = DESC_RE.captures(content) {
+          if let Some(studio) = captures.get(2) {
+            builder.studio(Some(studio.as_str().to_string()));
           }
         }
       }
     }
+
+    builder
   }
 
-  err("Poster not found")
-}
+  fn get_extra_fanart(&self, doc: &Html) -> Option<Vec<String>> {
+    let img = get_selector("img.swiper-lazy");
+    let mut arts = vec![];
 
-fn get_title(doc: &Html) -> Result<String> {
-  if let Some(elem) = doc.select(&TITLE_SELECTOR).next() {
-    Ok(elem.text().collect())
-  } else {
-    err("Title not found")
-  }
-}
-
-fn get_cover(doc: &Html) -> Option<String> {
-  if let Some(elem) = doc.select(&COVER_SELECTOR).next() {
-    if let Some(src) = elem.value().attr("data-src") {
-      return Some(src.to_string());
+    for elem in doc.select(&img) {
+      let src = elem.attr("data-src")?;
+      arts.push(src.to_string());
     }
-  }
 
-  None
-}
+    if arts.is_empty() {
+      None
+    } else {
+      arts.remove(0);
 
-fn get_actresses(doc: &Html) -> Option<Vec<Actress>> {
-  let mut actresses = Vec::new();
-
-  for elem in doc.select(&ACTRESS_SELECTOR) {
-    if let Some(href) = elem.value().attr("href") {
-      if href.contains("/actress/") {
-        actresses.push(Actress::name(elem.text().collect::<String>()));
+      if arts.is_empty() {
+        None
+      } else {
+        Some(arts)
       }
     }
   }
-
-  if actresses.is_empty() {
-    None
-  } else {
-    Some(actresses)
-  }
 }
 
-fn get_text(parent: &ElementRef, selector: &Selector) -> Option<String> {
-  if let Some(elem) = parent.select(selector).next() {
-    let text: String = elem.text().collect();
+fn next_sibling_element<'a>(elem: &ElementRef<'a>) -> Option<ElementRef<'a>> {
+  let mut next = elem.next_sibling();
 
-    if !text.is_empty() {
-      return Some(text);
+  while let Some(sibling) = next {
+    if sibling.value().is_element() {
+      return ElementRef::wrap(sibling);
     }
+
+    next = sibling.next_sibling();
   }
 
   None

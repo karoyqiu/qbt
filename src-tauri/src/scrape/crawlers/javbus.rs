@@ -137,7 +137,7 @@ impl Crawler for JavBus {
         let text: String = parent.text().collect();
         let text = text.replace("發行日期:", "");
         let text = text.trim();
-        return convert_date_string_to_epoch(text);
+        return convert_date_string_to_epoch(text, None);
       }
     }
 

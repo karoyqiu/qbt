@@ -418,7 +418,11 @@ duration: number | null;
 /**
  * 发布日期（Unix epoch）
  */
-release_date: number | null }
+release_date: number | null; 
+/**
+ * 额外的插图
+ */
+extra_fanart: string[] | null }
 
 /** tauri-specta globals **/
 

@@ -59,7 +59,7 @@ impl Crawler for Fc2ppvdb {
               } else if text.starts_with("販売日：") {
                 let text = text.replace("販売日：", "");
                 let text = text.trim();
-                builder.release_date(convert_date_string_to_epoch(text));
+                builder.release_date(convert_date_string_to_epoch(text, None));
               } else if text.starts_with("収録時間：") {
                 let text = text.replace("収録時間：", "");
                 let text = text.trim();

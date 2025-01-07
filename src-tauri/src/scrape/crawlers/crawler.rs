@@ -1,6 +1,7 @@
 use chrono::{Local, NaiveDate, NaiveDateTime, TimeZone};
 use log::info;
 use scraper::Html;
+use url::Url;
 
 use crate::{
   error::{IntoResult, Result},
@@ -15,7 +16,7 @@ pub trait Crawler {
   fn get_url(&self, code: &String) -> Result<String>;
 
   /** 下一步地址 */
-  fn get_next_url(&self, _code: &String, _html: &String) -> Option<String> {
+  fn get_next_url(&self, _url: &Url, _html: &String) -> Option<String> {
     None
   }
 
@@ -112,7 +113,7 @@ where
   let url = crawler.get_url(code)?;
   let (mut html, mut url) = get_html(&url).await?;
 
-  while let Some(next_url) = crawler.get_next_url(code, &html) {
+  while let Some(next_url) = crawler.get_next_url(&url, &html) {
     let next_url = url.join(&next_url).into_result()?.to_string();
     (html, url) = get_html(&next_url).await?;
   }
@@ -152,8 +153,8 @@ where
   Ok(info)
 }
 
-pub fn convert_date_string_to_epoch(text: &str) -> Option<i64> {
-  let date = NaiveDate::parse_from_str(text, "%Y-%m-%d");
+pub fn convert_date_string_to_epoch(text: &str, fmt: Option<&str>) -> Option<i64> {
+  let date = NaiveDate::parse_from_str(text, fmt.unwrap_or("%Y-%m-%d"));
 
   date.ok().map(|d| {
     d.and_hms_opt(0, 0, 0).map(|ndt| {
@@ -202,7 +203,7 @@ mod tests {
 
   #[test]
   fn test_convert_date_string_to_epoch() {
-    let date = convert_date_string_to_epoch("2025-01-01");
+    let date = convert_date_string_to_epoch("2025-01-01", None);
     assert_eq!(date, Some(1735660800));
   }
 

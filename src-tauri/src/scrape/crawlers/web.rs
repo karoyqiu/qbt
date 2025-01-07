@@ -23,9 +23,6 @@ use crate::{
 use super::cookie_jar::CookieJar;
 
 lazy_static! {
-  pub static ref DIV_SELECTOR: Selector = Selector::parse("div").unwrap();
-  pub static ref A_SELECTOR: Selector = Selector::parse("A").unwrap();
-  pub static ref H3_SELECTOR: Selector = Selector::parse("h3").unwrap();
   static ref SELECTORS: Mutex<HashMap<&'static str, Arc<Selector>>> = Mutex::new(HashMap::new());
 }
 

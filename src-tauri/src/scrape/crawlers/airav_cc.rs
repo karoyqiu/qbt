@@ -1,5 +1,6 @@
 use scraper::{ElementRef, Html};
 use serde::Deserialize;
+use url::Url;
 
 use crate::{
   error::{err, Result},
@@ -30,7 +31,11 @@ impl Crawler for AiravCc {
     Ok(format!("https://airav.io/search_result?kw={}", code))
   }
 
-  fn get_next_url(&self, code: &String, html: &String) -> Option<String> {
+  fn get_next_url(&self, url: &Url, html: &String) -> Option<String> {
+    if !url.path().contains("search_result") {
+      return None;
+    }
+
     let html = Html::parse_document(html);
     let one_video = get_selector("div.col.oneVideo");
     let a = get_selector("a");
@@ -41,10 +46,7 @@ impl Crawler for AiravCc {
       if let Some(h5) = elem.select(&h5).next() {
         let text: String = h5.text().collect();
 
-        if text.contains(code)
-          && !text.contains("克破")
-          && !text.contains("无码破解")
-          && !text.contains("無碼破解")
+        if !text.contains("克破") && !text.contains("无码破解") && !text.contains("無碼破解")
         {
           if let Some(a) = elem.select(&a).next() {
             if let Some(href) = a.value().attr("href") {
