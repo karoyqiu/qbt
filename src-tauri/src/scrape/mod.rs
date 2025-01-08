@@ -3,14 +3,11 @@ mod crawl;
 mod crawlers;
 
 use derive_builder::Builder;
-use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use tauri::AppHandle;
 
-use crate::error::{err, Result};
-
-use code::get_movie_code;
+pub use code::get_movie_code;
+pub use crawl::crawl;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Type)]
 pub struct TranslatedText {
@@ -183,20 +180,5 @@ impl VideoInfo {
     self.outline.is_some()
       && self.actresses.is_some()
       && (self.poster.is_some() || self.cover.is_some())
-  }
-}
-
-/// 刮削
-#[tauri::command]
-#[specta::specta]
-pub async fn scrape(_app: AppHandle, filename: String) -> Result<VideoInfo> {
-  info!("Scraping {}", filename);
-  let code = get_movie_code(&filename);
-
-  if let Some(code) = code {
-    debug!("Movie code: {}", code);
-    crawl::crawl(&code).await
-  } else {
-    err("No movie code found")
   }
 }

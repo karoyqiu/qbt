@@ -1,17 +1,14 @@
-mod db_trait;
-
 use log::debug;
 use ormlite::{
+  query_builder::OnConflict,
   sqlite::{SqliteConnectOptions, SqliteConnection, SqliteJournalMode, SqliteSynchronous},
   Connection, Executor, Model, Row, TableMeta,
 };
-use serde::{Deserialize, Serialize};
-use specta::Type;
-use tauri::{async_runtime::Mutex, path::BaseDirectory, AppHandle, Manager};
+use tauri::{async_runtime::Mutex, path::BaseDirectory, AppHandle, Manager, State};
 
 use crate::{
-  error::{IntoResult, Result},
-  scrape::VideoInfo,
+  error::{Error, IntoResult, Result},
+  scrape::{crawl, get_movie_code, VideoInfo},
 };
 
 const CURRENT_DB_VERSION: u32 = 1;
@@ -21,12 +18,6 @@ pub struct DbStateInner {
   conn: Option<SqliteConnection>,
 }
 
-impl db_trait::DbStateTrait for DbStateInner {
-  fn connection(&mut self) -> &mut Option<SqliteConnection> {
-    &mut self.conn
-  }
-}
-
 impl DbStateInner {
   pub async fn open(&mut self, app_handle: &AppHandle) -> Result<()> {
     self.conn = Some(open_db(app_handle, "videos").await?);
@@ -34,7 +25,10 @@ impl DbStateInner {
   }
 
   async fn upgrade(&mut self) -> Result<()> {
-    let db = self.conn.as_mut().unwrap();
+    let db = self
+      .conn
+      .as_mut()
+      .ok_or(Error(anyhow::anyhow!("No connection")))?;
     let version = db.fetch_one("PRAGMA user_version").await.into_result()?;
     let version = version.try_get::<u32, usize>(0).into_result()?;
     debug!("Current db version {}", version);
@@ -60,11 +54,43 @@ impl DbStateInner {
 
     Ok(())
   }
+
+  async fn query_one(&mut self, code: &str) -> Result<Option<VideoInfoRecord>> {
+    let db = self
+      .conn
+      .as_mut()
+      .ok_or(Error(anyhow::anyhow!("No connection")))?;
+    VideoInfoRecord::select()
+      .where_bind("code = ?", code)
+      .fetch_optional(db)
+      .await
+      .into_result()
+  }
+
+  async fn upsert_one(&mut self, video_info: VideoInfo) -> Result<()> {
+    let db = self
+      .conn
+      .as_mut()
+      .ok_or(Error(anyhow::anyhow!("No connection")))?;
+
+    VideoInfoRecord {
+      code: video_info.code.clone(),
+      info: video_info,
+    }
+    .insert(db)
+    .on_conflict(OnConflict::do_update_on_pkey(
+      VideoInfoRecord::primary_key().unwrap(),
+    ))
+    .await
+    .into_result()?;
+
+    Ok(())
+  }
 }
 
 pub type DbState = Mutex<DbStateInner>;
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize, Type, Model)]
+#[derive(Debug, Default, Clone, Model)]
 pub struct VideoInfoRecord {
   #[ormlite(primary_key)]
   pub code: String,
@@ -91,4 +117,32 @@ async fn open_db(app_handle: &AppHandle, base_name: &str) -> Result<SqliteConnec
     .optimize_on_close(true, None);
 
   SqliteConnection::connect_with(&options).await.into_result()
+}
+
+async fn find_video_info(state: &State<'_, DbState>, code: &String) -> Result<Option<VideoInfo>> {
+  let mut state = state.lock().await;
+  Ok(state.query_one(code).await?.map(|info| info.info))
+}
+
+async fn insert_video_info(state: &State<'_, DbState>, video_info: VideoInfo) -> Result<()> {
+  let mut state = state.lock().await;
+  state.upsert_one(video_info).await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_video_info(state: State<'_, DbState>, name: String) -> Result<Option<VideoInfo>> {
+  if let Some(code) = get_movie_code(&name) {
+    debug!("Movie code: {}", code);
+
+    if let Some(info) = find_video_info(&state, &code).await? {
+      return Ok(Some(info));
+    }
+
+    let info = crawl(&code).await?;
+    insert_video_info(&state, info.clone()).await?;
+    Ok(Some(info))
+  } else {
+    Ok(None)
+  }
 }

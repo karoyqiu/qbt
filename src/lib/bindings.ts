@@ -36,6 +36,9 @@ async getMainData() : Promise<MainData> {
 async getTorrentContents(hash: string) : Promise<TorrentContent[]> {
     return await TAURI_INVOKE("get_torrent_contents", { hash });
 },
+async getVideoInfo(name: string) : Promise<VideoInfo | null> {
+    return await TAURI_INVOKE("get_video_info", { name });
+},
 /**
  * 设置 URL
  */
@@ -53,12 +56,6 @@ async login(username: string, password: string) : Promise<boolean> {
  */
 async recheck(hashes: string[]) : Promise<null> {
     return await TAURI_INVOKE("recheck", { hashes });
-},
-/**
- * 刮削
- */
-async scrape(filename: string) : Promise<VideoInfo> {
-    return await TAURI_INVOKE("scrape", { filename });
 },
 /**
  * 设置文件优先级

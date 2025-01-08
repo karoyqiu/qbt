@@ -13,7 +13,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useReadLocalStorage } from 'usehooks-ts';
 
-import { type TorrentContent, commands } from '../lib/bindings';
+import { type TorrentContent, VideoInfo, commands } from '../lib/bindings';
 import { formatPercent, formatSize } from '../lib/format';
 
 export type TorrentNode = Omit<TreeNode, 'data' | 'children'> & {
@@ -50,13 +50,14 @@ export default function TorrentDialog(props: TorrentDialogProps) {
     onAutoSelect,
   } = props;
   const [expandedKeys, setExpandedKeys] = useState<TreeTableExpandedKeysType>({});
+  const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
   const localDownloadDir = useReadLocalStorage<string>('localDownloadDir');
 
   useEffect(() => setExpandedKeys(expanded), [expanded]);
 
   useEffect(() => {
     if (nodes.length > 0) {
-      commands.scrape(nodes[0].data.name);
+      commands.getVideoInfo(nodes[0].data.name).then(setVideoInfo);
     }
   }, [nodes]);
 

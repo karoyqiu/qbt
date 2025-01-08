@@ -109,6 +109,7 @@ pub trait Crawler {
   }
 }
 
+/// 刮削
 pub async fn crawl<T>(crawler: &T, code: &String) -> Result<VideoInfo>
 where
   T: Crawler + ?Sized,

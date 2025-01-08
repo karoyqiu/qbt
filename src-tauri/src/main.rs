@@ -7,7 +7,7 @@ mod error;
 mod qbittorrent;
 mod scrape;
 
-use db::DbState;
+use db::{get_video_info, DbState};
 use log::{error, LevelFilter};
 use tauri::{Manager, State};
 use tauri_specta::{collect_commands, Builder, ErrorHandlingMode};
@@ -16,7 +16,6 @@ use qbittorrent::{
   add_files, add_urls, delete, get_main_data, get_torrent_contents, initialize, login, recheck,
   set_file_priority, start, stop, QBittorrentState,
 };
-use scrape::scrape;
 
 fn main() {
   let builder = Builder::<tauri::Wry>::new()
@@ -27,10 +26,10 @@ fn main() {
       delete,
       get_main_data,
       get_torrent_contents,
+      get_video_info,
       initialize,
       login,
       recheck,
-      scrape,
       set_file_priority,
       start,
       stop,
