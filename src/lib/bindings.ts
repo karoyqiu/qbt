@@ -45,7 +45,7 @@ async getVideoInfo(name: string) : Promise<VideoInfo | null> {
 /**
  * 之前是否下载过
  */
-async hasBeenDownloaded(name: string) : Promise<boolean> {
+async hasBeenDownloaded(name: string) : Promise<number | null> {
     return await TAURI_INVOKE("has_been_downloaded", { name });
 },
 /**

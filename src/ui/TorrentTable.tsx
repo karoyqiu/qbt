@@ -1,10 +1,11 @@
 import { PrimeIcons } from 'primereact/api';
+import { Badge } from 'primereact/badge';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { ProgressBar } from 'primereact/progressbar';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
-import type { TorrentState } from '../lib/bindings';
+import { type TorrentState, commands } from '../lib/bindings';
 import cn from '../lib/cn';
 import { formatPercent, formatSize, formatSpeed } from '../lib/format';
 import {
@@ -119,6 +120,23 @@ export default function TorrentTable(props: TorrentTableProps) {
     return cols;
   }, [filter]);
 
+  const downloaded = useRef<Record<string, number | null>>({});
+
+  useEffect(() => {
+    for (const torrent of torrents) {
+      if (!(torrent.name in downloaded.current)) {
+        if (matchTorrent(torrent, 'completed')) {
+          downloaded.current[torrent.name] = torrent.completion_on;
+          commands.markAsDownloaded(torrent.name, torrent.completion_on);
+        } else {
+          commands.hasBeenDownloaded(torrent.name).then((value) => {
+            downloaded.current[torrent.name] = value;
+          });
+        }
+      }
+    }
+  }, [torrents]);
+
   return (
     <div className="min-h-0 grow">
       <DataTable
@@ -149,6 +167,9 @@ export default function TorrentTable(props: TorrentTableProps) {
             >
               &nbsp;
               {torrent.name}
+              {downloaded.current[torrent.name] && (
+                <Badge className="ms-2" value="D" severity="info" />
+              )}
             </span>
           )}
         />

@@ -38,7 +38,7 @@ impl DbStateInner {
         Box::pin(async move {
           // VideoInfoRecord 表
           let sql = format!(
-            "CREATE TABLE IF NOT EXISTS {} ({} TEXT PRIMARY KEY, info TEXT NOT NULL)",
+            "CREATE TABLE IF NOT EXISTS {} ({} TEXT PRIMARY KEY, info TEXT, downloaded_at INTEGER)",
             VideoInfoRecord::table_name(),
             VideoInfoRecord::primary_key().unwrap()
           );
@@ -103,12 +103,14 @@ impl DbStateInner {
       .ok_or(Error(anyhow::anyhow!("No connection")))?;
 
     if let Some(existed) = existed {
-      existed
-        .update_partial()
-        .downloaded_at(Some(downloaded_at))
-        .update(db)
-        .await
-        .into_result()?;
+      if existed.downloaded_at.is_none() {
+        existed
+          .update_partial()
+          .downloaded_at(Some(downloaded_at))
+          .update(db)
+          .await
+          .into_result()?;
+      }
     } else {
       VideoInfoRecord {
         code: code.to_string(),
@@ -195,14 +197,14 @@ pub async fn get_video_info(state: State<'_, DbState>, name: String) -> Result<O
 /// 之前是否下载过
 #[tauri::command]
 #[specta::specta]
-pub async fn has_been_downloaded(state: State<'_, DbState>, name: String) -> Result<bool> {
+pub async fn has_been_downloaded(state: State<'_, DbState>, name: String) -> Result<Option<i64>> {
   if let Some(code) = get_movie_code(&name) {
     if let Some(info) = find_video_info(&state, &code).await? {
-      return Ok(info.downloaded_at.is_some());
+      return Ok(info.downloaded_at);
     }
   }
 
-  Ok(false)
+  Ok(None)
 }
 
 /// 标记为已下载
