@@ -140,9 +140,12 @@ pub async fn get_video_info(state: State<'_, DbState>, name: String) -> Result<O
     }
 
     let info = crawl(&code).await?;
-    insert_video_info(&state, info.clone()).await?;
-    Ok(Some(info))
-  } else {
-    Ok(None)
+
+    if !info.title.text.is_empty() {
+      insert_video_info(&state, info.clone()).await?;
+      return Ok(Some(info));
+    }
   }
+
+  Ok(None)
 }

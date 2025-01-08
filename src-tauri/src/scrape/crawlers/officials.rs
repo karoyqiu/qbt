@@ -240,7 +240,7 @@ impl Crawler for Officials {
 
           if let Some(captures) = MINUTE_RE.captures(&text) {
             if let Some(duration) = captures.get(1) {
-              builder.duration(Some(duration.as_str().parse().unwrap()));
+              builder.duration(Some(duration.as_str().parse::<i64>().unwrap() * 60));
             }
           }
         }

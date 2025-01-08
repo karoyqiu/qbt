@@ -119,7 +119,7 @@ impl Crawler for JavBus {
         let text: String = parent.text().collect();
         let text = text.replace("長度:", "").replace("分鐘", "");
         let text = text.trim();
-        return Some(text.parse().unwrap());
+        return Some(text.parse::<i64>().unwrap() * 60);
       }
     }
 
