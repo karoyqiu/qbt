@@ -2,11 +2,14 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod app_handle;
+mod db;
 mod error;
 mod qbittorrent;
 mod scrape;
 
-use log::LevelFilter;
+use db::DbState;
+use log::{error, LevelFilter};
+use tauri::{Manager, State};
 use tauri_specta::{collect_commands, Builder, ErrorHandlingMode};
 
 use qbittorrent::{
@@ -60,10 +63,20 @@ fn main() {
     .plugin(tauri_plugin_clipboard::init())
     .plugin(tauri_plugin_shell::init())
     .manage(QBittorrentState::default())
+    .manage(DbState::default())
     .invoke_handler(builder.invoke_handler())
     .setup(|app| {
       let handle = app.handle();
       app_handle::set_app_handle(handle);
+
+      tauri::async_runtime::block_on(async move {
+        let state: State<DbState> = handle.state();
+        let mut state = state.lock().await;
+
+        if let Err(e) = state.open(handle).await {
+          error!("Failed to open database: {:?}", e);
+        }
+      });
       Ok(())
     })
     .run(tauri::generate_context!())
