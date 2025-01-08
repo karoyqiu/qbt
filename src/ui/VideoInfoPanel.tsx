@@ -60,7 +60,7 @@ export default function VideoInfoPanel(props: VideoInfoPanelProps) {
             {videoInfo.actresses.map((actress) => (
               <div key={actress.name} className="flex flex-col gap-2">
                 <Avatar
-                  className="shrink-0"
+                  className="shrink-0 size-16"
                   icon={PrimeIcons.USER}
                   image={actress.photo ?? undefined}
                   size="xlarge"

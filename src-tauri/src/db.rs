@@ -1,6 +1,6 @@
 use log::debug;
 use ormlite::{
-  query_builder::OnConflict,
+  model::ModelBuilder,
   sqlite::{SqliteConnectOptions, SqliteConnection, SqliteJournalMode, SqliteSynchronous},
   Connection, Executor, Model, Row, TableMeta,
 };
@@ -68,21 +68,57 @@ impl DbStateInner {
   }
 
   async fn upsert_one(&mut self, video_info: VideoInfo) -> Result<()> {
+    let existed = self.query_one(&video_info.code).await?;
     let db = self
       .conn
       .as_mut()
       .ok_or(Error(anyhow::anyhow!("No connection")))?;
 
-    VideoInfoRecord {
-      code: video_info.code.clone(),
-      info: video_info,
+    if let Some(existed) = existed {
+      existed
+        .update_partial()
+        .info(Some(video_info))
+        .update(db)
+        .await
+        .into_result()?;
+    } else {
+      VideoInfoRecord {
+        code: video_info.code.clone(),
+        info: Some(video_info),
+        downloaded_at: None,
+      }
+      .insert(db)
+      .await
+      .into_result()?;
     }
-    .insert(db)
-    .on_conflict(OnConflict::do_update_on_pkey(
-      VideoInfoRecord::primary_key().unwrap(),
-    ))
-    .await
-    .into_result()?;
+
+    Ok(())
+  }
+
+  async fn update_downloaded_at(&mut self, code: &str, downloaded_at: i64) -> Result<()> {
+    let existed = self.query_one(code).await?;
+    let db = self
+      .conn
+      .as_mut()
+      .ok_or(Error(anyhow::anyhow!("No connection")))?;
+
+    if let Some(existed) = existed {
+      existed
+        .update_partial()
+        .downloaded_at(Some(downloaded_at))
+        .update(db)
+        .await
+        .into_result()?;
+    } else {
+      VideoInfoRecord {
+        code: code.to_string(),
+        info: None,
+        downloaded_at: Some(downloaded_at),
+      }
+      .insert(db)
+      .await
+      .into_result()?;
+    }
 
     Ok(())
   }
@@ -95,7 +131,9 @@ pub struct VideoInfoRecord {
   #[ormlite(primary_key)]
   pub code: String,
   #[ormlite(json)]
-  pub info: VideoInfo,
+  pub info: Option<VideoInfo>,
+  /// 下载完成时间
+  pub downloaded_at: Option<i64>,
 }
 
 async fn open_db(app_handle: &AppHandle, base_name: &str) -> Result<SqliteConnection> {
@@ -119,9 +157,12 @@ async fn open_db(app_handle: &AppHandle, base_name: &str) -> Result<SqliteConnec
   SqliteConnection::connect_with(&options).await.into_result()
 }
 
-async fn find_video_info(state: &State<'_, DbState>, code: &String) -> Result<Option<VideoInfo>> {
+async fn find_video_info(
+  state: &State<'_, DbState>,
+  code: &String,
+) -> Result<Option<VideoInfoRecord>> {
   let mut state = state.lock().await;
-  Ok(state.query_one(code).await?.map(|info| info.info))
+  Ok(state.query_one(code).await?)
 }
 
 async fn insert_video_info(state: &State<'_, DbState>, video_info: VideoInfo) -> Result<()> {
@@ -129,6 +170,7 @@ async fn insert_video_info(state: &State<'_, DbState>, video_info: VideoInfo) ->
   state.upsert_one(video_info).await
 }
 
+/// 获取视频信息
 #[tauri::command]
 #[specta::specta]
 pub async fn get_video_info(state: State<'_, DbState>, name: String) -> Result<Option<VideoInfo>> {
@@ -136,7 +178,7 @@ pub async fn get_video_info(state: State<'_, DbState>, name: String) -> Result<O
     debug!("Movie code: {}", code);
 
     if let Some(info) = find_video_info(&state, &code).await? {
-      return Ok(Some(info));
+      return Ok(info.info);
     }
 
     let info = crawl(&code).await?;
@@ -148,4 +190,33 @@ pub async fn get_video_info(state: State<'_, DbState>, name: String) -> Result<O
   }
 
   Ok(None)
+}
+
+/// 之前是否下载过
+#[tauri::command]
+#[specta::specta]
+pub async fn has_been_downloaded(state: State<'_, DbState>, name: String) -> Result<bool> {
+  if let Some(code) = get_movie_code(&name) {
+    if let Some(info) = find_video_info(&state, &code).await? {
+      return Ok(info.downloaded_at.is_some());
+    }
+  }
+
+  Ok(false)
+}
+
+/// 标记为已下载
+#[tauri::command]
+#[specta::specta]
+pub async fn mark_as_downloaded(
+  state: State<'_, DbState>,
+  name: String,
+  downloaded_at: i64,
+) -> Result<()> {
+  if let Some(code) = get_movie_code(&name) {
+    let mut state = state.lock().await;
+    state.update_downloaded_at(&code, downloaded_at).await?;
+  }
+
+  Ok(())
 }
