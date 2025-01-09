@@ -41,6 +41,7 @@ export default function VideoInfoPanel(props: VideoInfoPanelProps) {
         src={videoInfo.poster ?? videoInfo.cover ?? undefined}
         width="360"
         referrerPolicy="no-referrer"
+        loading="lazy"
       />
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-4">

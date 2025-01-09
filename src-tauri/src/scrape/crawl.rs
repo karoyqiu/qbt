@@ -66,7 +66,6 @@ lazy_static! {
     "airav",
     "xcity",
     "avsox",
-    "officials",
   ];
   static ref DMM_WEBSITES: Vec<&'static str> = vec!["dmm"];
   static ref WHOLE_FIELDS: Vec<&'static str> =
@@ -294,7 +293,7 @@ async fn crawl_website(code: &String, website: &str) -> Result<VideoInfo> {
 /// 获取一组网站的数据：按照设置的网站组，请求各字段数据，并返回最终的数据
 async fn crawl_websites(code: &String, websites: &Vec<&'static str>) -> Result<VideoInfo> {
   debug!("Crawl websites: {:?}", websites);
-  let mut info = VideoInfo::default();
+  let mut info = crawl_website(code, "officials").await.unwrap_or_default();
 
   for &website in websites {
     match crawl_website(code, website).await {

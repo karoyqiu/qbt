@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Mutex};
 
 use lazy_static::lazy_static;
-use log::{debug, warn};
+use log::debug;
 use regex::Regex;
 use scraper::{ElementRef, Html};
 use url::Url;
@@ -73,7 +73,7 @@ pub struct Officials;
 
 impl Crawler for Officials {
   fn get_name(&self) -> &'static str {
-    "official"
+    "official website"
   }
 
   fn get_url(&self, code: &String) -> Result<String> {

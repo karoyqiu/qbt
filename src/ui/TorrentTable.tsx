@@ -124,15 +124,15 @@ export default function TorrentTable(props: TorrentTableProps) {
 
   useEffect(() => {
     for (const torrent of torrents) {
-      if (!(torrent.name in downloaded.current)) {
-        if (matchTorrent(torrent, 'completed')) {
+      if (matchTorrent(torrent, 'completed')) {
+        if (!(torrent.name in downloaded.current)) {
           downloaded.current[torrent.name] = torrent.completion_on;
           commands.markAsDownloaded(torrent.name, torrent.completion_on);
-        } else {
-          commands.hasBeenDownloaded(torrent.name).then((value) => {
-            downloaded.current[torrent.name] = value;
-          });
         }
+      } else if (!(torrent.name in downloaded.current)) {
+        commands.hasBeenDownloaded(torrent.name).then((value) => {
+          downloaded.current[torrent.name] = value;
+        });
       }
     }
   }, [torrents]);
@@ -168,7 +168,7 @@ export default function TorrentTable(props: TorrentTableProps) {
               &nbsp;
               {torrent.name}
               {downloaded.current[torrent.name] && (
-                <Badge className="ms-2" value="D" severity="info" />
+                <Badge className="ms-2" value="✓" severity="info" />
               )}
             </span>
           )}

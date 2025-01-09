@@ -54,6 +54,7 @@ export default function TorrentDialog(props: TorrentDialogProps) {
   const [expandedKeys, setExpandedKeys] = useState<TreeTableExpandedKeysType>({});
   const [status, setStatus] = useState<'undone' | 'doing' | 'done'>('undone');
   const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
+  const [tabIndex, setTabIndex] = useState(0);
   const localDownloadDir = useReadLocalStorage<string>('localDownloadDir');
 
   useEffect(() => setExpandedKeys(expanded), [expanded]);
@@ -71,17 +72,21 @@ export default function TorrentDialog(props: TorrentDialogProps) {
       className="w-[calc(100vw-16rem)] max-w-screen-lg"
       footer={
         <div className="pt-6">
-          {nodes.length === 0 ? (
-            <Button label="Magnet to torrent" onClick={onMagnetToTorrent} />
-          ) : (
-            <Button label="Auto select" onClick={onAutoSelect} />
-          )}
+          {tabIndex === 0 &&
+            (nodes.length === 0 ? (
+              <Button label="Magnet to torrent" onClick={onMagnetToTorrent} />
+            ) : (
+              <Button label="Auto select" onClick={onAutoSelect} />
+            ))}
+          {tabIndex === 1 && <Button label="Re-scrape" />}
         </div>
       }
       dismissableMask
     >
       <TabView
         onBeforeTabChange={async (e) => {
+          setTabIndex(e.index);
+
           if (e.index === 1 && status === 'undone' && !videoInfo) {
             setStatus('doing');
             setVideoInfo(await commands.getVideoInfo(nodes[0].data.name));

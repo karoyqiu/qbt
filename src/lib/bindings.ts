@@ -73,6 +73,12 @@ async recheck(hashes: string[]) : Promise<null> {
     return await TAURI_INVOKE("recheck", { hashes });
 },
 /**
+ * 标记为已下载
+ */
+async rescrape(name: string) : Promise<null> {
+    return await TAURI_INVOKE("rescrape", { name });
+},
+/**
  * 设置文件优先级
  */
 async setFilePriority(hash: string, indexes: number[], priority: number) : Promise<null> {

@@ -7,7 +7,7 @@ mod error;
 mod qbittorrent;
 mod scrape;
 
-use db::{get_video_info, has_been_downloaded, mark_as_downloaded, DbState};
+use db::{get_video_info, has_been_downloaded, mark_as_downloaded, rescrape, DbState};
 use log::{error, LevelFilter};
 use tauri::{Manager, State};
 use tauri_specta::{collect_commands, Builder, ErrorHandlingMode};
@@ -32,6 +32,7 @@ fn main() {
       login,
       mark_as_downloaded,
       recheck,
+      rescrape,
       set_file_priority,
       start,
       stop,
