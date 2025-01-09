@@ -160,7 +160,7 @@ export default function TorrentTable(props: TorrentTableProps) {
           body={(torrent: RequiredTorrentInfo) => (
             <span
               className={cn(
-                'cursor-pointer text-[--primary-color] underline-offset-4 hover:underline',
+                'cursor-pointer text-[--primary-color] underline-offset-4 hover:underline p-overlay-badge',
                 getStateIcon(torrent.state),
               )}
               onClick={() => onClick(torrent.infohash_v1)}
@@ -168,7 +168,7 @@ export default function TorrentTable(props: TorrentTableProps) {
               &nbsp;
               {torrent.name}
               {downloaded.current[torrent.name] && (
-                <Badge className="ms-2" value="✓" severity="info" />
+                <Badge className="translate-x-3 -translate-y-1/2" severity="info" />
               )}
             </span>
           )}
