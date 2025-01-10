@@ -1,7 +1,7 @@
 import { PrimeIcons } from 'primereact/api';
 import { Avatar } from 'primereact/avatar';
 import { Image } from 'primereact/image';
-import { ProgressSpinner } from 'primereact/progressspinner';
+import { Skeleton } from 'primereact/skeleton';
 import { useEffect, useState } from 'react';
 
 import { type VideoInfo, commands } from '../lib/bindings';
@@ -34,7 +34,43 @@ export default function VideoInfoPanel(props: VideoInfoPanelProps) {
 
   if (!videoInfo) {
     if (loading) {
-      return <ProgressSpinner />;
+      return (
+        <div className="flex gap-8">
+          <Skeleton width="360px" height="480px" />
+          <div className="flex flex-col gap-8 grow">
+            <div className="flex flex-col gap-4">
+              <Skeleton height="1.75rem" />
+              <Skeleton />
+              <div className="flex gap-16 text-sm">
+                <Skeleton width="8rem" />
+                <Skeleton width="8rem" />
+              </div>
+            </div>
+            <div className="flex flex-col gap-4">
+              <Skeleton height="5rem" />
+              <Skeleton height="5rem" />
+            </div>
+            <div className="flex gap-4">
+              <div className="flex flex-col gap-2">
+                <Skeleton size="4rem" borderRadius="1rem" />
+                <Skeleton />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Skeleton size="4rem" borderRadius="1rem" />
+                <Skeleton />
+              </div>
+            </div>
+            <div className="grid grid-cols-[6rem_1fr] gap-x-16 gap-y-2 text-sm">
+              <Skeleton />
+              <Skeleton />
+              <Skeleton />
+              <Skeleton />
+              <Skeleton />
+              <Skeleton />
+            </div>
+          </div>
+        </div>
+      );
     }
 
     return <span>No video information.</span>;
@@ -59,7 +95,7 @@ export default function VideoInfoPanel(props: VideoInfoPanelProps) {
           }
         }}
       />
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-8 grow">
         <div className="flex flex-col gap-4">
           <h3 className="text-xl font-bold">{videoInfo.title.text}</h3>
           <h3>{videoInfo.title.translated}</h3>
