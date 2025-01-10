@@ -8,13 +8,13 @@ use cookie::SameSite;
 use derive_builder::Builder;
 use lazy_static::lazy_static;
 use reqwest_cookie_store::{CookieStore, CookieStoreMutex, RawCookie};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tauri::Manager;
 use url::Url;
 
 use crate::{
   app_handle::get_app_handle,
-  error::{IntoResult, Result},
+  error::{Error, IntoResult, Result},
 };
 
 lazy_static! {
@@ -22,12 +22,12 @@ lazy_static! {
     let app = get_app_handle().expect("No app handle");
     let mut path = app.path().app_local_data_dir().expect("No local data dir");
     let main = path.join("cookies.json");
-    path.push("cookies-merge.json");
+    path.push("cookies.edit.json");
     (main, path)
   };
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Builder)]
+#[derive(Default, Debug, Clone, PartialEq, Deserialize, Builder)]
 #[builder(default, setter(into, strip_option))]
 #[serde(rename_all = "camelCase")]
 struct EditThisCookie {
@@ -54,17 +54,19 @@ impl CookieJar {
   }
 
   fn open() -> Result<CookieStore> {
-    let mut store = CookieStore::new(None);
-    Self::open_store(&mut store, &COOKIE_STORE_PATHS.0)?;
+    let reader = File::open(&COOKIE_STORE_PATHS.0)
+      .map(BufReader::new)
+      .into_result()?;
+    let mut store = cookie_store::serde::json::load(reader).unwrap_or_default();
 
-    if let Ok(_) = Self::open_store(&mut store, &COOKIE_STORE_PATHS.1) {
+    if Self::open_edit_store(&mut store, &COOKIE_STORE_PATHS.1).is_ok() {
       let _ = std::fs::remove_file(&COOKIE_STORE_PATHS.1);
     }
 
     Ok(store)
   }
 
-  fn open_store<P>(store: &mut CookieStore, path: P) -> Result<()>
+  fn open_edit_store<P>(store: &mut CookieStore, path: P) -> Result<()>
   where
     P: AsRef<Path>,
   {
@@ -99,43 +101,12 @@ impl CookieJar {
   }
 
   pub fn save(&self) -> Result<()> {
-    let writer = File::create(&COOKIE_STORE_PATHS.0)
+    let mut writer = File::create(&COOKIE_STORE_PATHS.0)
       .map(BufWriter::new)
       .into_result()?;
-    let store = self.store.lock().expect("Failed to lock cookie store");
-    let mut etcs = vec![];
-
-    for cookie in store.iter_unexpired() {
-      let mut builder = EditThisCookieBuilder::default();
-      builder
-        .domain(cookie.domain().unwrap_or_default())
-        .http_only(cookie.http_only().unwrap_or_default())
-        .name(cookie.name())
-        .path(cookie.path().unwrap_or("/"))
-        .secure(cookie.secure().unwrap_or_default())
-        .value(cookie.value());
-
-      match cookie.same_site() {
-        Some(SameSite::Strict) => {
-          builder.same_site("strict");
-        }
-        Some(SameSite::Lax) => {
-          builder.same_site("lax");
-        }
-        Some(SameSite::None) => {
-          builder.same_site("no_restriction");
-        }
-        None => {}
-      }
-
-      etcs.push(builder.build().into_result()?);
-    }
-
-    #[cfg(debug_assertions)]
-    return serde_json::to_writer_pretty(writer, &etcs).into_result();
-
-    #[cfg(not(debug_assertions))]
-    serde_json::to_writer(writer, &etcs).into_result()
+    let store = self.store.lock().unwrap();
+    cookie_store::serde::json::save(&store, &mut writer)
+      .map_err(|_| Error(anyhow::anyhow!("Failed to save cookies")))
   }
 }
 

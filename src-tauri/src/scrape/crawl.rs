@@ -246,6 +246,7 @@ lazy_static! {
 
 /// 刮削
 pub async fn crawl(code: &String) -> Result<VideoInfo> {
+  debug!("Crawling {}", code);
   // TODO: 先判断是不是国产，避免浪费时间
 
   if code.starts_with("FC2") {

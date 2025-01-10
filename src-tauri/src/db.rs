@@ -180,7 +180,9 @@ pub async fn get_video_info(state: State<'_, DbState>, name: String) -> Result<O
     debug!("Movie code: {}", code);
 
     if let Some(info) = find_video_info(&state, &code).await? {
-      return Ok(info.info);
+      if info.info.is_some() {
+        return Ok(info.info);
+      }
     }
 
     let info = crawl(&code).await?;

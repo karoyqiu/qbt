@@ -4032,6 +4032,7 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "cookie",
+ "cookie_store",
  "derive_builder",
  "futures",
  "lazy_static",
