@@ -188,3 +188,17 @@ pub fn get_translator() -> Result<GoogleTranslator> {
 
   Ok(GoogleTranslator::builder().build())
 }
+
+pub fn remove_first<T>(mut v: Vec<T>) -> Option<Vec<T>> {
+  if v.len() <= 1 {
+    None
+  } else {
+    v.remove(0);
+
+    if v.is_empty() {
+      None
+    } else {
+      Some(v)
+    }
+  }
+}

@@ -36,7 +36,7 @@ export default function VideoInfoPanel(props: VideoInfoPanelProps) {
     if (loading) {
       return (
         <div className="flex gap-8">
-          <Skeleton width="360px" height="480px" />
+          <Skeleton width="360px" height="520px" />
           <div className="flex flex-col gap-8 grow">
             <div className="flex flex-col gap-4">
               <Skeleton height="1.75rem" />

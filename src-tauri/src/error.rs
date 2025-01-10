@@ -1,5 +1,16 @@
+use std::fmt::{Debug, Display};
+
 #[derive(Debug)]
 pub struct Error(pub anyhow::Error);
+
+impl Error {
+  pub fn new<M>(value: M) -> Self
+  where
+    M: Display + Debug + Send + Sync + 'static,
+  {
+    Self(anyhow::Error::msg(value))
+  }
+}
 
 impl std::fmt::Display for Error {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -51,6 +62,9 @@ impl<T> IntoResult<T> for anyhow::Error {
   }
 }
 
-pub fn err<T>(msg: &'static str) -> Result<T> {
-  Err(Error(anyhow::anyhow!(msg)))
+pub fn err<T, M>(msg: M) -> Result<T>
+where
+  M: Display + Debug + Send + Sync + 'static,
+{
+  Err(Error::new(msg))
 }

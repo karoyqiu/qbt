@@ -57,7 +57,7 @@ impl CookieJar {
     let reader = File::open(&COOKIE_STORE_PATHS.0)
       .map(BufReader::new)
       .into_result()?;
-    let mut store = cookie_store::serde::json::load(reader).unwrap_or_default();
+    let mut store = cookie_store::serde::json::load_all(reader).unwrap_or_default();
 
     if Self::open_edit_store(&mut store, &COOKIE_STORE_PATHS.1).is_ok() {
       let _ = std::fs::remove_file(&COOKIE_STORE_PATHS.1);
@@ -74,7 +74,13 @@ impl CookieJar {
     let edit_this_cookies: Vec<EditThisCookie> = serde_json::from_reader(reader).into_result()?;
 
     for etc in edit_this_cookies {
-      let url = Url::parse(&format!("https://{}{}", etc.domain, etc.path)).into_result()?;
+      let mut domain = etc.domain.clone();
+
+      if domain.starts_with(".") {
+        domain.remove(0);
+      }
+
+      let url = Url::parse(&format!("https://{}{}", domain, etc.path)).into_result()?;
       let mut builder = RawCookie::build((etc.name, etc.value))
         .domain(etc.domain)
         .expires(
@@ -105,7 +111,7 @@ impl CookieJar {
       .map(BufWriter::new)
       .into_result()?;
     let store = self.store.lock().unwrap();
-    cookie_store::serde::json::save(&store, &mut writer)
+    cookie_store::serde::json::save_incl_expired_and_nonpersistent(&store, &mut writer)
       .map_err(|_| Error(anyhow::anyhow!("Failed to save cookies")))
   }
 }

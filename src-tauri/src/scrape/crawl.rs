@@ -8,7 +8,7 @@ use crate::error::{err, Result};
 
 use super::{
   code::is_uncensored,
-  crawlers::{self, AiravCc, Crawler, Fc2ppvdb, JavBus, Officials},
+  crawlers::{self, AiravCc, Crawler, Fc2, Fc2ppvdb, JavBus, Officials},
   VideoInfo,
 };
 
@@ -232,12 +232,11 @@ lazy_static! {
     );
     m
   };
-
   static ref CRAWLERS: HashMap<&'static str, Box<dyn Crawler + Sync + Send>> = {
-    let mut m:HashMap<&'static str, Box<dyn Crawler + Sync + Send>> = HashMap::new();
+    let mut m: HashMap<&'static str, Box<dyn Crawler + Sync + Send>> = HashMap::new();
     m.insert("officials", Box::new(Officials::default()));
     m.insert("javbus", Box::new(JavBus::default()));
-    // //m.insert("fc2", fc2::crawl);
+    m.insert("fc2", Box::new(Fc2::default()));
     m.insert("fc2ppvdb", Box::new(Fc2ppvdb::default()));
     m.insert("airav_cc", Box::new(AiravCc::default()));
     m
