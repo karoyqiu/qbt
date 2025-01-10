@@ -2,12 +2,17 @@ mod code;
 mod crawl;
 mod crawlers;
 
+use base64::{prelude::BASE64_STANDARD, Engine};
+use crawlers::get_response;
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
 pub use code::get_movie_code;
 pub use crawl::crawl;
+use tauri::http::HeaderValue;
+
+use crate::error::{IntoResult, Result};
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Type)]
 pub struct TranslatedText {
@@ -181,4 +186,22 @@ impl VideoInfo {
       && self.actresses.is_some()
       && (self.poster.is_some() || self.cover.is_some())
   }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn download_image(url: String) -> Result<String> {
+  static JPEG: HeaderValue = HeaderValue::from_static("image/jpeg");
+  let resp = get_response(&url).await?;
+  let content_type = resp
+    .headers()
+    .get("content-type")
+    .unwrap_or(&JPEG)
+    .to_str()
+    .into_result()?
+    .to_string();
+  let body = resp.bytes().await.into_result()?;
+  let data = BASE64_STANDARD.encode(body);
+  let data = format!("data:{};base64,{}", content_type, data);
+  Ok(data)
 }

@@ -12,3 +12,4 @@ pub use crawler::{crawl, Crawler};
 pub use fc2ppvdb::Fc2ppvdb;
 pub use javbus::JavBus;
 pub use officials::Officials;
+pub use web::get_response;

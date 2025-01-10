@@ -9,6 +9,7 @@ mod scrape;
 
 use db::{get_video_info, has_been_downloaded, mark_as_downloaded, rescrape, DbState};
 use log::{error, LevelFilter};
+use scrape::download_image;
 use tauri::{Manager, State};
 use tauri_specta::{collect_commands, Builder, ErrorHandlingMode};
 
@@ -24,6 +25,7 @@ fn main() {
       add_files,
       add_urls,
       delete,
+      download_image,
       get_main_data,
       get_torrent_contents,
       get_video_info,

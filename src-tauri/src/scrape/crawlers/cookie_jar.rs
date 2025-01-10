@@ -1,6 +1,6 @@
 use std::{
   fs::File,
-  io::{BufRead, BufReader, BufWriter},
+  io::{BufReader, BufWriter},
   path::{Path, PathBuf},
 };
 
@@ -14,7 +14,7 @@ use url::Url;
 
 use crate::{
   app_handle::get_app_handle,
-  error::{Error, IntoResult, Result},
+  error::{IntoResult, Result},
 };
 
 lazy_static! {

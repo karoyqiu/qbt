@@ -1,6 +1,7 @@
 use std::{
   collections::HashMap,
   sync::{Arc, Mutex},
+  time::Duration,
 };
 
 use lazy_static::lazy_static;
@@ -10,7 +11,6 @@ use reqwest::{
   Client, ClientBuilder, Proxy, Response,
 };
 use scraper::Selector;
-use serde::Serialize;
 use tauri::http::{HeaderMap, HeaderName, HeaderValue};
 use tauri_plugin_store::StoreExt;
 use translators::GoogleTranslator;
@@ -93,6 +93,7 @@ pub fn get_client() -> Result<Client> {
   let store = Arc::new(CookieJar::new());
   let client = apply_proxy(
     ClientBuilder::new()
+      .timeout(Duration::from_secs(30))
       .cookie_provider(store)
       .default_headers(headers)
       .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0")
@@ -103,9 +104,9 @@ pub fn get_client() -> Result<Client> {
   Ok(client)
 }
 
-/// 获取HTML
-pub async fn get_html(url: &str) -> Result<(String, Url)> {
-  debug!("Getting HTML from {}", url);
+/// 获取响应
+pub async fn get_response(url: &str) -> Result<Response> {
+  debug!("Getting {}", url);
   let client = get_client()?;
   let mut req = client.get(url);
 
@@ -124,23 +125,28 @@ pub async fn get_html(url: &str) -> Result<(String, Url)> {
     req = req.header("Referer", "https://www.giga-web.jp/top.html");
   }
 
-  let res = req.send().await.into_result()?;
+  req.send().await.into_result()
+}
+
+/// 获取 HTML
+pub async fn get_html(url: &str) -> Result<(String, Url)> {
+  let res = get_response(url).await?;
   get_response_text(res).await
 }
 
-/// 提交 HTML
-pub async fn post_html<F>(url: &str, form: &F) -> Result<(String, Url)>
-where
-  F: Serialize + ?Sized,
-{
-  debug!("Posting HTML to {}", url);
-  let client = get_client()?;
-  let resp = client.post(url).form(form).send().await.into_result()?;
-  get_response_text(resp).await
-}
+// /// 提交 HTML
+// pub async fn post_html<F>(url: &str, form: &F) -> Result<(String, Url)>
+// where
+//   F: Serialize + ?Sized,
+// {
+//   debug!("Posting HTML to {}", url);
+//   let client = get_client()?;
+//   let resp = client.post(url).form(form).send().await.into_result()?;
+//   get_response_text(resp).await
+// }
 
 /// 获取响应文本
-pub async fn get_response_text(res: Response) -> Result<(String, Url)> {
+async fn get_response_text(res: Response) -> Result<(String, Url)> {
   let status = res.status();
   let url = res.url().clone();
   let body = res.text().await.into_result()?;

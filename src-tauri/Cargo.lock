@@ -4029,6 +4029,7 @@ name = "qbt"
 version = "0.2.5"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
  "chrono",
  "cookie",
  "derive_builder",

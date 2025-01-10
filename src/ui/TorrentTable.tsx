@@ -35,7 +35,7 @@ const getStateIcon = (state: TorrentState) => {
     case 'stoppedUP':
       return PrimeIcons.CHECK_CIRCLE;
     default:
-      console.warn(`Unknown state: ${state}`);
+      //console.warn(`Unknown state: ${state}`);
       return PrimeIcons.TIMES_CIRCLE;
   }
 };

@@ -24,6 +24,9 @@ async addUrls(urls: string) : Promise<null> {
 async delete(hashes: string[]) : Promise<null> {
     return await TAURI_INVOKE("delete", { hashes });
 },
+async downloadImage(url: string) : Promise<string> {
+    return await TAURI_INVOKE("download_image", { url });
+},
 /**
  * 获取主要数据
  */

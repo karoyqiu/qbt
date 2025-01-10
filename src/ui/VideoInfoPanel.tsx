@@ -2,8 +2,9 @@ import { PrimeIcons } from 'primereact/api';
 import { Avatar } from 'primereact/avatar';
 import { Image } from 'primereact/image';
 import { ProgressSpinner } from 'primereact/progressspinner';
+import { useEffect, useState } from 'react';
 
-import type { VideoInfo } from '../lib/bindings';
+import { type VideoInfo, commands } from '../lib/bindings';
 
 const formatDate = (seconds: number) => {
   const date = new Date(seconds * 1000);
@@ -25,6 +26,11 @@ type VideoInfoPanelProps = {
 
 export default function VideoInfoPanel(props: VideoInfoPanelProps) {
   const { loading, videoInfo } = props;
+  const [imgSrc, setImgSrc] = useState('');
+
+  useEffect(() => {
+    setImgSrc(videoInfo?.poster ?? videoInfo?.cover ?? '');
+  }, [videoInfo]);
 
   if (!videoInfo) {
     if (loading) {
@@ -38,10 +44,20 @@ export default function VideoInfoPanel(props: VideoInfoPanelProps) {
     <div className="flex gap-8">
       <Image
         className="shrink-0"
-        src={videoInfo.poster ?? videoInfo.cover ?? undefined}
+        src={imgSrc}
         width="360"
         referrerPolicy="no-referrer"
         loading="lazy"
+        onError={async () => {
+          if (imgSrc.startsWith('http')) {
+            try {
+              const src = await commands.downloadImage(imgSrc);
+              setImgSrc(src);
+            } catch (e) {
+              console.error('Failed to load image', e);
+            }
+          }
+        }}
       />
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-4">
