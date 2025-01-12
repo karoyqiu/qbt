@@ -8,7 +8,7 @@ use crate::error::{err, Result};
 
 use super::{
   code::is_uncensored,
-  crawlers::{self, AiravCc, Crawler, Fc2, Fc2ppvdb, JavBus, Officials},
+  crawlers::{self, AiravCc, Crawler, CrawlerCDP, Fc2, Fc2ppvdb, Fc2ppvdbCDP, JavBus, Officials},
   VideoInfo,
 };
 
@@ -19,6 +19,7 @@ lazy_static! {
   static ref FANTASTICA_RE: Regex = Regex::new(r"FA[A-Z]{2}-?\d+").unwrap();
   static ref FC2_WEBSITES: Vec<&'static str> = vec![
     "fc2ppvdb",
+    "fc2ppvdb_cdp",
     "fc2",
     "fc2club",
     "fc2hub",
@@ -241,6 +242,11 @@ lazy_static! {
     m.insert("airav_cc", Box::new(AiravCc::default()));
     m
   };
+  static ref CDP_CRAWLERS: HashMap<&'static str, Box<dyn CrawlerCDP + Sync + Send>> = {
+    let mut m: HashMap<&'static str, Box<dyn CrawlerCDP + Sync + Send>> = HashMap::new();
+    m.insert("fc2ppvdb_cdp", Box::new(Fc2ppvdbCDP::default()));
+    m
+  };
 }
 
 /// 刮削
@@ -285,6 +291,8 @@ pub async fn crawl(code: &String) -> Result<VideoInfo> {
 async fn crawl_website(code: &String, website: &str) -> Result<VideoInfo> {
   if let Some(crawler) = CRAWLERS.get(website) {
     crawlers::crawl(crawler.as_ref(), code).await
+  } else if let Some(cralwer) = CDP_CRAWLERS.get(website) {
+    crawlers::crawl_cdp(cralwer.as_ref(), code).await
   } else {
     err("Crawler not found")
   }

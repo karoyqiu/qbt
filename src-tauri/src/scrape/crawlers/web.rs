@@ -32,15 +32,21 @@ struct StringValue {
   value: String,
 }
 
-fn apply_proxy(builder: ClientBuilder) -> Result<ClientBuilder> {
+pub fn get_proxy() -> Result<Option<String>> {
   let app = get_app_handle().ok_or(Error(anyhow::anyhow!("App handle not found")))?;
   let store = app.store("settings.json").into_result()?;
   let proxy = store.get("proxy");
 
   if let Some(proxy) = proxy {
     let proxy: StringValue = serde_json::from_value(proxy).into_result()?;
-    let proxy = proxy.value;
+    Ok(Some(proxy.value))
+  } else {
+    Ok(None)
+  }
+}
 
+fn apply_proxy(builder: ClientBuilder) -> Result<ClientBuilder> {
+  if let Some(proxy) = get_proxy()? {
     match proxy.as_str() {
       "<system>" | "" => Ok(builder),
       "<direct>" => Ok(builder.no_proxy()),
@@ -152,7 +158,7 @@ async fn get_response_text(res: Response) -> Result<(String, Url)> {
   let body = res.text().await.into_result()?;
 
   if status.is_success() {
-    trace!("Got HTML: {} - {}", url, body);
+    //trace!("Got HTML: {} - {}", url, body);
     Ok((body, url))
   } else {
     trace!("Failed to get HTML: {}, {}", status, body);

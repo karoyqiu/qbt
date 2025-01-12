@@ -41,6 +41,59 @@ struct EditThisCookie {
   pub value: String,
 }
 
+pub fn load_cookies() -> Result<CookieStore> {
+  let reader = File::open(&COOKIE_STORE_PATHS.0)
+    .map(BufReader::new)
+    .into_result()?;
+  let mut store = cookie_store::serde::json::load_all(reader).unwrap_or_default();
+
+  if open_edit_store(&mut store, &COOKIE_STORE_PATHS.1).is_ok() {
+    let _ = std::fs::remove_file(&COOKIE_STORE_PATHS.1);
+  }
+
+  Ok(store)
+}
+
+fn open_edit_store<P>(store: &mut CookieStore, path: P) -> Result<()>
+where
+  P: AsRef<Path>,
+{
+  let reader = File::open(path).map(BufReader::new).into_result()?;
+  let edit_this_cookies: Vec<EditThisCookie> = serde_json::from_reader(reader).into_result()?;
+
+  for etc in edit_this_cookies {
+    let mut domain = etc.domain.clone();
+
+    if domain.starts_with(".") {
+      domain.remove(0);
+    }
+
+    let url = Url::parse(&format!("https://{}{}", domain, etc.path)).into_result()?;
+    let mut builder = RawCookie::build((etc.name, etc.value))
+      .domain(etc.domain)
+      .expires(
+        etc
+          .expiration_date
+          .map(|exp| cookie::time::OffsetDateTime::from_unix_timestamp(exp as i64).unwrap()),
+      )
+      .http_only(etc.http_only)
+      .path(etc.path)
+      .secure(etc.secure);
+
+    match etc.same_site.as_str() {
+      "strict" => builder = builder.same_site(SameSite::Strict),
+      "lax" => builder = builder.same_site(SameSite::Lax),
+      "no_restriction" => builder = builder.same_site(SameSite::None),
+      _ => {}
+    }
+
+    let cookie = builder.build();
+    store.insert_raw(&cookie, &url).into_result()?;
+  }
+
+  Ok(())
+}
+
 #[derive(Default)]
 pub struct CookieJar {
   store: CookieStoreMutex,
@@ -48,62 +101,9 @@ pub struct CookieJar {
 
 impl CookieJar {
   pub fn new() -> Self {
-    let store = Self::open().unwrap_or_default();
+    let store = load_cookies().unwrap_or_default();
     let store = CookieStoreMutex::new(store);
     CookieJar { store }
-  }
-
-  fn open() -> Result<CookieStore> {
-    let reader = File::open(&COOKIE_STORE_PATHS.0)
-      .map(BufReader::new)
-      .into_result()?;
-    let mut store = cookie_store::serde::json::load_all(reader).unwrap_or_default();
-
-    if Self::open_edit_store(&mut store, &COOKIE_STORE_PATHS.1).is_ok() {
-      let _ = std::fs::remove_file(&COOKIE_STORE_PATHS.1);
-    }
-
-    Ok(store)
-  }
-
-  fn open_edit_store<P>(store: &mut CookieStore, path: P) -> Result<()>
-  where
-    P: AsRef<Path>,
-  {
-    let reader = File::open(path).map(BufReader::new).into_result()?;
-    let edit_this_cookies: Vec<EditThisCookie> = serde_json::from_reader(reader).into_result()?;
-
-    for etc in edit_this_cookies {
-      let mut domain = etc.domain.clone();
-
-      if domain.starts_with(".") {
-        domain.remove(0);
-      }
-
-      let url = Url::parse(&format!("https://{}{}", domain, etc.path)).into_result()?;
-      let mut builder = RawCookie::build((etc.name, etc.value))
-        .domain(etc.domain)
-        .expires(
-          etc
-            .expiration_date
-            .map(|exp| cookie::time::OffsetDateTime::from_unix_timestamp(exp as i64).unwrap()),
-        )
-        .http_only(etc.http_only)
-        .path(etc.path)
-        .secure(etc.secure);
-
-      match etc.same_site.as_str() {
-        "strict" => builder = builder.same_site(SameSite::Strict),
-        "lax" => builder = builder.same_site(SameSite::Lax),
-        "no_restriction" => builder = builder.same_site(SameSite::None),
-        _ => {}
-      }
-
-      let cookie = builder.build();
-      store.insert_raw(&cookie, &url).into_result()?;
-    }
-
-    Ok(())
   }
 
   pub fn save(&self) -> Result<()> {

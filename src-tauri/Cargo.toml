@@ -21,6 +21,7 @@ cookie = "0.18.1"
 cookie_store = "0.21.1"
 derive_builder = "0.20.2"
 futures = { version = "0.3.31", default-features = false }
+headless_chrome = "1.0.15"
 lazy_static = "1.5.0"
 log = "0.4.22"
 ormlite = { version = "0.22.8", features = ["sqlite"] }
