@@ -8,21 +8,22 @@ use crate::{
 };
 
 use super::{
+  airav_cdp::AiravCDP,
   crawler::{convert_datetime_string_to_epoch, Crawler},
   web::get_selector,
 };
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct VideoObject {
-  thumbnail_url: String,
+pub struct VideoObject {
+  pub thumbnail_url: Vec<String>,
 }
 
 #[derive(Default)]
-pub struct AiravCc;
+pub struct Airav;
 
 // 现在貌似绕不过去 cloudflare 的检测
-impl Crawler for AiravCc {
+impl Crawler for Airav {
   fn get_name(&self) -> &'static str {
     "airav.io"
   }
@@ -75,29 +76,19 @@ impl Crawler for AiravCc {
     let selector = get_selector("script[type=\"application/ld+json\"]");
     let script = doc.select(&selector).next()?;
     let text: String = script.text().collect();
-    let video_object: VideoObject = serde_json::from_str(&text).ok()?;
-    Some(video_object.thumbnail_url)
+    let mut video_object: VideoObject = serde_json::from_str(&text).ok()?;
+    video_object.thumbnail_url.pop()
   }
 
   fn get_outline(&self, doc: &Html) -> Option<TranslatedText> {
     let selector = get_selector("div.video-info > p");
     let elem = doc.select(&selector).next()?;
-    Some(TranslatedText {
-      text: elem.text().collect(),
-      translated: None,
-    })
+    Some(TranslatedText::text::<String>(elem.text().collect()))
   }
 
   fn get_actresses(&self, doc: &Html) -> Option<Vec<Actress>> {
     let actresses = get_info_list_items(doc, "女優");
-    let actresses = actresses.map(|a| {
-      a.iter()
-        .map(|a| Actress {
-          name: a.clone(),
-          photo: None,
-        })
-        .collect::<Vec<_>>()
-    });
+    let actresses = actresses.map(|a| a.iter().map(|a| Actress::name(a)).collect::<Vec<_>>());
     actresses
   }
 
@@ -122,6 +113,10 @@ impl Crawler for AiravCc {
     let parent = ElementRef::wrap(parent)?;
     let text: String = parent.text().collect();
     convert_datetime_string_to_epoch(&text, None)
+  }
+
+  fn cdp(&self) -> Option<Box<dyn super::CrawlerCDP + Sync + Send>> {
+    Some(Box::new(AiravCDP::default()))
   }
 }
 

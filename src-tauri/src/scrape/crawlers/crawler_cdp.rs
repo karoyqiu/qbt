@@ -9,7 +9,7 @@ use headless_chrome::{
   },
   Browser, Element, LaunchOptionsBuilder, Tab,
 };
-use log::{debug, info};
+use log::{debug, error, info};
 use translators::Translator;
 use url::Url;
 
@@ -32,8 +32,8 @@ pub trait CrawlerCDP {
   fn get_url(&self, code: &String) -> Result<String>;
 
   /** 下一步地址 */
-  fn get_next_url(&self, _url: &Url, _tab: &Arc<Tab>) -> bool {
-    false
+  fn goto_next_url(&self, _url: &Url, _tab: &Arc<Tab>) -> Result<bool> {
+    Ok(false)
   }
 
   /** 标题 */
@@ -127,7 +127,6 @@ where
   T: CrawlerCDP + ?Sized,
 {
   info!("Crawling {} for {}", crawler.get_name(), code);
-  let url = crawler.get_url(code)?;
 
   let mut builder = LaunchOptionsBuilder::default();
   builder
@@ -159,41 +158,19 @@ where
 
   let browser = Browser::new(options)?;
   let tab = browser.new_tab()?;
-  tab.set_user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0", None, None)?;
-  tab.navigate_to(&url)?.wait_until_navigated()?;
+  tab.set_default_timeout(Duration::from_secs(60))
+    .set_slow_motion_multiplier(1.0)
+    .set_user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0", None, None)?;
 
-  // Set cookies then navigate again
-  set_cookies(&tab, &Url::parse(&url).into_result()?)?;
-  tab.navigate_to(&url)?.wait_until_navigated()?;
+  let result = crawl_with_browser(crawler, code, &tab);
 
-  let mut url = Url::parse(&tab.get_url()).into_result()?;
-
-  while crawler.get_next_url(&url, &tab) {
-    tab.wait_until_navigated()?;
-    url = Url::parse(&tab.get_url()).into_result()?;
+  if result.is_err() {
+    error!("Fuck");
+    take_screenshot(&tab, "fuck")?;
+    return Err(result.unwrap_err());
   }
 
-  let mut info = {
-    debug!("Url: {}", url);
-
-    if let Ok(title) = crawler.get_title(&tab) {
-      crawler
-        .get_info_builder(&tab)?
-        .code(code.clone())
-        .title(TranslatedText::text(title))
-        .build()
-        .into_result()?
-    } else {
-      let png = tab.capture_screenshot(
-        headless_chrome::protocol::cdp::Page::CaptureScreenshotFormatOption::Png,
-        None,
-        None,
-        true,
-      )?;
-      std::fs::write("R:\\fuck.png", png).into_result()?;
-      return err("Fuck");
-    }
-  };
+  let (url, mut info) = result.unwrap();
 
   if let Some(poster) = info.poster {
     let poster = url.join(&poster).into_result()?;
@@ -230,6 +207,43 @@ where
 
   info!("Crawled {} for {}: {:?}", crawler.get_name(), code, info);
   Ok(info)
+}
+
+fn crawl_with_browser<T>(crawler: &T, code: &String, tab: &Arc<Tab>) -> Result<(Url, VideoInfo)>
+where
+  T: CrawlerCDP + ?Sized,
+{
+  let url = crawler.get_url(code)?;
+  debug!("Navigating to {}", url);
+  tab.navigate_to(&url)?.wait_until_navigated()?;
+
+  debug!("Setting cookies and reloading");
+  set_cookies(&tab, &Url::parse(&url).into_result()?)?;
+  tab.navigate_to(&url)?.wait_until_navigated()?;
+
+  let mut url = Url::parse(&tab.get_target_info()?.url).into_result()?;
+  debug!("Current url: {}", url);
+
+  while crawler.goto_next_url(&url, &tab)? {
+    //tab.wait_until_navigated()?;
+    std::thread::sleep(Duration::from_secs(3));
+    url = Url::parse(&tab.get_target_info()?.url).into_result()?;
+    debug!("Current url: {}", url);
+  }
+
+  let info = {
+    debug!("Url: {}", url);
+
+    let title = crawler.get_title(&tab)?;
+    crawler
+      .get_info_builder(&tab)?
+      .code(code.clone())
+      .title(TranslatedText::text(title))
+      .build()
+      .into_result()?
+  };
+
+  Ok((url, info))
 }
 
 fn set_cookies(tab: &Arc<Tab>, url: &Url) -> Result<()> {
@@ -289,4 +303,18 @@ pub fn get_parent_element<'a>(elem: &'a Element<'a>) -> Result<Element<'a>> {
   })?;
 
   Element::new(tab, result.node_id).into_result()
+}
+
+pub fn take_screenshot(tab: &Arc<Tab>, name: &str) -> Result<()> {
+  let png = tab.capture_screenshot(
+    headless_chrome::protocol::cdp::Page::CaptureScreenshotFormatOption::Png,
+    None,
+    None,
+    true,
+  )?;
+
+  let mut temp = std::env::temp_dir();
+  temp.push(format!("{}.png", name));
+  std::fs::write(temp, png).into_result()?;
+  Ok(())
 }

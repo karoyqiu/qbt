@@ -1,4 +1,5 @@
-mod airav_cc;
+mod airav;
+mod airav_cdp;
 mod cookie_jar;
 mod crawler;
 mod crawler_cdp;
@@ -9,13 +10,12 @@ mod javbus;
 mod officials;
 mod web;
 
-pub use airav_cc::AiravCc;
+pub use airav::Airav;
 pub use cookie_jar::load_cookies;
 pub use crawler::{crawl, Crawler};
 pub use crawler_cdp::{crawl_cdp, CrawlerCDP};
 pub use fc2::Fc2;
 pub use fc2ppvdb::Fc2ppvdb;
-pub use fc2ppvdb_cdp::Fc2ppvdbCDP;
 pub use javbus::JavBus;
 pub use officials::Officials;
 pub use web::get_response;

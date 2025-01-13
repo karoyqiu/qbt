@@ -8,7 +8,7 @@ use crate::error::{err, Result};
 
 use super::{
   code::is_uncensored,
-  crawlers::{self, AiravCc, Crawler, Fc2, Fc2ppvdb, JavBus, Officials},
+  crawlers::{self, Airav, Crawler, Fc2, Fc2ppvdb, JavBus, Officials},
   VideoInfo,
 };
 
@@ -239,7 +239,7 @@ lazy_static! {
     m.insert("javbus", Box::new(JavBus::default()));
     m.insert("fc2", Box::new(Fc2::default()));
     m.insert("fc2ppvdb", Box::new(Fc2ppvdb::default()));
-    m.insert("airav_cc", Box::new(AiravCc::default()));
+    m.insert("airav_cc", Box::new(Airav::default()));
     m
   };
 }

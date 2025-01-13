@@ -7,8 +7,8 @@ use crate::{
 
 use super::{
   crawler::{convert_date_string_to_epoch, convert_duration_string_to_seconds, Crawler},
+  fc2ppvdb_cdp::Fc2ppvdbCDP,
   web::get_selector,
-  Fc2ppvdbCDP,
 };
 
 #[derive(Default)]
