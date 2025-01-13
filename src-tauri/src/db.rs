@@ -225,17 +225,18 @@ pub async fn mark_as_downloaded(
   Ok(())
 }
 
-/// 标记为已下载
+/// 重新刮削
 #[tauri::command]
 #[specta::specta]
-pub async fn rescrape(state: State<'_, DbState>, name: String) -> Result<()> {
+pub async fn rescrape(state: State<'_, DbState>, name: String) -> Result<Option<VideoInfo>> {
   if let Some(code) = get_movie_code(&name) {
     let info = crawl(&code).await?;
 
     if !info.title.text.is_empty() {
       insert_video_info(&state, info.clone()).await?;
+      return Ok(Some(info));
     }
   }
 
-  Ok(())
+  Ok(None)
 }

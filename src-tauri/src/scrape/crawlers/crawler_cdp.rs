@@ -2,15 +2,19 @@ use std::{ffi::OsStr, sync::Arc, time::Duration};
 
 use cookie::SameSite;
 use headless_chrome::{
-  protocol::cdp::Network::{CookieParam, CookieSameSite},
-  Browser, LaunchOptionsBuilder, Tab,
+  protocol::cdp::{
+    Network::{CookieParam, CookieSameSite},
+    Runtime::{RemoteObjectSubtype, RemoteObjectType},
+    DOM::RequestNode,
+  },
+  Browser, Element, LaunchOptionsBuilder, Tab,
 };
-use log::info;
+use log::{debug, info};
 use translators::Translator;
 use url::Url;
 
 use crate::{
-  error::{IntoResult, Result},
+  error::{err, IntoResult, Result},
   scrape::{
     crawlers::{
       load_cookies,
@@ -127,22 +131,22 @@ where
 
   let mut builder = LaunchOptionsBuilder::default();
   builder
-    //.path(Some(path))
-    //.user_data_dir(Some(data_dir))
-    //.proxy_server(proxy)
     .disable_default_args(true)
     .enable_gpu(true)
     .headless(false)
     .idle_browser_timeout(Duration::from_secs(180))
+    .ignore_certificate_errors(false)
+    .window_size(Some((1920, 1080)))
     .args(vec![
-      OsStr::new("--disable-background-timer-throttling"),
-      OsStr::new("--disable-backgrounding-occluded-windows"),
-      OsStr::new("--disable-blink-features=AutomationControlled"),
-      OsStr::new("--disable-component-extensions-with-background-pages"),
-      OsStr::new("--disable-renderer-backgrounding"),
-      OsStr::new("--hide-crash-restore-bubble"),
-      OsStr::new("--no-default-browser-check"),
-      OsStr::new("--start-maximized"),
+      OsStr::new("--headless=new"),
+      // OsStr::new("--disable-background-timer-throttling"),
+      // OsStr::new("--disable-backgrounding-occluded-windows"),
+      // OsStr::new("--disable-blink-features=AutomationControlled"),
+      // OsStr::new("--disable-component-extensions-with-background-pages"),
+      // OsStr::new("--disable-renderer-backgrounding"),
+      // OsStr::new("--hide-crash-restore-bubble"),
+      // OsStr::new("--no-default-browser-check"),
+      // OsStr::new("--start-maximized"),
     ]);
 
   let proxy = get_proxy()?;
@@ -155,6 +159,7 @@ where
 
   let browser = Browser::new(options)?;
   let tab = browser.new_tab()?;
+  tab.set_user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0", None, None)?;
   tab.navigate_to(&url)?.wait_until_navigated()?;
 
   // Set cookies then navigate again
@@ -169,14 +174,25 @@ where
   }
 
   let mut info = {
-    let title = crawler.get_title(&tab)?;
+    debug!("Url: {}", url);
 
-    crawler
-      .get_info_builder(&tab)?
-      .code(code.clone())
-      .title(TranslatedText::text(title))
-      .build()
-      .into_result()?
+    if let Ok(title) = crawler.get_title(&tab) {
+      crawler
+        .get_info_builder(&tab)?
+        .code(code.clone())
+        .title(TranslatedText::text(title))
+        .build()
+        .into_result()?
+    } else {
+      let png = tab.capture_screenshot(
+        headless_chrome::protocol::cdp::Page::CaptureScreenshotFormatOption::Png,
+        None,
+        None,
+        true,
+      )?;
+      std::fs::write("R:\\fuck.png", png).into_result()?;
+      return err("Fuck");
+    }
   };
 
   if let Some(poster) = info.poster {
@@ -254,4 +270,23 @@ fn same_site_to_cookie_same_site(value: SameSite) -> CookieSameSite {
     SameSite::Lax => CookieSameSite::Lax,
     SameSite::None => CookieSameSite::None,
   }
+}
+
+pub fn get_parent_element<'a>(elem: &'a Element<'a>) -> Result<Element<'a>> {
+  let tab = elem.parent;
+  let result = elem.call_js_fn("function() { return this.parentElement; }", vec![], false)?;
+  debug!("Parent element: {:?}", result);
+
+  if result.Type != RemoteObjectType::Object
+    || result.subtype != Some(RemoteObjectSubtype::Node)
+    || result.object_id.is_none()
+  {
+    return err("Parent not found");
+  }
+
+  let result = tab.call_method(RequestNode {
+    object_id: result.object_id.unwrap(),
+  })?;
+
+  Element::new(tab, result.node_id).into_result()
 }

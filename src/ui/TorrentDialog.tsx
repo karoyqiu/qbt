@@ -12,10 +12,10 @@ import {
   type TreeTableSelectionKeysType,
 } from 'primereact/treetable';
 import { useEffect, useState } from 'react';
-import { useReadLocalStorage } from 'usehooks-ts';
 
 import { type TorrentContent, VideoInfo, commands } from '../lib/bindings';
 import { formatPercent, formatSize } from '../lib/format';
+import { useStore } from '../lib/useStore';
 import VideoInfoPanel from './VideoInfoPanel';
 
 export type TorrentNode = Omit<TreeNode, 'data' | 'children'> & {
@@ -55,18 +55,19 @@ export default function TorrentDialog(props: TorrentDialogProps) {
   const [status, setStatus] = useState<'undone' | 'doing' | 'done'>('undone');
   const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
   const [tabIndex, setTabIndex] = useState(0);
-  const localDownloadDir = useReadLocalStorage<string>('localDownloadDir');
+  const [localDownloadDir] = useStore<string>('localDownloadDir', '');
 
   useEffect(() => setExpandedKeys(expanded), [expanded]);
 
   useEffect(() => {
     setStatus('undone');
     setVideoInfo(null);
+    setTabIndex(0);
   }, [nodes]);
 
   return (
     <Dialog
-      header="Torrent"
+      header={nodes.length === 0 ? 'Torrent' : nodes[0].data.name}
       visible={open}
       onHide={onClose}
       className="w-[calc(100vw-16rem)] max-w-screen-lg"
@@ -78,7 +79,17 @@ export default function TorrentDialog(props: TorrentDialogProps) {
             ) : (
               <Button label="Auto select" onClick={onAutoSelect} />
             ))}
-          {tabIndex === 1 && <Button label="Re-scrape" />}
+          {tabIndex === 1 && (
+            <Button
+              label="Re-scrape"
+              onClick={async () => {
+                setStatus('doing');
+                setVideoInfo(null);
+                setVideoInfo(await commands.rescrape(nodes[0].data.name));
+                setStatus('done');
+              }}
+            />
+          )}
         </div>
       }
       dismissableMask

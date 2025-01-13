@@ -12,7 +12,7 @@ import { TabMenu } from 'primereact/tabmenu';
 import type { TreeTableExpandedKeysType, TreeTableSelectionKeysType } from 'primereact/treetable';
 import { diff, fork, max, unique } from 'radashi';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useInterval, useLocalStorage, useReadLocalStorage } from 'usehooks-ts';
+import { useInterval, useLocalStorage } from 'usehooks-ts';
 
 import { type MainData, type TorrentContent, commands } from './lib/bindings';
 import { formatSize, formatSpeed } from './lib/format';
@@ -28,6 +28,7 @@ import {
   mergeMainData,
 } from './lib/qBittorrentTypes';
 import useClipboard from './lib/useClipboard';
+import { useStore } from './lib/useStore';
 import AddDialog from './ui/AddDialog';
 import LoginDialog, { type Credentials } from './ui/LoginDialog';
 import SettingsDialog from './ui/SettingsDialog';
@@ -84,8 +85,8 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [mainData, setMainDataRaw] = useState(defaultMainData);
-  const smallFileThreshold = useReadLocalStorage<number>('smallFileThreshold') ?? 200 * 1024 * 1024;
-  const watchClipboard = useReadLocalStorage<boolean>('watchClipboard') ?? false;
+  const [smallFileThreshold] = useStore<number>('smallFileThreshold', 200 * 1024 * 1024);
+  const [watchClipboard] = useStore<boolean>('watchClipboard', false);
 
   const metas = useRef<RequiredTorrentInfo[]>([]);
   const torrents = Object.values(mainData.torrents);

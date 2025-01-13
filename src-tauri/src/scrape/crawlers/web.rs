@@ -161,7 +161,7 @@ async fn get_response_text(res: Response) -> Result<(String, Url)> {
     //trace!("Got HTML: {} - {}", url, body);
     Ok((body, url))
   } else {
-    trace!("Failed to get HTML: {}, {}", status, body);
+    trace!("Failed to get HTML: {}", status);
     err("Failed to get HTML")
   }
 }

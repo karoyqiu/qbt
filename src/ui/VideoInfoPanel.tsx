@@ -1,10 +1,9 @@
-import { PrimeIcons } from 'primereact/api';
-import { Avatar } from 'primereact/avatar';
 import { Image } from 'primereact/image';
 import { Skeleton } from 'primereact/skeleton';
 import { useEffect, useState } from 'react';
 
 import { type VideoInfo, commands } from '../lib/bindings';
+import ActressAvatar from './ActressAvatar';
 
 const formatDate = (seconds: number) => {
   const date = new Date(seconds * 1000);
@@ -44,6 +43,7 @@ export default function VideoInfoPanel(props: VideoInfoPanelProps) {
               <div className="flex gap-16 text-sm">
                 <Skeleton width="8rem" />
                 <Skeleton width="8rem" />
+                <Skeleton width="8rem" />
               </div>
             </div>
             <div className="flex flex-col gap-4">
@@ -52,11 +52,11 @@ export default function VideoInfoPanel(props: VideoInfoPanelProps) {
             </div>
             <div className="flex gap-4">
               <div className="flex flex-col gap-2">
-                <Skeleton size="4rem" borderRadius="1rem" />
+                <Skeleton size="4rem" borderRadius="0.75rem" />
                 <Skeleton />
               </div>
               <div className="flex flex-col gap-2">
-                <Skeleton size="4rem" borderRadius="1rem" />
+                <Skeleton size="4rem" borderRadius="0.75rem" />
                 <Skeleton />
               </div>
             </div>
@@ -100,6 +100,7 @@ export default function VideoInfoPanel(props: VideoInfoPanelProps) {
           <h3 className="text-xl font-bold">{videoInfo.title.text}</h3>
           <h3>{videoInfo.title.translated}</h3>
           <div className="flex gap-16 text-sm text-[--text-color-secondary]">
+            <span>{videoInfo.code}</span>
             {videoInfo.release_date && <span>{formatDate(videoInfo.release_date)}</span>}
             {videoInfo.duration && <span>{formatMinutes(videoInfo.duration)}</span>}
           </div>
@@ -112,12 +113,7 @@ export default function VideoInfoPanel(props: VideoInfoPanelProps) {
           <div className="flex gap-4">
             {videoInfo.actresses.map((actress) => (
               <div key={actress.name} className="flex flex-col gap-2">
-                <Avatar
-                  className="shrink-0 size-16"
-                  icon={PrimeIcons.USER}
-                  image={actress.photo ?? undefined}
-                  size="xlarge"
-                />
+                <ActressAvatar photo={actress.photo} />
                 <span>{actress.name}</span>
               </div>
             ))}

@@ -12,6 +12,8 @@ use crate::{
   },
 };
 
+use super::CrawlerCDP;
+
 pub trait Crawler {
   /** 网站名称 */
   fn get_name(&self) -> &'static str;
@@ -105,6 +107,10 @@ pub trait Crawler {
 
   /** 额外的插图 */
   fn get_extra_fanart(&self, _doc: &Html) -> Option<Vec<String>> {
+    None
+  }
+
+  fn cdp(&self) -> Option<Box<dyn CrawlerCDP + Sync + Send>> {
     None
   }
 }

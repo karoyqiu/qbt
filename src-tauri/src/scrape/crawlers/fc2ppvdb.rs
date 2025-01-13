@@ -8,6 +8,7 @@ use crate::{
 use super::{
   crawler::{convert_date_string_to_epoch, convert_duration_string_to_seconds, Crawler},
   web::get_selector,
+  Fc2ppvdbCDP,
 };
 
 #[derive(Default)]
@@ -117,6 +118,10 @@ impl Crawler for Fc2ppvdb {
     } else {
       None
     }
+  }
+
+  fn cdp(&self) -> Option<Box<dyn super::CrawlerCDP + Sync + Send>> {
+    Some(Box::new(Fc2ppvdbCDP::default()))
   }
 }
 

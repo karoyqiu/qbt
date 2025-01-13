@@ -8,7 +8,7 @@ use crate::error::{err, Result};
 
 use super::{
   code::is_uncensored,
-  crawlers::{self, AiravCc, Crawler, CrawlerCDP, Fc2, Fc2ppvdb, Fc2ppvdbCDP, JavBus, Officials},
+  crawlers::{self, AiravCc, Crawler, Fc2, Fc2ppvdb, JavBus, Officials},
   VideoInfo,
 };
 
@@ -242,11 +242,6 @@ lazy_static! {
     m.insert("airav_cc", Box::new(AiravCc::default()));
     m
   };
-  static ref CDP_CRAWLERS: HashMap<&'static str, Box<dyn CrawlerCDP + Sync + Send>> = {
-    let mut m: HashMap<&'static str, Box<dyn CrawlerCDP + Sync + Send>> = HashMap::new();
-    m.insert("fc2ppvdb_cdp", Box::new(Fc2ppvdbCDP::default()));
-    m
-  };
 }
 
 /// 刮削
@@ -290,9 +285,13 @@ pub async fn crawl(code: &String) -> Result<VideoInfo> {
 
 async fn crawl_website(code: &String, website: &str) -> Result<VideoInfo> {
   if let Some(crawler) = CRAWLERS.get(website) {
-    crawlers::crawl(crawler.as_ref(), code).await
-  } else if let Some(cralwer) = CDP_CRAWLERS.get(website) {
-    crawlers::crawl_cdp(cralwer.as_ref(), code).await
+    if let Ok(result) = crawlers::crawl(crawler.as_ref(), code).await {
+      Ok(result)
+    } else if let Some(cdp) = crawler.cdp() {
+      crawlers::crawl_cdp(cdp.as_ref(), code).await
+    } else {
+      err("Failed to crawl")
+    }
   } else {
     err("Crawler not found")
   }

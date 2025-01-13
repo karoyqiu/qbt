@@ -76,9 +76,9 @@ async recheck(hashes: string[]) : Promise<null> {
     return await TAURI_INVOKE("recheck", { hashes });
 },
 /**
- * 标记为已下载
+ * 重新刮削
  */
-async rescrape(name: string) : Promise<null> {
+async rescrape(name: string) : Promise<VideoInfo | null> {
     return await TAURI_INVOKE("rescrape", { name });
 },
 /**
