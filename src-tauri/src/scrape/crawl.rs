@@ -52,7 +52,6 @@ lazy_static! {
     "airav",
   ];
   static ref CENSORED_WEBSITES: Vec<&'static str> = vec![
-    "airav_cc",
     "iqqtv",
     "avsex",
     "javbus",
@@ -79,10 +78,10 @@ lazy_static! {
     "jav321",
     "javlibrary",
   ];
-  static ref TITLE_ZH_WEBSITE: Vec<&'static str> = vec!["airav_cc", "iqqtv", "avsex", "lulubar"];
+  static ref TITLE_ZH_WEBSITE: Vec<&'static str> = vec!["iqqtv", "avsex", "lulubar"];
   static ref TITLE_WEBSITE_EXCLUDE: Vec<&'static str> = vec![""];
   static ref OUTLINE_WEBSITE: Vec<&'static str> = vec!["theporndb", "dmm", "jav321"];
-  static ref OUTLINE_ZH_WEBSITE: Vec<&'static str> = vec!["airav_cc", "avsex", "iqqtv", "lulubar"];
+  static ref OUTLINE_ZH_WEBSITE: Vec<&'static str> = vec!["avsex", "iqqtv", "lulubar"];
   static ref OUTLINE_WEBSITE_EXCLUDE: Vec<&'static str> = vec![
     "avsox",
     "fc2club",
@@ -108,15 +107,8 @@ lazy_static! {
     "lulubar",
   ];
   static ref EXTRAFANART_WEBSITE: Vec<&'static str> = vec!["javbus", "freejavbt"];
-  static ref EXTRAFANART_WEBSITE_EXCLUDE: Vec<&'static str> = vec![
-    "airav",
-    "airav_cc",
-    "avsex",
-    "avsox",
-    "iqqtv",
-    "javlibrary",
-    "lulubar",
-  ];
+  static ref EXTRAFANART_WEBSITE_EXCLUDE: Vec<&'static str> =
+    vec!["airav", "avsex", "avsox", "iqqtv", "javlibrary", "lulubar",];
   static ref TRAILER_WEBSITE: Vec<&'static str> = vec!["freejavbt", "mgstage", "dmm"];
   static ref TRAILER_WEBSITE_EXCLUDE: Vec<&'static str> = vec!["7mmtv", "lulubar"];
   static ref TAG_WEBSITE: Vec<&'static str> = vec!["javbus", "freejavbt"];
@@ -125,32 +117,22 @@ lazy_static! {
   static ref RELEASE_WEBSITE_EXCLUDE: Vec<&'static str> = vec!["fc2club", "fc2hub"];
   static ref DURATION_WEBSITE: Vec<&'static str> = vec!["javbus", "freejavbt"];
   static ref RUNTIME_WEBSITE_EXCLUDE: Vec<&'static str> =
-    vec!["airav", "airav_cc", "fc2", "fc2club", "fc2hub", "lulubar"];
+    vec!["airav", "fc2", "fc2club", "fc2hub", "lulubar"];
   static ref SCORE_WEBSITE: Vec<&'static str> = vec!["jav321", "javlibrary", "javdb"];
   static ref SCORE_WEBSITE_EXCLUDE: Vec<&'static str> = vec![
-    "airav", "airav_cc", "avsex", "avsox", "7mmtv", "fc2", "fc2hub", "iqqtv", "javbus", "xcity",
-    "lulubar",
+    "airav", "avsex", "avsox", "7mmtv", "fc2", "fc2hub", "iqqtv", "javbus", "xcity", "lulubar",
   ];
   static ref DIRECTOR_WEBSITE: Vec<&'static str> = vec!["javbus", "freejavbt"];
-  static ref DIRECTOR_WEBSITE_EXCLUDE: Vec<&'static str> = vec![
-    "airav", "airav_cc", "avsex", "avsox", "fc2", "fc2hub", "iqqtv", "jav321", "mgstage",
-    "lulubar",
-  ];
+  static ref DIRECTOR_WEBSITE_EXCLUDE: Vec<&'static str> =
+    vec!["airav", "avsex", "avsox", "fc2", "fc2hub", "iqqtv", "jav321", "mgstage", "lulubar",];
   static ref SERIES_WEBSITE: Vec<&'static str> = vec!["javbus", "freejavbt"];
-  static ref SERIES_WEBSITE_EXCLUDE: Vec<&'static str> = vec![
-    "airav",
-    "airav_cc",
-    "avsex",
-    "iqqtv",
-    "7mmtv",
-    "javlibrary",
-    "lulubar",
-  ];
+  static ref SERIES_WEBSITE_EXCLUDE: Vec<&'static str> =
+    vec!["airav", "avsex", "iqqtv", "7mmtv", "javlibrary", "lulubar",];
   static ref STUDIO_WEBSITE: Vec<&'static str> = vec!["javbus", "freejavbt"];
   static ref STUDIO_WEBSITE_EXCLUDE: Vec<&'static str> = vec!["avsex"];
   static ref PUBLISHER_WEBSITE: Vec<&'static str> = vec!["javbus"];
   static ref PUBLISHER_WEBSITE_EXCLUDE: Vec<&'static str> =
-    vec!["airav", "airav_cc", "avsex", "iqqtv", "lulubar"];
+    vec!["airav", "avsex", "iqqtv", "lulubar"];
   static ref WANTED_WEBSITE: Vec<&'static str> = vec!["javlibrary", "javdb"];
   static ref FIELD_EXCLUDES: HashMap<&'static str, Vec<&'static str>> = {
     let mut m = HashMap::new();
@@ -183,54 +165,33 @@ lazy_static! {
     );
     m.insert(
       "extrafanart",
-      vec![
-        "airav",
-        "airav_cc",
-        "avsex",
-        "avsox",
-        "iqqtv",
-        "javlibrary",
-        "lulubar",
-      ],
+      vec!["airav", "avsex", "avsox", "iqqtv", "javlibrary", "lulubar"],
     );
     m.insert("trailer", vec!["7mmtv", "lulubar"]);
     m.insert("tag", vec![]);
     m.insert("release", vec!["fc2club", "fc2hub"]);
     m.insert(
       "recorded",
-      vec!["airav", "airav_cc", "fc2", "fc2club", "fc2hub", "lulubar"],
+      vec!["airav", "fc2", "fc2club", "fc2hub", "lulubar"],
     );
     m.insert(
       "score",
       vec![
-        "airav", "airav_cc", "avsex", "avsox", "7mmtv", "fc2", "fc2hub", "iqqtv", "javbus",
-        "xcity", "lulubar",
+        "airav", "avsex", "avsox", "7mmtv", "fc2", "fc2hub", "iqqtv", "javbus", "xcity", "lulubar",
       ],
     );
     m.insert(
       "director",
       vec![
-        "airav", "airav_cc", "avsex", "avsox", "fc2", "fc2hub", "iqqtv", "jav321", "mgstage",
-        "lulubar",
+        "airav", "avsex", "avsox", "fc2", "fc2hub", "iqqtv", "jav321", "mgstage", "lulubar",
       ],
     );
     m.insert(
       "series",
-      vec![
-        "airav",
-        "airav_cc",
-        "avsex",
-        "iqqtv",
-        "7mmtv",
-        "javlibrary",
-        "lulubar",
-      ],
+      vec!["airav", "avsex", "iqqtv", "7mmtv", "javlibrary", "lulubar"],
     );
     m.insert("studio", vec!["avsex"]);
-    m.insert(
-      "publisher",
-      vec!["airav", "airav_cc", "avsex", "iqqtv", "lulubar"],
-    );
+    m.insert("publisher", vec!["airav", "avsex", "iqqtv", "lulubar"]);
     m
   };
   static ref CRAWLERS: HashMap<&'static str, Box<dyn Crawler + Sync + Send>> = {
@@ -239,7 +200,7 @@ lazy_static! {
     m.insert("javbus", Box::new(JavBus::default()));
     m.insert("fc2", Box::new(Fc2::default()));
     m.insert("fc2ppvdb", Box::new(Fc2ppvdb::default()));
-    m.insert("airav_cc", Box::new(Airav::default()));
+    m.insert("airav", Box::new(Airav::default()));
     m
   };
 }
