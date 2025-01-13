@@ -5,14 +5,21 @@ mod crawlers;
 use base64::{prelude::BASE64_STANDARD, Engine};
 use crawlers::get_response;
 use derive_builder::Builder;
+use lazy_static::lazy_static;
+use quick_cache::{sync::Cache, Weighter};
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use tauri::http::HeaderValue;
 
 pub use code::get_movie_code;
 pub use crawl::crawl;
-use tauri::http::HeaderValue;
 
-use crate::error::{IntoResult, Result};
+use crate::error::{Error, IntoResult, Result};
+
+lazy_static! {
+  static ref IMAGE_CACHE: Cache<String, String, StringWeighter> =
+    Cache::with_weighter(1024 * 2, 128 * 1024 * 1024, StringWeighter);
+}
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Type)]
 pub struct TranslatedText {
@@ -188,20 +195,35 @@ impl VideoInfo {
   }
 }
 
+#[derive(Clone)]
+struct StringWeighter;
+
+impl Weighter<String, String> for StringWeighter {
+  fn weight(&self, _key: &String, val: &String) -> u64 {
+    // Be cautions out about zero weights!
+    val.len() as u64
+  }
+}
+
 #[tauri::command]
 #[specta::specta]
 pub async fn download_image(url: String) -> Result<String> {
   static JPEG: HeaderValue = HeaderValue::from_static("image/jpeg");
-  let resp = get_response(&url).await?;
-  let content_type = resp
-    .headers()
-    .get("content-type")
-    .unwrap_or(&JPEG)
-    .to_str()
-    .into_result()?
-    .to_string();
-  let body = resp.bytes().await.into_result()?;
-  let data = BASE64_STANDARD.encode(body);
-  let data = format!("data:{};base64,{}", content_type, data);
-  Ok(data)
+
+  IMAGE_CACHE
+    .get_or_insert_async(&url, async {
+      let resp = get_response(&url).await?;
+      let content_type = resp
+        .headers()
+        .get("content-type")
+        .unwrap_or(&JPEG)
+        .to_str()
+        .into_result()?
+        .to_string();
+      let body = resp.bytes().await.into_result()?;
+      let data = BASE64_STANDARD.encode(body);
+      let data = format!("data:{};base64,{}", content_type, data);
+      Ok::<std::string::String, Error>(data)
+    })
+    .await
 }

@@ -27,6 +27,7 @@ type TorrentDialogProps = {
   open: boolean;
   onClose: () => void;
   loading?: boolean;
+  name: string;
   nodes: TorrentNode[];
   selected: TreeTableSelectionKeysType;
   expanded: TreeTableExpandedKeysType;
@@ -42,6 +43,7 @@ export default function TorrentDialog(props: TorrentDialogProps) {
     open,
     onClose,
     loading,
+    name,
     nodes,
     selected,
     expanded,
@@ -67,7 +69,7 @@ export default function TorrentDialog(props: TorrentDialogProps) {
 
   return (
     <Dialog
-      header={nodes.length === 0 ? 'Torrent' : nodes[0].data.name}
+      header={name}
       visible={open}
       onHide={onClose}
       className="w-[calc(100vw-16rem)] max-w-screen-lg"
@@ -85,7 +87,7 @@ export default function TorrentDialog(props: TorrentDialogProps) {
               onClick={async () => {
                 setStatus('doing');
                 setVideoInfo(null);
-                setVideoInfo(await commands.rescrape(nodes[0].data.name));
+                setVideoInfo(await commands.rescrape(name));
                 setStatus('done');
               }}
             />
@@ -100,7 +102,7 @@ export default function TorrentDialog(props: TorrentDialogProps) {
 
           if (e.index === 1 && status === 'undone' && !videoInfo) {
             setStatus('doing');
-            setVideoInfo(await commands.getVideoInfo(nodes[0].data.name));
+            setVideoInfo(await commands.getVideoInfo(name));
             setStatus('done');
           }
         }}

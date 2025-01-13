@@ -90,6 +90,7 @@ function App() {
 
   const metas = useRef<RequiredTorrentInfo[]>([]);
   const torrents = Object.values(mainData.torrents);
+  const currentTorrent = torrents.find((t) => t.infohash_v1 === currentHash);
   const refreshInterval = mainData.server_state.refresh_interval;
 
   const setFilter = useCallback((filter: TorrentFilter) => {
@@ -363,6 +364,7 @@ function App() {
         open={showTorrent}
         onClose={() => setShowTorrent(false)}
         loading={contentLoading}
+        name={currentTorrent?.name ?? ''}
         nodes={nodes}
         selected={selectedNodes}
         expanded={expanded}
