@@ -19,7 +19,7 @@ use super::{
 lazy_static! {
   static ref OFFICIAL_WEBSITES: HashMap<&'static str, &'static &'static str> = {
     let websites = &[
-      ("https://s1s1s1.com", "SIVR|SSIS|SSNI|SNIS|SOE|ONED|ONE|ONSD|OFJE|SPS|TKSOE"),  // https://s1s1s1.com/search/list?keyword=soe
+      ("https://s1s1s1.com", "SIVR|SSIS|SSNI|SNIS|SOE|ONED|ONE|ONSD|OFJE|SPS|TKSOE|SONE"),  // https://s1s1s1.com/search/list?keyword=soe
       ("https://moodyz.com", "MDVR|MIDV|MIDE|MIDD|MIBD|MIMK|MIID|MIGD|MIFD|MIAE|MIAD|MIAA|MDL|MDJ|MDI|MDG|MDF|MDE|MDLD|MDED|MIZD|MIRD|MDJD|RMID|MDID|MDMD|MIMU|MDPD|MIVD|MDUD|MDGD|MDVD|MIAS|MIQD|MINT|RMPD|MDRD|TKMIDE|TKMIDD|KMIDE|TKMIGD|MDFD|RMWD|MIAB"),
       ("https://madonna-av.com", "JUVR|JUSD|JUQ|JUY|JUX|JUL|JUK|JUC|JUKD|JUSD|OBA|JUFD|ROEB|ROE|URE|MDON|JFB|OBE|JUMS"),
       ("https://www.wanz-factory.com", "WAVR|WAAA|BMW|WANZ"),
