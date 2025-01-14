@@ -36,7 +36,7 @@ serde_urlencoded = "0.7.1"
 serde_with = "3.12.0"
 specta = "=2.0.0-rc.20"
 specta-typescript = "0.0.7"
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["devtools"] }
 tauri-plugin-clipboard = "2.1.11"
 tauri-plugin-dialog = "2"
 tauri-plugin-log = "2"
