@@ -92,6 +92,7 @@ function App() {
   const torrents = Object.values(mainData.torrents);
   const currentTorrent = torrents.find((t) => t.infohash_v1 === currentHash);
   const refreshInterval = mainData.server_state.refresh_interval;
+  const totalSelected = selected.reduce((prev, t) => prev + t.size, 0);
 
   const setFilter = useCallback((filter: TorrentFilter) => {
     setFilterRaw(filter);
@@ -389,7 +390,7 @@ function App() {
       />
       <SettingsDialog open={showSettings} onClose={() => setShowSettings(false)} />
       <Sidebar visible={showSidebar} onHide={() => setShowSidebar(false)}>
-        <div className="grid grid-cols-2 gap-y-2">
+        <div className="grid grid-cols-[1fr,auto] gap-y-2">
           <span>DHT nodes</span>
           <span className="text-end font-mono">{mainData.server_state.dht_nodes}</span>
           <span>Data downloaded</span>
@@ -412,6 +413,8 @@ function App() {
           <span className="text-end font-mono">
             {formatSize(mainData.server_state.free_space_on_disk)}
           </span>
+          <span>Total selected size</span>
+          <span className="text-end font-mono">{formatSize(totalSelected)}</span>
           <span>Speed limited</span>
           <span className="text-end">
             {mainData.server_state.use_alt_speed_limits ? 'Yes' : 'No'}
