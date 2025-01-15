@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useInterval, useLocalStorage } from 'usehooks-ts';
 
 import { type MainData, type TorrentContent, commands } from './lib/bindings';
+import cn from './lib/cn';
 import { formatSize, formatSpeed } from './lib/format';
 import makeTree from './lib/makeTree';
 import {
@@ -51,6 +52,18 @@ const collectChildIndexes = (node: TorrentNode) => {
   }
 
   return indexes;
+};
+
+const diskSpaceColor = (value: number) => {
+  if (value <= 1024 * 1024 * 1024 * 2) {
+    return 'text-red-500';
+  }
+
+  if (value <= 1024 * 1024 * 1024 * 8) {
+    return 'text-orange-500';
+  }
+
+  return 'text-green-500';
 };
 
 function remove<T>(list: T[], value: T, toKey: (item: T) => number | string | symbol) {
@@ -397,26 +410,36 @@ function App() {
           <span className="text-end font-mono">
             {formatSize(mainData.server_state.dl_info_data)}
           </span>
-          <span>Download speed</span>
-          <span className="text-end font-mono">
-            {formatSpeed(mainData.server_state.dl_info_speed)}
-          </span>
           <span>Data uploaded</span>
           <span className="text-end font-mono">
             {formatSize(mainData.server_state.up_info_data)}
+          </span>
+          <span>Download speed</span>
+          <span className="text-end font-mono">
+            {formatSpeed(mainData.server_state.dl_info_speed)}
           </span>
           <span>Upload speed</span>
           <span className="text-end font-mono">
             {formatSpeed(mainData.server_state.up_info_speed)}
           </span>
           <span>Free disk space</span>
-          <span className="text-end font-mono">
+          <span
+            className={cn(
+              'text-end font-mono',
+              diskSpaceColor(mainData.server_state.free_space_on_disk),
+            )}
+          >
             {formatSize(mainData.server_state.free_space_on_disk)}
           </span>
           <span>Total selected size</span>
           <span className="text-end font-mono">{formatSize(totalSelected)}</span>
           <span>Speed limited</span>
-          <span className="text-end">
+          <span
+            className={cn(
+              'text-end',
+              mainData.server_state.use_alt_speed_limits ? 'text-orange-500' : 'text-green-500',
+            )}
+          >
             {mainData.server_state.use_alt_speed_limits ? 'Yes' : 'No'}
           </span>
         </div>
