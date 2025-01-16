@@ -5,7 +5,7 @@ use translators::Translator;
 use url::Url;
 
 use crate::{
-  error::{IntoResult, Result},
+  error::{err, IntoResult, Result},
   scrape::{
     crawlers::web::{get_html, get_translator},
     Actress, TranslatedText, VideoInfo, VideoInfoBuilder,
@@ -22,12 +22,27 @@ pub trait Crawler {
   fn get_url(&self, code: &String) -> Result<String>;
 
   /** 下一步地址 */
-  fn get_next_url(&self, _url: &Url, _html: &String) -> Option<String> {
+  fn get_next_url(&self, _code: &String, _url: &Url, _html: &String) -> Option<String> {
     None
   }
 
+  /** 信息 */
+  fn get_info(&self, code: &String, html: &str) -> Result<VideoInfo> {
+    let doc = Html::parse_document(html);
+    let title = self.get_title(&doc)?;
+
+    self
+      .get_info_builder(&doc)
+      .code(code.clone())
+      .title(TranslatedText::text(title))
+      .build()
+      .into_result()
+  }
+
   /** 标题 */
-  fn get_title(&self, doc: &Html) -> Result<String>;
+  fn get_title(&self, _doc: &Html) -> Result<String> {
+    err("No title")
+  }
 
   /** 信息构建器 */
   fn get_info_builder(&self, doc: &Html) -> VideoInfoBuilder {
@@ -124,22 +139,12 @@ where
   let url = crawler.get_url(code)?;
   let (mut html, mut url) = get_html(&url).await?;
 
-  while let Some(next_url) = crawler.get_next_url(&url, &html) {
+  while let Some(next_url) = crawler.get_next_url(code, &url, &html) {
     let next_url = url.join(&next_url).into_result()?.to_string();
     (html, url) = get_html(&next_url).await?;
   }
 
-  let mut info = {
-    let doc = Html::parse_document(&html);
-    let title = crawler.get_title(&doc)?;
-
-    crawler
-      .get_info_builder(&doc)
-      .code(code.clone())
-      .title(TranslatedText::text(title))
-      .build()
-      .into_result()?
-  };
+  let mut info = crawler.get_info(code, &html)?;
 
   if let Some(poster) = info.poster {
     let poster = url.join(&poster).into_result()?;

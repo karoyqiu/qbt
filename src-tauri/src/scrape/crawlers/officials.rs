@@ -48,7 +48,7 @@ lazy_static! {
       ("https://nanpa-japan.jp", "NJVR|NNPJ|NPJB"),
       ("https://hajimekikaku.com", "HJBB|HJMO|AVGL"),
       ("https://hhh-av.com", "HUNTB|HUNTA|HUNT|HUNBL|ROYD|TYSF"),
-      ("https://www.prestige-av.com", "ABP|MBM|EZD|DOCP|ONEZ|YRH|ABW|ABS|CHN|MGT|TRE|EDD|ULT|CMI|MBD|DNW|SGA|RDD|DCX|EVO|RDT|PPT|GETS|SIM|KIL|TUS|DTT|GNAB|MAN|MAS|TBL|RTP|CTD|FIV|DIC|ESK|KBI|TEM|AMA|KFNE|TRD|HAR|YRZ|SRS|MZQ|ZZR|GZAP|TGAV|RIX|AKA|BGN|LXV|AFS|GOAL|GIRO|CPDE|NMP|MCT|ABC|INU|SHL|MBMS|PXH|NRS|FTN|PRDVR|FST|BLO|SHS|KUM|GSX|NDX|ATD|DLD|KBH|BCV|RAW|SOUD|JOB|CHS|YOK|BSD|FSB|NNN|HYK|SOR|HSP|JBS|XND|MEI|DAY|MMY|KZD|JAN|GYAN|TDT|TOK|DMS|FND|CDC|JCN|PVRBST|SDVR|DOCVR|FCP|ABF|PPX"),
+      //("https://www.prestige-av.com", "ABP|MBM|EZD|DOCP|ONEZ|YRH|ABW|ABS|CHN|MGT|TRE|EDD|ULT|CMI|MBD|DNW|SGA|RDD|DCX|EVO|RDT|PPT|GETS|SIM|KIL|TUS|DTT|GNAB|MAN|MAS|TBL|RTP|CTD|FIV|DIC|ESK|KBI|TEM|AMA|KFNE|TRD|HAR|YRZ|SRS|MZQ|ZZR|GZAP|TGAV|RIX|AKA|BGN|LXV|AFS|GOAL|GIRO|CPDE|NMP|MCT|ABC|INU|SHL|MBMS|PXH|NRS|FTN|PRDVR|FST|BLO|SHS|KUM|GSX|NDX|ATD|DLD|KBH|BCV|RAW|SOUD|JOB|CHS|YOK|BSD|FSB|NNN|HYK|SOR|HSP|JBS|XND|MEI|DAY|MMY|KZD|JAN|GYAN|TDT|TOK|DMS|FND|CDC|JCN|PVRBST|SDVR|DOCVR|FCP|ABF|PPX"),
     ];
 
     let mut map = HashMap::new();
@@ -92,18 +92,13 @@ impl Crawler for Officials {
     }
 
     let mut url = String::from(**url.unwrap());
-
-    if url == "https://www.prestige-av.com" {
-      // TODO: Prestige
-    }
-
     url.push_str("/search/list?keyword=");
     url.push_str(&code.replace("-", ""));
 
     Ok(url)
   }
 
-  fn get_next_url(&self, url: &Url, html: &String) -> Option<String> {
+  fn get_next_url(&self, _code: &String, url: &Url, html: &String) -> Option<String> {
     if !url.path().contains("search") {
       return None;
     }

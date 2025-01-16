@@ -8,7 +8,7 @@ use crate::error::{err, Result};
 
 use super::{
   code::is_uncensored,
-  crawlers::{self, Airav, Crawler, Fc2, Fc2ppvdb, JavBus, Officials},
+  crawlers::{self, Airav, Crawler, Fc2, Fc2ppvdb, JavBus, Officials, Prestige},
   VideoInfo,
 };
 
@@ -201,6 +201,7 @@ lazy_static! {
     m.insert("fc2", Box::new(Fc2::default()));
     m.insert("fc2ppvdb", Box::new(Fc2ppvdb::default()));
     m.insert("airav", Box::new(Airav::default()));
+    m.insert("prestige", Box::new(Prestige::default()));
     m
   };
 }
@@ -261,7 +262,7 @@ async fn crawl_website(code: &String, website: &str) -> Result<VideoInfo> {
 /// 获取一组网站的数据：按照设置的网站组，请求各字段数据，并返回最终的数据
 async fn crawl_websites(code: &String, websites: &Vec<&'static str>) -> Result<VideoInfo> {
   debug!("Crawl websites: {:?}", websites);
-  let mut info = crawl_website(code, "officials").await.unwrap_or_default();
+  let mut info = crawl_officials(code).await.unwrap_or_default();
 
   for &website in websites {
     match crawl_website(code, website).await {
@@ -276,4 +277,12 @@ async fn crawl_websites(code: &String, websites: &Vec<&'static str>) -> Result<V
 
   debug!("Video info: {:?}", info);
   Ok(info)
+}
+
+async fn crawl_officials(code: &String) -> Result<VideoInfo> {
+  if let Ok(info) = crawl_website(code, "officials").await {
+    Ok(info)
+  } else {
+    crawl_website(code, "prestige").await
+  }
 }

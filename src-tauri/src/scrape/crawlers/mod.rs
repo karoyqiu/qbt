@@ -8,6 +8,7 @@ mod fc2ppvdb;
 mod fc2ppvdb_cdp;
 mod javbus;
 mod officials;
+mod prestige;
 mod web;
 
 pub use airav::Airav;
@@ -18,4 +19,5 @@ pub use fc2::Fc2;
 pub use fc2ppvdb::Fc2ppvdb;
 pub use javbus::JavBus;
 pub use officials::Officials;
+pub use prestige::Prestige;
 pub use web::get_response;

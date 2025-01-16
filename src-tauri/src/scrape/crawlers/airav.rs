@@ -32,7 +32,7 @@ impl Crawler for Airav {
     Ok(format!("https://airav.io/search_result?kw={}", code))
   }
 
-  fn get_next_url(&self, url: &Url, html: &String) -> Option<String> {
+  fn get_next_url(&self, _code: &String, url: &Url, html: &String) -> Option<String> {
     if !url.path().contains("search_result") {
       return None;
     }
