@@ -230,10 +230,15 @@ function App() {
   );
 
   const refresh = useCallback(async () => {
-    const data = await commands.getMainData();
-    setMainData(data);
-    setLoading(false);
-  }, [setMainData, setLoading]);
+    try {
+      const data = await commands.getMainData();
+      setMainData(data);
+      setLoading(false);
+    } catch (e) {
+      console.warn('Re-login');
+      await commands.login(credentials.username, credentials.password);
+    }
+  }, [setMainData, setLoading, credentials]);
 
   useEffect(() => {
     const ts = Object.values(mainData.torrents);

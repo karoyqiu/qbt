@@ -240,16 +240,22 @@ impl QBittorrentStateInner {
 
     let client = self.client.as_ref().unwrap();
     let res = client.get(url).send().await.into_result()?;
-    //res.json().await.into_result()
-    let text = res.text().await.into_result()?;
-    match serde_json::from_str(&text) {
-      Ok(data) => Ok(data),
-      Err(e) => {
-        debug!("Error: {}", e);
-        debug!("Text: {}", text);
-        anyhow::anyhow!(e).into_result()
-      }
+
+    #[cfg(debug_assertions)]
+    {
+      let text = res.text().await.into_result()?;
+      return match serde_json::from_str(&text) {
+        Ok(data) => Ok(data),
+        Err(e) => {
+          debug!("Error: {}", e);
+          debug!("Text: {}", text);
+          anyhow::anyhow!(e).into_result()
+        }
+      };
     }
+
+    #[cfg(not(debug_assertions))]
+    res.json().await.into_result()
   }
 
   async fn post<F: Serialize + ?Sized>(

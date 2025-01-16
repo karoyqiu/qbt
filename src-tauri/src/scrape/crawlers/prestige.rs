@@ -123,8 +123,8 @@ impl Crawler for Prestige {
     builder
       .code(code.clone())
       .title(TranslatedText::text(title))
-      .poster(Some(product.thumbnail.path))
-      .cover(Some(product.package_image.path))
+      .poster(Some(full_path(&product.thumbnail)))
+      .cover(Some(full_path(&product.package_image)))
       .outline(Some(TranslatedText::text(product.body)))
       .series(product.series.map(|n| n.name))
       .studio(product.maker.map(|n| n.name))
@@ -164,7 +164,7 @@ impl Crawler for Prestige {
         let mut arts = vec![];
 
         for m in media {
-          arts.push(format!("https://www.prestige-av.com/api/media/{}", m.path));
+          arts.push(full_path(&m));
         }
 
         builder.extra_fanart(Some(arts));
@@ -180,4 +180,8 @@ impl Crawler for Prestige {
 
     builder.build().into_result()
   }
+}
+
+fn full_path(path: &Path) -> String {
+  format!("https://www.prestige-av.com/api/media/{}", path.path)
 }
