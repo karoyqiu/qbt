@@ -88,7 +88,9 @@ export default function TorrentTable(props: TorrentTableProps) {
           bodyClassName="font-mono"
           body={(torrent: RequiredTorrentInfo) => (
             <div className="flex flex-col">
-              <span>{formatPercent(torrent.progress)}</span>
+              <span className={torrent.progress === 0 ? 'text-orange-500' : undefined}>
+                {formatPercent(torrent.progress)}
+              </span>
               <ProgressBar value={torrent.progress * 100} showValue={false} className="h-1" />
             </div>
           )}
