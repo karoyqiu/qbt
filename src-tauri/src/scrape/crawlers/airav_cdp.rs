@@ -18,7 +18,7 @@ use super::{
 pub struct AiravCDP;
 
 impl CrawlerCDP for AiravCDP {
-  fn get_name(&self) -> &'static str {
+  fn name(&self) -> &'static str {
     "airav.io cdp"
   }
 

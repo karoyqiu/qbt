@@ -20,4 +20,4 @@ pub use fc2ppvdb::Fc2ppvdb;
 pub use javbus::JavBus;
 pub use officials::Officials;
 pub use prestige::Prestige;
-pub use web::get_response;
+pub use web::{get_response, get_translator};

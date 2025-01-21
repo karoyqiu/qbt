@@ -72,7 +72,7 @@ lazy_static! {
 pub struct Officials;
 
 impl Crawler for Officials {
-  fn get_name(&self) -> &'static str {
+  fn name(&self) -> &'static str {
     "official website"
   }
 

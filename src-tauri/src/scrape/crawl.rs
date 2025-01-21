@@ -3,12 +3,13 @@ use std::collections::HashMap;
 use lazy_static::lazy_static;
 use log::{debug, warn};
 use regex::Regex;
+use translators::Translator;
 
 use crate::error::{err, Result};
 
 use super::{
   code::is_uncensored,
-  crawlers::{self, Airav, Crawler, Fc2, Fc2ppvdb, JavBus, Officials, Prestige},
+  crawlers::{self, get_translator, Airav, Crawler, Fc2, Fc2ppvdb, JavBus, Officials, Prestige},
   VideoInfo,
 };
 
@@ -247,16 +248,57 @@ pub async fn crawl(code: &String) -> Result<VideoInfo> {
 
 async fn crawl_website(code: &String, website: &str) -> Result<VideoInfo> {
   if let Some(crawler) = CRAWLERS.get(website) {
-    if let Ok(result) = crawlers::crawl(crawler.as_ref(), code).await {
-      Ok(result)
-    } else if let Some(cdp) = crawler.cdp() {
-      crawlers::crawl_cdp(cdp.as_ref(), code).await
-    } else {
-      err("Failed to crawl")
+    let result = crawl_one(crawler.as_ref(), code).await;
+
+    if result.is_ok() {
+      return result;
     }
-  } else {
-    err("Crawler not found")
   }
+
+  err("Failed to crawl")
+}
+
+async fn crawl_one<T>(crawler: &T, code: &String) -> Result<VideoInfo>
+where
+  T: Crawler + ?Sized,
+{
+  let mut result = crawlers::crawl(crawler, code).await;
+
+  if result.is_err() {
+    if let Some(cdp) = crawler.cdp() {
+      result = crawlers::crawl_cdp(cdp.as_ref(), code).await;
+    }
+  }
+
+  let result = result?;
+
+  if crawler.language().starts_with("zh") {
+    Ok(result)
+  } else {
+    translate_info(result).await
+  }
+}
+
+async fn translate_info(mut info: VideoInfo) -> Result<VideoInfo> {
+  let translator = get_translator()?;
+
+  if info.title.translated.is_none() {
+    info.title.translated = translator
+      .translate_async(&info.title.text, "", "zh-CN")
+      .await
+      .ok();
+  }
+
+  if let Some(outline) = &mut info.outline {
+    if outline.translated.is_none() {
+      outline.translated = translator
+        .translate_async(&outline.text, "", "zh-CN")
+        .await
+        .ok();
+    }
+  }
+
+  Ok(info)
 }
 
 /// 获取一组网站的数据：按照设置的网站组，请求各字段数据，并返回最终的数据

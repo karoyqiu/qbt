@@ -1,22 +1,23 @@
 use chrono::{Local, NaiveDate, NaiveDateTime, TimeZone};
 use log::info;
 use scraper::Html;
-use translators::Translator;
 use url::Url;
 
 use crate::{
   error::{err, IntoResult, Result},
-  scrape::{
-    crawlers::web::{get_html, get_translator},
-    Actress, TranslatedText, VideoInfo, VideoInfoBuilder,
-  },
+  scrape::{crawlers::web::get_html, Actress, TranslatedText, VideoInfo, VideoInfoBuilder},
 };
 
 use super::CrawlerCDP;
 
 pub trait Crawler {
   /** 网站名称 */
-  fn get_name(&self) -> &'static str;
+  fn name(&self) -> &'static str;
+
+  /** 语言 */
+  fn language(&self) -> &'static str {
+    "ja"
+  }
 
   /** 网站地址 */
   fn get_url(&self, code: &String) -> Result<String>;
@@ -135,7 +136,7 @@ pub async fn crawl<T>(crawler: &T, code: &String) -> Result<VideoInfo>
 where
   T: Crawler + ?Sized,
 {
-  info!("Crawling {} for {}", crawler.get_name(), code);
+  info!("Crawling {} for {}", crawler.name(), code);
   let url = crawler.get_url(code)?;
   let (mut html, mut url) = get_html(&url).await?;
 
@@ -164,22 +165,7 @@ where
     }
   }
 
-  let translator = get_translator()?;
-  info.title.translated = translator
-    .translate_async(&info.title.text, "", "zh-CN")
-    .await
-    .ok();
-
-  if let Some(outline) = &mut info.outline {
-    if outline.translated.is_none() {
-      outline.translated = translator
-        .translate_async(&outline.text, "", "zh-CN")
-        .await
-        .ok();
-    }
-  }
-
-  info!("Crawled {} for {}: {:?}", crawler.get_name(), code, info);
+  info!("Crawled {} for {}: {:?}", crawler.name(), code, info);
   Ok(info)
 }
 

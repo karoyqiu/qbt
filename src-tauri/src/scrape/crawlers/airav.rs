@@ -24,8 +24,12 @@ pub struct Airav;
 
 // 现在貌似绕不过去 cloudflare 的检测
 impl Crawler for Airav {
-  fn get_name(&self) -> &'static str {
+  fn name(&self) -> &'static str {
     "airav.io"
+  }
+
+  fn language(&self) -> &'static str {
+    "zh-TW"
   }
 
   fn get_url(&self, code: &String) -> Result<String> {

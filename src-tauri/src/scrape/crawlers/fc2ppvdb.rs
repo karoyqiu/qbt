@@ -15,7 +15,7 @@ use super::{
 pub struct Fc2ppvdb;
 
 impl Crawler for Fc2ppvdb {
-  fn get_name(&self) -> &'static str {
+  fn name(&self) -> &'static str {
     "fc2ppvdb.com"
   }
 

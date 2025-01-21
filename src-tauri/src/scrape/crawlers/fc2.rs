@@ -24,7 +24,7 @@ struct NameOnly {
 pub struct Fc2;
 
 impl Crawler for Fc2 {
-  fn get_name(&self) -> &'static str {
+  fn name(&self) -> &'static str {
     "fc2.com"
   }
 

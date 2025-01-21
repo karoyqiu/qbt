@@ -14,8 +14,12 @@ use super::{
 pub struct JavBus;
 
 impl Crawler for JavBus {
-  fn get_name(&self) -> &'static str {
+  fn name(&self) -> &'static str {
     "javbus.com"
+  }
+
+  fn language(&self) -> &'static str {
+    "zh-TW"
   }
 
   fn get_url(&self, code: &String) -> Result<String> {

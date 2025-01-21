@@ -16,7 +16,7 @@ use super::{
 pub struct Fc2ppvdbCDP;
 
 impl CrawlerCDP for Fc2ppvdbCDP {
-  fn get_name(&self) -> &'static str {
+  fn name(&self) -> &'static str {
     "fc2ppvdb.com cdp"
   }
 

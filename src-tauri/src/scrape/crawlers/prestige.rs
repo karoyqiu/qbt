@@ -70,7 +70,7 @@ struct Path {
 pub struct Prestige;
 
 impl Crawler for Prestige {
-  fn get_name(&self) -> &'static str {
+  fn name(&self) -> &'static str {
     "prestige-av.com"
   }
 
