@@ -9,7 +9,7 @@ use crate::error::{err, Result};
 
 use super::{
   code::is_uncensored,
-  crawlers::{self, get_translator, Airav, Crawler, Fc2, Fc2ppvdb, JavBus, Officials, Prestige},
+  crawlers::{self, get_translator, Crawler},
   VideoInfo,
 };
 
@@ -196,6 +196,8 @@ lazy_static! {
     m
   };
   static ref CRAWLERS: HashMap<&'static str, Box<dyn Crawler + Sync + Send>> = {
+    use super::crawlers::{Airav, Fc2, Fc2ppvdb, Iqqtv, JavBus, Officials, Prestige};
+
     let mut m: HashMap<&'static str, Box<dyn Crawler + Sync + Send>> = HashMap::new();
     m.insert("officials", Box::new(Officials::default()));
     m.insert("javbus", Box::new(JavBus::default()));
@@ -203,6 +205,7 @@ lazy_static! {
     m.insert("fc2ppvdb", Box::new(Fc2ppvdb::default()));
     m.insert("airav", Box::new(Airav::default()));
     m.insert("prestige", Box::new(Prestige::default()));
+    m.insert("iqqtv", Box::new(Iqqtv::default()));
     m
   };
 }
@@ -267,6 +270,8 @@ where
   if result.is_err() {
     if let Some(cdp) = crawler.cdp() {
       result = crawlers::crawl_cdp(cdp.as_ref(), code).await;
+    } else {
+      warn!("Failed to crawl: {:?}", result.as_ref().err());
     }
   }
 

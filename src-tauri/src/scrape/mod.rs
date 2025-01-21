@@ -28,17 +28,6 @@ pub struct TranslatedText {
 }
 
 impl TranslatedText {
-  pub fn new<N, P>(text: N, translated: Option<P>) -> Self
-  where
-    N: ToString,
-    P: ToString,
-  {
-    TranslatedText {
-      text: text.to_string(),
-      translated: translated.map(|s| s.to_string()),
-    }
-  }
-
   pub fn text<N>(text: N) -> Self
   where
     N: ToString,
