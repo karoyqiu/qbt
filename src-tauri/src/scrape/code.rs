@@ -43,19 +43,19 @@ lazy_static! {
 pub fn get_movie_code(name: &String) -> Option<String> {
   // 去除多余字符
   static USELESS_WORDS: &[&str] = &[
-    "h_720",
-    "2048论坛@fun2048.com",
-    "1080p",
-    "720p",
-    "22-sht.me",
+    "H_720",
+    "2048论坛@FUN2048.COM",
+    "1080P",
+    "720P",
+    "22-SHT.ME",
     "-HD",
-    "bbs2048.org@",
-    "hhd800.com@",
-    "kfa55.com@",
-    "icao.me@",
-    "hhb_000",
-    "[456k.me]",
-    "[ThZu.Cc]",
+    "BBS2048.ORG@",
+    "HHD800.COM@",
+    "KFA55.COM@",
+    "ICAO.ME@",
+    "HHB_000",
+    "[456K.ME]",
+    "[THZU.CC]",
   ];
 
   let mut name = name.to_uppercase();
