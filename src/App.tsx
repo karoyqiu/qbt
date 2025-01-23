@@ -383,6 +383,7 @@ function App() {
         open={showTorrent}
         onClose={() => setShowTorrent(false)}
         loading={contentLoading}
+        hash={currentHash}
         name={currentTorrent?.name ?? ''}
         nodes={nodes}
         selected={selectedNodes}

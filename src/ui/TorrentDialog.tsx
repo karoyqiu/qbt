@@ -23,10 +23,29 @@ export type TorrentNode = Omit<TreeNode, 'data' | 'children'> & {
   children?: TorrentNode[];
 };
 
+const getSelectedNodes = (
+  result: TorrentContent[],
+  nodes: TorrentNode[],
+  selected: TreeTableSelectionKeysType,
+) => {
+  for (const node of nodes) {
+    if (node.children) {
+      getSelectedNodes(result, node.children, selected);
+    } else if (node.key) {
+      const sel = selected[node.key];
+
+      if (sel === true || (sel && 'checked' in sel && sel.checked)) {
+        result.push(node.data);
+      }
+    }
+  }
+};
+
 type TorrentDialogProps = {
   open: boolean;
   onClose: () => void;
   loading?: boolean;
+  hash: string;
   name: string;
   nodes: TorrentNode[];
   selected: TreeTableSelectionKeysType;
@@ -43,6 +62,7 @@ export default function TorrentDialog(props: TorrentDialogProps) {
     open,
     onClose,
     loading,
+    hash,
     name,
     nodes,
     selected,
@@ -59,6 +79,21 @@ export default function TorrentDialog(props: TorrentDialogProps) {
   const [tabIndex, setTabIndex] = useState(0);
   const [localDownloadDir] = useStore<string>('localDownloadDir', '');
 
+  const autoRename = async () => {
+    const checked: TorrentContent[] = [];
+    getSelectedNodes(checked, nodes, selected);
+    checked.sort((a, b) => b.size - a.size);
+
+    for (const sel of checked) {
+      const code = await commands.guessMovieCode(sel.name);
+
+      if (code) {
+        await commands.rename(hash, code);
+        break;
+      }
+    }
+  };
+
   useEffect(() => setExpandedKeys(expanded), [expanded]);
 
   useEffect(() => {
@@ -74,12 +109,15 @@ export default function TorrentDialog(props: TorrentDialogProps) {
       onHide={onClose}
       className="w-[calc(100vw-16rem)] max-w-screen-lg"
       footer={
-        <div className="pt-6">
+        <div className="pt-6 space-x-4">
           {tabIndex === 0 &&
             (nodes.length === 0 ? (
               <Button label="Magnet to torrent" onClick={onMagnetToTorrent} />
             ) : (
-              <Button label="Auto select" onClick={onAutoSelect} />
+              <>
+                <Button label="Auto rename" onClick={autoRename} />
+                <Button label="Auto select" onClick={onAutoSelect} />
+              </>
             ))}
           {tabIndex === 1 && (
             <Button

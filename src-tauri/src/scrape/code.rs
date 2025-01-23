@@ -274,3 +274,10 @@ pub fn get_code_prefix(code: &String) -> Option<String> {
     None
   }
 }
+
+/// 获取番号
+#[tauri::command]
+#[specta::specta]
+pub fn guess_movie_code(name: String) -> Option<String> {
+  get_movie_code(&name)
+}

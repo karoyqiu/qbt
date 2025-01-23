@@ -34,6 +34,12 @@ async getMainData() : Promise<MainData> {
     return await TAURI_INVOKE("get_main_data");
 },
 /**
+ * 获取番号
+ */
+async guessMovieCode(name: string) : Promise<string | null> {
+    return await TAURI_INVOKE("guess_movie_code", { name });
+},
+/**
  * 获取种子内容
  */
 async getTorrentContents(hash: string) : Promise<TorrentContent[]> {
@@ -74,6 +80,12 @@ async markAsDownloaded(name: string, downloadedAt: number) : Promise<null> {
  */
 async recheck(hashes: string[]) : Promise<null> {
     return await TAURI_INVOKE("recheck", { hashes });
+},
+/**
+ * 重命名
+ */
+async rename(hash: string, name: string) : Promise<null> {
+    return await TAURI_INVOKE("rename", { hash, name });
 },
 /**
  * 重新刮削

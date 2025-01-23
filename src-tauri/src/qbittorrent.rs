@@ -450,6 +450,21 @@ pub async fn delete(state: State<'_, QBittorrentState>, hashes: Vec<String>) -> 
   Ok(())
 }
 
+/// 重命名
+#[tauri::command]
+#[specta::specta]
+pub async fn rename(state: State<'_, QBittorrentState>, hash: String, name: String) -> Result<()> {
+  let state = state.lock().await;
+  state
+    .post(
+      "torrents",
+      "rename",
+      &[("hash", hash.as_str()), ("name", name.as_str())],
+    )
+    .await?;
+  Ok(())
+}
+
 /// 设置文件优先级
 #[tauri::command]
 #[specta::specta]

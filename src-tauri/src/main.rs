@@ -9,13 +9,13 @@ mod scrape;
 
 use db::{get_video_info, has_been_downloaded, mark_as_downloaded, rescrape, DbState};
 use log::{error, LevelFilter};
-use scrape::download_image;
+use scrape::{download_image, guess_movie_code};
 use tauri::{Manager, State};
 use tauri_specta::{collect_commands, Builder, ErrorHandlingMode};
 
 use qbittorrent::{
   add_files, add_urls, delete, get_main_data, get_torrent_contents, initialize, login, recheck,
-  set_file_priority, start, stop, QBittorrentState,
+  rename, set_file_priority, start, stop, QBittorrentState,
 };
 
 fn main() {
@@ -27,6 +27,7 @@ fn main() {
       delete,
       download_image,
       get_main_data,
+      guess_movie_code,
       get_torrent_contents,
       get_video_info,
       has_been_downloaded,
@@ -34,6 +35,7 @@ fn main() {
       login,
       mark_as_downloaded,
       recheck,
+      rename,
       rescrape,
       set_file_priority,
       start,

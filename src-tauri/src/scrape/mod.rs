@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri::http::HeaderValue;
 
-pub use code::get_movie_code;
+pub use code::{get_movie_code, guess_movie_code};
 pub use crawl::crawl;
 
 use crate::error::{Error, IntoResult, Result};
