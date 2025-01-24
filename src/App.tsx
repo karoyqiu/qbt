@@ -31,6 +31,7 @@ import {
 import useClipboard from './lib/useClipboard';
 import { useStore } from './lib/useStore';
 import AddDialog from './ui/AddDialog';
+import InfoDialog from './ui/InfoDialog';
 import LoginDialog, { type Credentials } from './ui/LoginDialog';
 import SettingsDialog from './ui/SettingsDialog';
 import TorrentDialog, { TorrentNode } from './ui/TorrentDialog';
@@ -94,6 +95,7 @@ function App() {
   const [expanded, setExpanded] = useState<TreeTableExpandedKeysType>({});
   const [showAdd, setShowAdd] = useState(false);
   const [showTorrent, setShowTorrent] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   const [contentLoading, setContentLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
@@ -121,12 +123,6 @@ function App() {
     () => [
       { label: 'Add', icon: PrimeIcons.PLUS, command: () => setShowAdd(true) },
       {
-        label: 'Stop',
-        icon: PrimeIcons.STOP,
-        disabled: selected.length === 0,
-        command: () => commands.stop(getInfoHashes(selected)),
-      },
-      {
         label: 'Start',
         icon: PrimeIcons.PLAY,
         disabled: selected.length === 0,
@@ -141,6 +137,12 @@ function App() {
         },
       },
       {
+        label: 'Stop',
+        icon: PrimeIcons.STOP,
+        disabled: selected.length === 0,
+        command: () => commands.stop(getInfoHashes(selected)),
+      },
+      {
         label: 'Delete',
         icon: PrimeIcons.TRASH,
         disabled: selected.length === 0,
@@ -153,6 +155,7 @@ function App() {
         },
       },
       { label: 'Settings', icon: PrimeIcons.COG, command: () => setShowSettings(true) },
+      { label: 'Info', icon: PrimeIcons.INFO_CIRCLE, command: () => setShowInfo(true) },
     ],
     [selected],
   );
@@ -407,6 +410,7 @@ function App() {
           }
         }}
       />
+      <InfoDialog open={showInfo} onClose={() => setShowInfo(false)} />
       <SettingsDialog open={showSettings} onClose={() => setShowSettings(false)} />
       <Sidebar visible={showSidebar} onHide={() => setShowSidebar(false)}>
         <div className="grid grid-cols-[1fr,auto] gap-y-2">

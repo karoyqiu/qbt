@@ -1,5 +1,6 @@
 import { join } from '@tauri-apps/api/path';
 import { open as shellOpen } from '@tauri-apps/plugin-shell';
+import { PrimeIcons } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { Dialog } from 'primereact/dialog';
@@ -122,6 +123,8 @@ export default function TorrentDialog(props: TorrentDialogProps) {
           {tabIndex === 1 && (
             <Button
               label="Re-scrape"
+              icon={PrimeIcons.REFRESH}
+              loading={status === 'doing'}
               onClick={async () => {
                 setStatus('doing');
                 setVideoInfo(null);
