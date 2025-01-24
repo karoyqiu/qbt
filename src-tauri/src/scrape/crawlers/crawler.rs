@@ -165,6 +165,12 @@ where
     }
   }
 
+  if let Some(arts) = &mut info.extra_fanart {
+    for art in arts {
+      *art = url.join(art).into_result()?.to_string();
+    }
+  }
+
   info!("Crawled {} for {}: {:?}", crawler.name(), code, info);
   Ok(info)
 }
