@@ -13,7 +13,7 @@ use crate::{
 
 use super::{
   crawler::{convert_date_string_to_epoch, Crawler},
-  web::get_selector,
+  web::{get_selector, optional, remove_first},
 };
 
 lazy_static! {
@@ -166,11 +166,7 @@ impl Crawler for Officials {
       .map(|e| Actress::name::<String>(e.text().collect()))
       .collect();
 
-    if actresses.is_empty() {
-      None
-    } else {
-      Some(actresses)
-    }
+    optional(actresses)
   }
 
   fn get_info_builder(&self, doc: &Html) -> VideoInfoBuilder {
@@ -270,17 +266,7 @@ impl Crawler for Officials {
       arts.push(src.to_string());
     }
 
-    if arts.is_empty() {
-      None
-    } else {
-      arts.remove(0);
-
-      if arts.is_empty() {
-        None
-      } else {
-        Some(arts)
-      }
-    }
+    remove_first(arts)
   }
 }
 

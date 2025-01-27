@@ -196,7 +196,7 @@ lazy_static! {
     m
   };
   static ref CRAWLERS: HashMap<&'static str, Box<dyn Crawler + Sync + Send>> = {
-    use super::crawlers::{Airav, Fc2, Fc2ppvdb, Iqqtv, JavBus, Officials, Prestige};
+    use super::crawlers::{Airav, AvWiki, Fc2, Fc2ppvdb, Iqqtv, JavBus, Officials, Prestige};
 
     let mut m: HashMap<&'static str, Box<dyn Crawler + Sync + Send>> = HashMap::new();
     m.insert("officials", Box::new(Officials::default()));
@@ -206,6 +206,7 @@ lazy_static! {
     m.insert("airav", Box::new(Airav::default()));
     m.insert("prestige", Box::new(Prestige::default()));
     m.insert("iqqtv", Box::new(Iqqtv::default()));
+    m.insert("av-wiki", Box::new(AvWiki::default()));
     m
   };
 }
@@ -319,6 +320,15 @@ async fn crawl_websites(code: &String, websites: &Vec<&'static str>) -> Result<V
 
     if info.is_good_enough() {
       break;
+    }
+  }
+
+  // 单独拿一下演员列表
+  if info.actresses.is_none() {
+    if let Ok(wiki) = crawl_website(code, "av-wiki").await {
+      if wiki.actresses.is_some() {
+        info.actresses = wiki.actresses;
+      }
     }
   }
 

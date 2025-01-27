@@ -12,6 +12,7 @@ use super::{
   airav::VideoObject,
   crawler::convert_datetime_string_to_epoch,
   crawler_cdp::{get_parent_element, CrawlerCDP},
+  web::optional,
 };
 
 #[derive(Default)]
@@ -139,9 +140,5 @@ fn get_info_list_items(tab: &Arc<Tab>, label: &str) -> Result<Option<Vec<String>
     }
   }
 
-  if items.is_empty() {
-    Ok(None)
-  } else {
-    Ok(Some(items))
-  }
+  Ok(optional(items))
 }

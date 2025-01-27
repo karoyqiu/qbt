@@ -1,5 +1,6 @@
 mod airav;
 mod airav_cdp;
+mod avwiki;
 mod cookie_jar;
 mod crawler;
 mod crawler_cdp;
@@ -13,6 +14,7 @@ mod prestige;
 mod web;
 
 pub use airav::Airav;
+pub use avwiki::AvWiki;
 pub use cookie_jar::load_cookies;
 pub use crawler::{crawl, Crawler};
 pub use crawler_cdp::{crawl_cdp, CrawlerCDP};

@@ -7,7 +7,7 @@ use crate::{
 
 use super::{
   crawler::{convert_date_string_to_epoch, Crawler},
-  web::get_selector,
+  web::{get_selector, optional},
 };
 
 #[derive(Default)]
@@ -57,11 +57,7 @@ impl Crawler for JavBus {
       actresses.push(Actress::new(name, src));
     }
 
-    if actresses.is_empty() {
-      None
-    } else {
-      Some(actresses)
-    }
+    optional(actresses)
   }
 
   fn get_tags(&self, doc: &Html) -> Option<Vec<String>> {
@@ -73,11 +69,7 @@ impl Crawler for JavBus {
       tags.push(text);
     }
 
-    if tags.is_empty() {
-      None
-    } else {
-      Some(tags)
-    }
+    optional(tags)
   }
 
   fn get_series(&self, doc: &Html) -> Option<String> {

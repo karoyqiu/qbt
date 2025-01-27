@@ -10,7 +10,7 @@ use crate::{
 use super::{
   airav_cdp::AiravCDP,
   crawler::{convert_datetime_string_to_epoch, Crawler},
-  web::get_selector,
+  web::{get_selector, optional},
 };
 
 #[derive(Debug, Clone, Deserialize)]
@@ -139,9 +139,5 @@ fn get_info_list_items(doc: &Html, label: &str) -> Option<Vec<String>> {
     }
   }
 
-  if items.is_empty() {
-    None
-  } else {
-    Some(items)
-  }
+  optional(items)
 }

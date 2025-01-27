@@ -11,7 +11,7 @@ use crate::{
 
 use super::{
   crawler::{convert_date_string_to_epoch, convert_duration_string_to_seconds, Crawler},
-  web::get_selector,
+  web::{get_selector, optional},
 };
 
 lazy_static! {
@@ -117,11 +117,7 @@ impl Crawler for Iqqtv {
       actresses.push(Actress::name(a.text().collect::<String>()));
     }
 
-    if actresses.is_empty() {
-      None
-    } else {
-      Some(actresses)
-    }
+    optional(actresses)
   }
 
   fn get_tags(&self, doc: &Html) -> Option<Vec<String>> {
@@ -132,11 +128,7 @@ impl Crawler for Iqqtv {
       tags.push(a.text().collect());
     }
 
-    if tags.is_empty() {
-      None
-    } else {
-      Some(tags)
-    }
+    optional(tags)
   }
 
   fn get_series(&self, doc: &Html) -> Option<String> {
@@ -185,11 +177,7 @@ impl Crawler for Iqqtv {
       }
     }
 
-    if arts.is_empty() {
-      None
-    } else {
-      Some(arts)
-    }
+    optional(arts)
   }
 }
 

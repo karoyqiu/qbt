@@ -7,7 +7,7 @@ use crate::error::{Error, IntoResult, Result};
 
 use super::{
   crawler::convert_date_string_to_epoch,
-  web::{get_selector, remove_first},
+  web::{get_selector, optional, remove_first},
   Crawler,
 };
 
@@ -68,11 +68,7 @@ impl Crawler for Fc2 {
       tags.push(text);
     }
 
-    if tags.is_empty() {
-      None
-    } else {
-      Some(tags)
-    }
+    optional(tags)
   }
 
   fn get_studio(&self, doc: &Html) -> Option<String> {
