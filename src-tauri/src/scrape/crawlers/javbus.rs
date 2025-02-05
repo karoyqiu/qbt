@@ -139,6 +139,19 @@ impl Crawler for JavBus {
 
     None
   }
+
+  fn get_extra_fanart(&self, doc: &Html) -> Option<Vec<String>> {
+    let selector = get_selector("a.sample-box");
+    let mut arts = vec![];
+
+    for elem in doc.select(&selector) {
+      if let Some(href) = elem.attr("href") {
+        arts.push(href.to_string());
+      }
+    }
+
+    optional(arts)
+  }
 }
 
 // #[cfg(test)]
