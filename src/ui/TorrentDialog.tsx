@@ -77,6 +77,7 @@ export default function TorrentDialog(props: TorrentDialogProps) {
   const [expandedKeys, setExpandedKeys] = useState<TreeTableExpandedKeysType>({});
   const [status, setStatus] = useState<'undone' | 'doing' | 'done'>('undone');
   const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
+  const [downloadedAt, setDownloadedAt] = useState<number | null>(0);
   const [tabIndex, setTabIndex] = useState(0);
   const [localDownloadDir] = useStore<string>('localDownloadDir', '');
 
@@ -99,6 +100,7 @@ export default function TorrentDialog(props: TorrentDialogProps) {
 
   useEffect(() => {
     setStatus('undone');
+    setDownloadedAt(null);
     setVideoInfo(null);
     setTabIndex(0);
   }, [nodes]);
@@ -143,7 +145,12 @@ export default function TorrentDialog(props: TorrentDialogProps) {
 
           if (e.index === 1 && status === 'undone' && !videoInfo) {
             setStatus('doing');
-            setVideoInfo(await commands.getVideoInfo(name));
+            const [d, v] = await Promise.all([
+              commands.hasBeenDownloaded(name),
+              commands.getVideoInfo(name),
+            ]);
+            setDownloadedAt(d);
+            setVideoInfo(v);
             setStatus('done');
           }
         }}
@@ -216,7 +223,11 @@ export default function TorrentDialog(props: TorrentDialogProps) {
           </TreeTable>
         </TabPanel>
         <TabPanel header="Information">
-          <VideoInfoPanel loading={status === 'doing'} videoInfo={videoInfo} />
+          <VideoInfoPanel
+            loading={status === 'doing'}
+            videoInfo={videoInfo}
+            downloadedAt={downloadedAt}
+          />
         </TabPanel>
       </TabView>
     </Dialog>

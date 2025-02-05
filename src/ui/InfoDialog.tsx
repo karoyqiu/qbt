@@ -20,15 +20,18 @@ export default function InfoDialog(props: InfoDialogProps) {
   const [input, code, setInput] = useDebounce('', 500);
   const [status, setStatus] = useState<'undone' | 'doing' | 'done'>('undone');
   const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
+  const [downloadedAt, setDownloadedAt] = useState<number | null>(0);
   const loading = status === 'doing';
 
   useEffect(() => {
     if (code) {
       setStatus('doing');
-      commands
-        .getVideoInfo(code)
-        .then(setVideoInfo)
-        .then(() => setStatus('done'));
+      Promise.all([commands.hasBeenDownloaded(code), commands.getVideoInfo(code)])
+        .then(([d, v]) => {
+          setDownloadedAt(d);
+          setVideoInfo(v);
+        })
+        .finally(() => setStatus('done'));
     }
   }, [code]);
 
@@ -66,7 +69,7 @@ export default function InfoDialog(props: InfoDialogProps) {
           disabled={loading}
         />
       </IconField>
-      <VideoInfoPanel loading={loading} videoInfo={videoInfo} />
+      <VideoInfoPanel loading={loading} videoInfo={videoInfo} downloadedAt={downloadedAt} />
     </Dialog>
   );
 }

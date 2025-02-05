@@ -22,10 +22,11 @@ const formatMinutes = (seconds: number) => minutes.format(seconds / 60);
 type VideoInfoPanelProps = {
   loading: boolean;
   videoInfo: VideoInfo | null;
+  downloadedAt?: number | null;
 };
 
 export default function VideoInfoPanel(props: VideoInfoPanelProps) {
-  const { loading, videoInfo } = props;
+  const { loading, videoInfo, downloadedAt } = props;
   const [imgSrc, setImgSrc] = useState('');
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function VideoInfoPanel(props: VideoInfoPanelProps) {
               <Skeleton height="1.75rem" />
               <Skeleton />
               <div className="flex gap-16 text-sm">
+                <Skeleton width="8rem" />
                 <Skeleton width="8rem" />
                 <Skeleton width="8rem" />
                 <Skeleton width="8rem" />
@@ -106,6 +108,7 @@ export default function VideoInfoPanel(props: VideoInfoPanelProps) {
               <span>{videoInfo.code}</span>
               {videoInfo.release_date && <span>{formatDate(videoInfo.release_date)}</span>}
               {videoInfo.duration && <span>{formatMinutes(videoInfo.duration)}</span>}
+              {downloadedAt && <span>{`Downloaded at ${formatDate(downloadedAt)}`}</span>}
             </div>
           </div>
           <div className="flex flex-col gap-4">
