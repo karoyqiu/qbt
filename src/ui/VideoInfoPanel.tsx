@@ -51,12 +51,12 @@ export default function VideoInfoPanel(props: VideoInfoPanelProps) {
               <Skeleton height="5rem" />
               <Skeleton height="5rem" />
             </div>
-            <div className="flex gap-4">
-              <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-6 gap-4">
+              <div className="flex flex-col gap-2 items-center">
                 <Skeleton size="4rem" borderRadius="0.75rem" />
                 <Skeleton />
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 items-center">
                 <Skeleton size="4rem" borderRadius="0.75rem" />
                 <Skeleton />
               </div>
@@ -113,9 +113,9 @@ export default function VideoInfoPanel(props: VideoInfoPanelProps) {
             <p>{videoInfo.outline?.translated}</p>
           </div>
           {videoInfo.actresses && (
-            <div className="flex gap-4">
+            <div className="grid grid-cols-6 gap-y-4">
               {videoInfo.actresses.map((actress) => (
-                <div key={actress.name} className="flex flex-col gap-2">
+                <div key={actress.name} className="flex flex-col gap-2 items-center">
                   <ActressAvatar photo={actress.photo} />
                   <span>{actress.name}</span>
                 </div>
