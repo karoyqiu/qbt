@@ -146,7 +146,7 @@ export default function TorrentDialog(props: TorrentDialogProps) {
           if (e.index === 1 && status === 'undone' && !videoInfo) {
             setStatus('doing');
             const [d, v] = await Promise.all([
-              commands.hasBeenDownloaded(name),
+              commands.hasBeenDownloaded(name, hash),
               commands.getVideoInfo(name),
             ]);
             setDownloadedAt(d);

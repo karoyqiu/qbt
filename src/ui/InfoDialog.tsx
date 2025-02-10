@@ -26,7 +26,7 @@ export default function InfoDialog(props: InfoDialogProps) {
   useEffect(() => {
     if (code) {
       setStatus('doing');
-      Promise.all([commands.hasBeenDownloaded(code), commands.getVideoInfo(code)])
+      Promise.all([commands.hasBeenDownloaded(code, null), commands.getVideoInfo(code)])
         .then(([d, v]) => {
           setDownloadedAt(d);
           setVideoInfo(v);

@@ -199,8 +199,12 @@ pub async fn get_video_info(state: State<'_, DbState>, name: String) -> Result<O
 /// 之前是否下载过
 #[tauri::command]
 #[specta::specta]
-pub async fn has_been_downloaded(state: State<'_, DbState>, name: String) -> Result<Option<i64>> {
-  if let Some(code) = get_movie_code(&name) {
+pub async fn has_been_downloaded(
+  state: State<'_, DbState>,
+  name: String,
+  hash: Option<String>,
+) -> Result<Option<i64>> {
+  if let Some(code) = get_movie_code(&name).or(hash) {
     if let Some(info) = find_video_info(&state, &code).await? {
       return Ok(info.downloaded_at);
     }
@@ -215,9 +219,10 @@ pub async fn has_been_downloaded(state: State<'_, DbState>, name: String) -> Res
 pub async fn mark_as_downloaded(
   state: State<'_, DbState>,
   name: String,
+  hash: Option<String>,
   downloaded_at: i64,
 ) -> Result<()> {
-  if let Some(code) = get_movie_code(&name) {
+  if let Some(code) = get_movie_code(&name).or(hash) {
     let mut state = state.lock().await;
     state.update_downloaded_at(&code, downloaded_at).await?;
   }

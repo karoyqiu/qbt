@@ -54,8 +54,8 @@ async getVideoInfo(name: string) : Promise<VideoInfo | null> {
 /**
  * 之前是否下载过
  */
-async hasBeenDownloaded(name: string) : Promise<number | null> {
-    return await TAURI_INVOKE("has_been_downloaded", { name });
+async hasBeenDownloaded(name: string, hash: string | null) : Promise<number | null> {
+    return await TAURI_INVOKE("has_been_downloaded", { name, hash });
 },
 /**
  * 设置 URL
@@ -72,8 +72,8 @@ async login(username: string, password: string) : Promise<boolean> {
 /**
  * 标记为已下载
  */
-async markAsDownloaded(name: string, downloadedAt: number) : Promise<null> {
-    return await TAURI_INVOKE("mark_as_downloaded", { name, downloadedAt });
+async markAsDownloaded(name: string, hash: string | null, downloadedAt: number) : Promise<null> {
+    return await TAURI_INVOKE("mark_as_downloaded", { name, hash, downloadedAt });
 },
 /**
  * 重新校验

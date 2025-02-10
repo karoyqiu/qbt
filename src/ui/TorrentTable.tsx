@@ -129,10 +129,10 @@ export default function TorrentTable(props: TorrentTableProps) {
       if (matchTorrent(torrent, 'completed')) {
         if (!(torrent.name in downloaded.current)) {
           downloaded.current[torrent.name] = torrent.completion_on;
-          commands.markAsDownloaded(torrent.name, torrent.completion_on);
+          commands.markAsDownloaded(torrent.name, torrent.infohash_v1, torrent.completion_on);
         }
       } else if (!(torrent.name in downloaded.current)) {
-        commands.hasBeenDownloaded(torrent.name).then((value) => {
+        commands.hasBeenDownloaded(torrent.name, torrent.infohash_v1).then((value) => {
           downloaded.current[torrent.name] = value;
         });
       }
