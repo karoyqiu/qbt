@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+use log::debug;
 use regex::Regex;
 
 lazy_static! {
@@ -44,21 +45,21 @@ pub fn get_movie_code(name: &String) -> Option<String> {
   // 去除多余字符
   static USELESS_WORDS: &[&str] = &[
     "H_720",
-    "2048论坛@FUN2048.COM",
+    "FUN2048.COM",
     "1080P",
     "720P",
     "22-SHT.ME",
     "-HD",
-    "BBS2048.ORG@",
-    "HHD800.COM@",
-    "KFA55.COM@",
-    "ICAO.ME@",
     "HHB_000",
     "[456K.ME]",
     "[THZU.CC]",
   ];
 
   let mut name = name.to_uppercase();
+
+  if let Some(pos) = name.find('@') {
+    name = name[pos + 1..].to_string();
+  }
 
   for word in USELESS_WORDS {
     name = name.replace(word, "");
@@ -99,7 +100,12 @@ pub fn get_movie_code(name: &String) -> Option<String> {
 
     code = code.trim_matches(&['-', '_', '.']).to_string();
 
-    Some(code)
+    if is_valid(&code) {
+      Some(code)
+    } else {
+      debug!("Invalid code: {}", code);
+      None
+    }
   } else {
     None
   }
@@ -217,6 +223,25 @@ fn extract_movie_code(filename: &str) -> Option<String> {
   }
 
   None
+}
+
+fn is_valid(code: &String) -> bool {
+  let mut letters = 0;
+  let mut digits = 0;
+
+  for c in code.chars() {
+    if !c.is_ascii_alphanumeric() && c != '-' {
+      return false;
+    }
+
+    if c.is_ascii_alphabetic() {
+      letters += 1;
+    } else if c.is_ascii_digit() {
+      digits += 1;
+    }
+  }
+
+  letters > 0 && digits > 0
 }
 
 pub fn is_uncensored(code: &String) -> bool {
