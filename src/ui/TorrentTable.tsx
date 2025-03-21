@@ -1,10 +1,11 @@
 import { PrimeIcons } from 'primereact/api';
+import { Badge } from 'primereact/badge';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { ProgressBar } from 'primereact/progressbar';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
-import type { TorrentState } from '../lib/bindings';
+import { type TorrentState, commands } from '../lib/bindings';
 import cn from '../lib/cn';
 import { formatPercent, formatSize, formatSpeed } from '../lib/format';
 import {
@@ -34,7 +35,7 @@ const getStateIcon = (state: TorrentState) => {
     case 'stoppedUP':
       return PrimeIcons.CHECK_CIRCLE;
     default:
-      console.warn(`Unknown state: ${state}`);
+      //console.warn(`Unknown state: ${state}`);
       return PrimeIcons.TIMES_CIRCLE;
   }
 };
@@ -87,7 +88,9 @@ export default function TorrentTable(props: TorrentTableProps) {
           bodyClassName="font-mono"
           body={(torrent: RequiredTorrentInfo) => (
             <div className="flex flex-col">
-              <span>{formatPercent(torrent.progress)}</span>
+              <span className={torrent.progress === 0 ? 'text-orange-500' : undefined}>
+                {formatPercent(torrent.progress)}
+              </span>
               <ProgressBar value={torrent.progress * 100} showValue={false} className="h-1" />
             </div>
           )}
@@ -119,6 +122,23 @@ export default function TorrentTable(props: TorrentTableProps) {
     return cols;
   }, [filter]);
 
+  const downloaded = useRef<Record<string, number | null>>({});
+
+  useEffect(() => {
+    for (const torrent of torrents) {
+      if (matchTorrent(torrent, 'completed')) {
+        if (!(torrent.name in downloaded.current)) {
+          downloaded.current[torrent.name] = torrent.completion_on;
+          commands.markAsDownloaded(torrent.name, torrent.infohash_v1, torrent.completion_on);
+        }
+      } else if (!(torrent.name in downloaded.current)) {
+        commands.hasBeenDownloaded(torrent.name, torrent.infohash_v1).then((value) => {
+          downloaded.current[torrent.name] = value;
+        });
+      }
+    }
+  }, [torrents]);
+
   return (
     <div className="min-h-0 grow">
       <DataTable
@@ -142,13 +162,16 @@ export default function TorrentTable(props: TorrentTableProps) {
           body={(torrent: RequiredTorrentInfo) => (
             <span
               className={cn(
-                'cursor-pointer text-[--primary-color] underline-offset-4 hover:underline',
+                'cursor-pointer text-[--primary-color] underline-offset-4 hover:underline p-overlay-badge',
                 getStateIcon(torrent.state),
               )}
               onClick={() => onClick(torrent.infohash_v1)}
             >
               &nbsp;
               {torrent.name}
+              {downloaded.current[torrent.name] && (
+                <Badge className="translate-x-3 -translate-y-1/2" severity="info" />
+              )}
             </span>
           )}
         />

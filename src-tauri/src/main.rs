@@ -1,14 +1,22 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod app_handle;
+mod db;
 mod error;
 mod qbittorrent;
+mod scrape;
+
+use db::{get_video_info, has_been_downloaded, mark_as_downloaded, rescrape, DbState};
+use log::{error, LevelFilter};
+use scrape::{download_image, guess_movie_code};
+use tauri::{Manager, State};
+use tauri_specta::{collect_commands, Builder, ErrorHandlingMode};
 
 use qbittorrent::{
   add_files, add_urls, delete, get_main_data, get_torrent_contents, initialize, login, recheck,
-  set_file_priority, start, stop, QBittorrentState,
+  rename, set_file_priority, start, stop, QBittorrentState,
 };
-use tauri_specta::{collect_commands, Builder, ErrorHandlingMode};
 
 fn main() {
   let builder = Builder::<tauri::Wry>::new()
@@ -17,11 +25,18 @@ fn main() {
       add_files,
       add_urls,
       delete,
+      download_image,
       get_main_data,
+      guess_movie_code,
       get_torrent_contents,
+      get_video_info,
+      has_been_downloaded,
       initialize,
       login,
+      mark_as_downloaded,
       recheck,
+      rename,
+      rescrape,
       set_file_priority,
       start,
       stop,
@@ -40,17 +55,36 @@ fn main() {
   }
 
   tauri::Builder::default()
+    .plugin(tauri_plugin_store::Builder::new().build())
     .plugin(
       tauri_plugin_log::Builder::new()
         .clear_targets()
         .target(tauri_plugin_log::Target::new(
           tauri_plugin_log::TargetKind::Stdout,
         ))
+        .level(LevelFilter::Warn)
+        .level_for("qbt", LevelFilter::Trace)
         .build(),
     )
     .plugin(tauri_plugin_clipboard::init())
+    .plugin(tauri_plugin_shell::init())
     .manage(QBittorrentState::default())
+    .manage(DbState::default())
     .invoke_handler(builder.invoke_handler())
+    .setup(|app| {
+      let handle = app.handle();
+      app_handle::set_app_handle(handle);
+
+      tauri::async_runtime::block_on(async move {
+        let state: State<DbState> = handle.state();
+        let mut state = state.lock().await;
+
+        if let Err(e) = state.open(handle).await {
+          error!("Failed to open database: {:?}", e);
+        }
+      });
+      Ok(())
+    })
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

@@ -1,17 +1,20 @@
+use std::fmt::{Debug, Display};
+
 #[derive(Debug)]
 pub struct Error(pub anyhow::Error);
 
+impl Error {
+  pub fn new<M>(value: M) -> Self
+  where
+    M: Display + Debug + Send + Sync + 'static,
+  {
+    Self(anyhow::Error::msg(value))
+  }
+}
+
 impl std::fmt::Display for Error {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    #[cfg(debug_assertions)]
-    {
-      write!(f, "{:#}", self.0)
-    }
-
-    #[cfg(not(debug_assertions))]
-    {
-      write!(f, "{}", self.0)
-    }
+    write!(f, "{:#}", self.0)
   }
 }
 
@@ -57,4 +60,11 @@ impl<T> IntoResult<T> for anyhow::Error {
   fn into_result(self) -> Result<T> {
     Err(Error(self))
   }
+}
+
+pub fn err<T, M>(msg: M) -> Result<T>
+where
+  M: Display + Debug + Send + Sync + 'static,
+{
+  Err(Error::new(msg))
 }

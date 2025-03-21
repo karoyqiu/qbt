@@ -24,6 +24,9 @@ async addUrls(urls: string) : Promise<null> {
 async delete(hashes: string[]) : Promise<null> {
     return await TAURI_INVOKE("delete", { hashes });
 },
+async downloadImage(url: string) : Promise<string> {
+    return await TAURI_INVOKE("download_image", { url });
+},
 /**
  * 获取主要数据
  */
@@ -31,10 +34,28 @@ async getMainData() : Promise<MainData> {
     return await TAURI_INVOKE("get_main_data");
 },
 /**
+ * 获取番号
+ */
+async guessMovieCode(name: string) : Promise<string | null> {
+    return await TAURI_INVOKE("guess_movie_code", { name });
+},
+/**
  * 获取种子内容
  */
 async getTorrentContents(hash: string) : Promise<TorrentContent[]> {
     return await TAURI_INVOKE("get_torrent_contents", { hash });
+},
+/**
+ * 获取视频信息
+ */
+async getVideoInfo(name: string) : Promise<VideoInfo | null> {
+    return await TAURI_INVOKE("get_video_info", { name });
+},
+/**
+ * 之前是否下载过
+ */
+async hasBeenDownloaded(name: string, hash: string | null) : Promise<number | null> {
+    return await TAURI_INVOKE("has_been_downloaded", { name, hash });
 },
 /**
  * 设置 URL
@@ -49,10 +70,28 @@ async login(username: string, password: string) : Promise<boolean> {
     return await TAURI_INVOKE("login", { username, password });
 },
 /**
+ * 标记为已下载
+ */
+async markAsDownloaded(name: string, hash: string | null, downloadedAt: number) : Promise<null> {
+    return await TAURI_INVOKE("mark_as_downloaded", { name, hash, downloadedAt });
+},
+/**
  * 重新校验
  */
 async recheck(hashes: string[]) : Promise<null> {
     return await TAURI_INVOKE("recheck", { hashes });
+},
+/**
+ * 重命名
+ */
+async rename(hash: string, name: string) : Promise<null> {
+    return await TAURI_INVOKE("rename", { hash, name });
+},
+/**
+ * 重新刮削
+ */
+async rescrape(name: string) : Promise<VideoInfo | null> {
+    return await TAURI_INVOKE("rescrape", { name });
 },
 /**
  * 设置文件优先级
@@ -84,6 +123,7 @@ async stop(hashes: string[]) : Promise<null> {
 
 /** user-defined types **/
 
+export type Actress = { name: string; photo: string | null }
 export type ConnectionStatus = "connected" | "firewalled" | "disconnected"
 export type MainData = { 
 /**
@@ -355,6 +395,67 @@ uploaded_session?: number | null;
  */
 upspeed?: number | null }
 export type TorrentState = "error" | "missingFiles" | "uploading" | "stoppedUP" | "queuedUP" | "stalledUP" | "checkingUP" | "forcedUP" | "allocating" | "downloading" | "metaDL" | "stoppedDL" | "queuedDL" | "stalledDL" | "checkingDL" | "forcedDL" | "checkingResumeData" | "moving" | "unknown"
+export type TranslatedText = { text: string; translated: string | null }
+/**
+ * 视频信息
+ */
+export type VideoInfo = { 
+/**
+ * 番号
+ */
+code: string; 
+/**
+ * 标题
+ */
+title: TranslatedText; 
+/**
+ * 海报
+ */
+poster: string | null; 
+/**
+ * 封面
+ */
+cover: string | null; 
+/**
+ * 简介
+ */
+outline: TranslatedText | null; 
+/**
+ * 演员列表
+ */
+actresses: Actress[] | null; 
+/**
+ * 标签列表
+ */
+tags: string[] | null; 
+/**
+ * 系列
+ */
+series: string | null; 
+/**
+ * 片商
+ */
+studio: string | null; 
+/**
+ * 发行商
+ */
+publisher: string | null; 
+/**
+ * 导演
+ */
+director: string | null; 
+/**
+ * 时长（秒）
+ */
+duration: number | null; 
+/**
+ * 发布日期（Unix epoch）
+ */
+release_date: number | null; 
+/**
+ * 额外的插图
+ */
+extra_fanart: string[] | null }
 
 /** tauri-specta globals **/
 

@@ -16,25 +16,25 @@ pub struct TorrentInfo {
   /// Time (Unix Epoch) when the torrent was added to the client
   added_on: Option<i64>,
   /// Amount of data left to download (bytes)
-  amount_left: Option<u64>,
+  amount_left: Option<i64>,
   /// Whether this torrent is managed by Automatic Torrent Management
   auto_tmm: Option<bool>,
   /// Percentage of file pieces currently available
-  availability: Option<f64>,
+  availability: Option<f32>,
   /// Category of the torrent
   category: Option<String>,
   /// Amount of transfer data completed (bytes)
-  completed: Option<u64>,
+  completed: Option<i64>,
   /// Time (Unix Epoch) when the torrent completed
   completion_on: Option<i64>,
   /// Torrent download speed limit (bytes/s). -1 if unlimited.
   dl_limit: Option<i64>,
   /// Torrent download speed (bytes/s)
-  dlspeed: Option<u64>,
+  dlspeed: Option<i64>,
   /// Amount of data downloaded
-  downloaded: Option<u64>,
+  downloaded: Option<i64>,
   /// Amount of data downloaded this session
-  downloaded_session: Option<u64>,
+  downloaded_session: Option<i64>,
   /// Torrent ETA (seconds)
   eta: Option<i64>,
   /// True if first last piece are prioritized
@@ -49,27 +49,27 @@ pub struct TorrentInfo {
   /// Magnet URI corresponding to this torrent
   magnet_uri: Option<String>,
   /// Maximum share ratio until torrent is stopped from seeding/uploading
-  max_ratio: Option<f64>,
+  max_ratio: Option<f32>,
   /// Maximum seeding time (seconds) until torrent is stopped from seeding
   max_seeding_time: Option<i64>,
   /// Torrent name
   name: Option<String>,
   /// Number of seeds in the swarm
-  num_complete: Option<u64>,
+  num_complete: Option<i64>,
   /// Number of leechers in the swarm
-  num_incomplete: Option<u64>,
+  num_incomplete: Option<i64>,
   /// Number of leechers connected to
-  num_leechs: Option<u64>,
+  num_leechs: Option<i64>,
   /// Number of seeds connected to
-  num_seeds: Option<u64>,
+  num_seeds: Option<i64>,
   /// Torrent priority. Returns -1 if queuing is disabled or torrent is in seed mode
   priority: Option<i64>,
   /// Torrent progress (percentage/100)
-  progress: Option<f64>,
+  progress: Option<f32>,
   /// Torrent share ratio. Max ratio value: 9999.
-  ratio: Option<f64>,
+  ratio: Option<f32>,
   /// TODO (what is different from max_ratio?)
-  ratio_limit: Option<f64>,
+  ratio_limit: Option<f32>,
   /// Path where this torrent's data is stored
   save_path: Option<String>,
   /// TODO (what is different from max_seeding_time?)
@@ -79,7 +79,7 @@ pub struct TorrentInfo {
   /// True if sequential download is enabled
   seq_dl: Option<bool>,
   /// Total size (bytes) of files selected for download
-  size: Option<u64>,
+  size: Option<i64>,
   /// Torrent state
   state: Option<TorrentState>,
   /// True if super seeding is enabled
@@ -89,17 +89,17 @@ pub struct TorrentInfo {
   /// Total active time (seconds)
   time_active: Option<i64>,
   /// Total size (bytes) of all file in this torrent (including unselected ones)
-  total_size: Option<u64>,
+  total_size: Option<i64>,
   /// The first tracker with working status. Returns empty string if no tracker is working.
   tracker: Option<String>,
   /// Torrent upload speed limit (bytes/s). -1 if unlimited.
   up_limit: Option<i64>,
   /// Amount of data uploaded
-  uploaded: Option<u64>,
+  uploaded: Option<i64>,
   /// Amount of data uploaded this session
-  uploaded_session: Option<u64>,
+  uploaded_session: Option<i64>,
   /// Torrent upload speed (bytes/s)
-  upspeed: Option<u64>,
+  upspeed: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -109,7 +109,7 @@ pub struct TorrentContent {
   /// File name (including relative path)
   name: String,
   /// File size (bytes)
-  size: u64,
+  size: i64,
   /// File progress (percentage/100)
   progress: f32,
   /// File priority
@@ -149,20 +149,20 @@ pub enum TorrentState {
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct ServerState {
-  pub alltime_dl: Option<u64>,
-  pub alltime_ul: Option<u64>,
-  pub average_time_queue: Option<u64>,
+  pub alltime_dl: Option<i64>,
+  pub alltime_ul: Option<i64>,
+  pub average_time_queue: Option<i64>,
   /// Connection status
   pub connection_status: Option<ConnectionStatus>,
   /// DHT nodes connected to
   pub dht_nodes: Option<u32>,
   /// Data downloaded this session (bytes)
-  pub dl_info_data: Option<u64>,
+  pub dl_info_data: Option<i64>,
   /// Global download rate (bytes/s)
-  pub dl_info_speed: Option<u64>,
+  pub dl_info_speed: Option<i64>,
   /// Download rate limit (bytes/s)
-  pub dl_rate_limit: Option<u64>,
-  pub free_space_on_disk: Option<u64>,
+  pub dl_rate_limit: Option<i64>,
+  pub free_space_on_disk: Option<i64>,
   pub global_ratio: Option<String>,
   pub queued_io_jobs: Option<u32>,
   /// True if torrent queueing is enabled
@@ -170,17 +170,17 @@ pub struct ServerState {
   pub read_cache_hits: Option<String>,
   pub read_cache_overload: Option<String>,
   /// Transfer list refresh interval (milliseconds)
-  pub refresh_interval: Option<u64>,
-  pub total_buffers_size: Option<u64>,
+  pub refresh_interval: Option<i64>,
+  pub total_buffers_size: Option<i64>,
   pub total_peer_connections: Option<u32>,
-  pub total_queued_size: Option<u64>,
-  pub total_wasted_session: Option<u64>,
+  pub total_queued_size: Option<i64>,
+  pub total_wasted_session: Option<i64>,
   /// Data uploaded this session (bytes)
-  pub up_info_data: Option<u64>,
+  pub up_info_data: Option<i64>,
   /// Global upload rate (bytes/s)
-  pub up_info_speed: Option<u64>,
+  pub up_info_speed: Option<i64>,
   /// Upload rate limit (bytes/s)
-  pub up_rate_limit: Option<u64>,
+  pub up_rate_limit: Option<i64>,
   /// True if alternative speed limits are enabled
   pub use_alt_speed_limits: Option<bool>,
   pub use_subcategories: Option<bool>,
@@ -223,7 +223,6 @@ impl QBittorrentStateInner {
   fn get_url(&self, api_name: &str, method_name: &str) -> Result<Url> {
     let url = self.url.as_ref().unwrap();
     let path = format!("/api/v2/{}/{}", api_name, method_name);
-    debug!("Path: {}", path);
     url.join(&path).into_result()
   }
 
@@ -232,7 +231,6 @@ impl QBittorrentStateInner {
     F: Serialize + ?Sized,
     T: DeserializeOwned,
   {
-    debug!("Getting {}/{}", api_name, method_name);
     let mut url = self.get_url(api_name, method_name)?;
 
     if let Some(query) = query {
@@ -242,16 +240,22 @@ impl QBittorrentStateInner {
 
     let client = self.client.as_ref().unwrap();
     let res = client.get(url).send().await.into_result()?;
-    //res.json().await.into_result()
-    let text = res.text().await.into_result()?;
-    match serde_json::from_str(&text) {
-      Ok(data) => Ok(data),
-      Err(e) => {
-        debug!("Error: {}", e);
-        debug!("Text: {}", text);
-        anyhow::anyhow!(e).into_result()
-      }
+
+    #[cfg(debug_assertions)]
+    {
+      let text = res.text().await.into_result()?;
+      return match serde_json::from_str(&text) {
+        Ok(data) => Ok(data),
+        Err(e) => {
+          debug!("Error: {}", e);
+          debug!("Text: {}", text);
+          anyhow::anyhow!(e).into_result()
+        }
+      };
     }
+
+    #[cfg(not(debug_assertions))]
+    res.json().await.into_result()
   }
 
   async fn post<F: Serialize + ?Sized>(
@@ -260,7 +264,6 @@ impl QBittorrentStateInner {
     method_name: &str,
     body: &F,
   ) -> Result<String> {
-    debug!("Posting {}/{}", api_name, method_name);
     let client = self.client.as_ref().unwrap();
     let res = client
       .post(self.get_url(api_name, method_name)?)
@@ -442,6 +445,21 @@ pub async fn delete(state: State<'_, QBittorrentState>, hashes: Vec<String>) -> 
         ("hashes", hashes.join("|").as_str()),
         ("deleteFiles", "true"),
       ],
+    )
+    .await?;
+  Ok(())
+}
+
+/// 重命名
+#[tauri::command]
+#[specta::specta]
+pub async fn rename(state: State<'_, QBittorrentState>, hash: String, name: String) -> Result<()> {
+  let state = state.lock().await;
+  state
+    .post(
+      "torrents",
+      "rename",
+      &[("hash", hash.as_str()), ("name", name.as_str())],
     )
     .await?;
   Ok(())

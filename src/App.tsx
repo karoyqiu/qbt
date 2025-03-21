@@ -12,9 +12,10 @@ import { TabMenu } from 'primereact/tabmenu';
 import type { TreeTableExpandedKeysType, TreeTableSelectionKeysType } from 'primereact/treetable';
 import { diff, fork, max, unique } from 'radashi';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useInterval, useLocalStorage, useReadLocalStorage } from 'usehooks-ts';
+import { useInterval, useLocalStorage } from 'usehooks-ts';
 
 import { type MainData, type TorrentContent, commands } from './lib/bindings';
+import cn from './lib/cn';
 import { formatSize, formatSpeed } from './lib/format';
 import makeTree from './lib/makeTree';
 import {
@@ -28,7 +29,9 @@ import {
   mergeMainData,
 } from './lib/qBittorrentTypes';
 import useClipboard from './lib/useClipboard';
+import { useStore } from './lib/useStore';
 import AddDialog from './ui/AddDialog';
+import InfoDialog from './ui/InfoDialog';
 import LoginDialog, { type Credentials } from './ui/LoginDialog';
 import SettingsDialog from './ui/SettingsDialog';
 import TorrentDialog, { TorrentNode } from './ui/TorrentDialog';
@@ -52,6 +55,18 @@ const collectChildIndexes = (node: TorrentNode) => {
   return indexes;
 };
 
+const diskSpaceColor = (value: number) => {
+  if (value <= 1024 * 1024 * 1024 * 2) {
+    return 'text-red-500';
+  }
+
+  if (value <= 1024 * 1024 * 1024 * 8) {
+    return 'text-orange-500';
+  }
+
+  return 'text-green-500';
+};
+
 function remove<T>(list: T[], value: T, toKey: (item: T) => number | string | symbol) {
   const key = toKey(value);
   const index = list.findIndex((v) => toKey(v) === key);
@@ -71,7 +86,7 @@ function App() {
   });
   const [showLogin, setShowLogin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<TorrentFilter>('downloading');
+  const [filter, setFilterRaw] = useState<TorrentFilter>('downloading');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<RequiredTorrentInfo[]>([]);
   const [currentHash, setCurrentHash] = useState('');
@@ -80,31 +95,33 @@ function App() {
   const [expanded, setExpanded] = useState<TreeTableExpandedKeysType>({});
   const [showAdd, setShowAdd] = useState(false);
   const [showTorrent, setShowTorrent] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   const [contentLoading, setContentLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [mainData, setMainDataRaw] = useState(defaultMainData);
-  const smallFileThreshold = useReadLocalStorage<number>('smallFileThreshold') ?? 200 * 1024 * 1024;
-  const watchClipboard = useReadLocalStorage<boolean>('watchClipboard') ?? false;
+  const [smallFileThreshold] = useStore<number>('smallFileThreshold', 200 * 1024 * 1024);
+  const [watchClipboard] = useStore<boolean>('watchClipboard', false);
 
   const metas = useRef<RequiredTorrentInfo[]>([]);
   const torrents = Object.values(mainData.torrents);
+  const currentTorrent = torrents.find((t) => t.infohash_v1 === currentHash);
   const refreshInterval = mainData.server_state.refresh_interval;
+  const totalSelected = selected.reduce((prev, t) => prev + t.size, 0);
+
+  const setFilter = useCallback((filter: TorrentFilter) => {
+    setFilterRaw(filter);
+    setSelected([]);
+  }, []);
 
   const setMainData = useCallback(
     (delta: MainData) => setMainDataRaw((data) => mergeMainData(data, delta)),
-    [setMainDataRaw],
+    [],
   );
 
   const buttons = useMemo<MenuItem[]>(
     () => [
       { label: 'Add', icon: PrimeIcons.PLUS, command: () => setShowAdd(true) },
-      {
-        label: 'Stop',
-        icon: PrimeIcons.STOP,
-        disabled: selected.length === 0,
-        command: () => commands.stop(getInfoHashes(selected)),
-      },
       {
         label: 'Start',
         icon: PrimeIcons.PLAY,
@@ -120,6 +137,12 @@ function App() {
         },
       },
       {
+        label: 'Stop',
+        icon: PrimeIcons.STOP,
+        disabled: selected.length === 0,
+        command: () => commands.stop(getInfoHashes(selected)),
+      },
+      {
         label: 'Delete',
         icon: PrimeIcons.TRASH,
         disabled: selected.length === 0,
@@ -132,6 +155,7 @@ function App() {
         },
       },
       { label: 'Settings', icon: PrimeIcons.COG, command: () => setShowSettings(true) },
+      { label: 'Info', icon: PrimeIcons.INFO_CIRCLE, command: () => setShowInfo(true) },
     ],
     [selected],
   );
@@ -209,10 +233,15 @@ function App() {
   );
 
   const refresh = useCallback(async () => {
-    const data = await commands.getMainData();
-    setMainData(data);
-    setLoading(false);
-  }, [setMainData, setLoading]);
+    try {
+      const data = await commands.getMainData();
+      setMainData(data);
+      setLoading(false);
+    } catch (e) {
+      console.warn('Re-login');
+      await commands.login(credentials.username, credentials.password);
+    }
+  }, [setMainData, setLoading, credentials]);
 
   useEffect(() => {
     const ts = Object.values(mainData.torrents);
@@ -357,6 +386,8 @@ function App() {
         open={showTorrent}
         onClose={() => setShowTorrent(false)}
         loading={contentLoading}
+        hash={currentHash}
+        name={currentTorrent?.name ?? ''}
         nodes={nodes}
         selected={selectedNodes}
         expanded={expanded}
@@ -379,33 +410,46 @@ function App() {
           }
         }}
       />
+      <InfoDialog open={showInfo} onClose={() => setShowInfo(false)} />
       <SettingsDialog open={showSettings} onClose={() => setShowSettings(false)} />
       <Sidebar visible={showSidebar} onHide={() => setShowSidebar(false)}>
-        <div className="grid grid-cols-2 gap-y-2">
+        <div className="grid grid-cols-[1fr,auto] gap-y-2">
           <span>DHT nodes</span>
           <span className="text-end font-mono">{mainData.server_state.dht_nodes}</span>
           <span>Data downloaded</span>
           <span className="text-end font-mono">
             {formatSize(mainData.server_state.dl_info_data)}
           </span>
-          <span>Download speed</span>
-          <span className="text-end font-mono">
-            {formatSpeed(mainData.server_state.dl_info_speed)}
-          </span>
           <span>Data uploaded</span>
           <span className="text-end font-mono">
             {formatSize(mainData.server_state.up_info_data)}
+          </span>
+          <span>Download speed</span>
+          <span className="text-end font-mono">
+            {formatSpeed(mainData.server_state.dl_info_speed)}
           </span>
           <span>Upload speed</span>
           <span className="text-end font-mono">
             {formatSpeed(mainData.server_state.up_info_speed)}
           </span>
           <span>Free disk space</span>
-          <span className="text-end font-mono">
+          <span
+            className={cn(
+              'text-end font-mono',
+              diskSpaceColor(mainData.server_state.free_space_on_disk),
+            )}
+          >
             {formatSize(mainData.server_state.free_space_on_disk)}
           </span>
+          <span>Total selected size</span>
+          <span className="text-end font-mono">{formatSize(totalSelected)}</span>
           <span>Speed limited</span>
-          <span className="text-end">
+          <span
+            className={cn(
+              'text-end',
+              mainData.server_state.use_alt_speed_limits ? 'text-orange-500' : 'text-green-500',
+            )}
+          >
             {mainData.server_state.use_alt_speed_limits ? 'Yes' : 'No'}
           </span>
         </div>
