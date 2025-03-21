@@ -22,6 +22,10 @@ const percentFormatter = new Intl.NumberFormat(undefined, {
   style: 'percent',
   minimumFractionDigits: 1,
 });
+const smallPercentFormatter = new Intl.NumberFormat(undefined, {
+  style: 'percent',
+  maximumSignificantDigits: 1,
+});
 
 const formatWith = (value: number, formatters: readonly Intl.NumberFormat[]) => {
   let i = 0;
@@ -39,4 +43,5 @@ const formatWith = (value: number, formatters: readonly Intl.NumberFormat[]) => 
 export const formatSize = (bytes: number) => formatWith(bytes, sizeFormatters);
 export const formatSpeed = (bps: number) => formatWith(bps, speedFormatters);
 
-export const formatPercent = (value: number) => percentFormatter.format(value);
+export const formatPercent = (value: number) =>
+  value < 0.01 ? smallPercentFormatter.format(value) : percentFormatter.format(value);

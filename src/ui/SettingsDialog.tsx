@@ -1,12 +1,14 @@
-import { open as openDialog } from '@tauri-apps/api/dialog';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { PrimeIcons } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
+import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputSwitch } from 'primereact/inputswitch';
 import { InputText } from 'primereact/inputtext';
 import { useId } from 'react';
-import { useLocalStorage } from 'usehooks-ts';
+
+import { useStore } from '../lib/useStore';
 
 const getUnit = (unit: string) => {
   const formatter = new Intl.NumberFormat(undefined, {
@@ -19,6 +21,7 @@ const getUnit = (unit: string) => {
   const u = parts.find((p) => p.type === 'unit');
   return u ? u.value : unit;
 };
+const MB = ` ${getUnit('megabyte')}`;
 
 type SettingsDialogProps = {
   open: boolean;
@@ -27,13 +30,13 @@ type SettingsDialogProps = {
 
 export default function SettingsDialog(props: SettingsDialogProps) {
   const { open, onClose } = props;
-  const [refreshInterval, setRefreshInterval] = useLocalStorage('refreshInterval', 1000);
-  const [smallFileThreshold, setSmallFileThreshold] = useLocalStorage(
+  const [smallFileThreshold, setSmallFileThreshold] = useStore(
     'smallFileThreshold',
     200 * 1024 * 1024,
   );
-  const [localDownloadDir, setLocalDownloadDir] = useLocalStorage('localDownloadDir', '');
-  const [watchClipboard, setWatchClipboard] = useLocalStorage('watchClipboard', false);
+  const [localDownloadDir, setLocalDownloadDir] = useStore('localDownloadDir', '');
+  const [watchClipboard, setWatchClipboard] = useStore('watchClipboard', false);
+  const [proxy, setProxy] = useStore('proxy', '<system>');
   const id = useId();
 
   return (
@@ -46,26 +49,13 @@ export default function SettingsDialog(props: SettingsDialogProps) {
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-auto flex-col gap-1">
-          <label htmlFor={`${id}ri`}>Refresh interval</label>
-          <InputNumber
-            id={`${id}ri`}
-            autoFocus
-            allowEmpty={false}
-            inputClassName="w-full font-mono text-end"
-            inputMode="numeric"
-            suffix={` ${getUnit('millisecond')}`}
-            value={refreshInterval}
-            onValueChange={(e) => setRefreshInterval(e.value ?? 1000)}
-          />
-        </div>
-        <div className="flex flex-auto flex-col gap-1">
           <label htmlFor={`${id}smt`}>Small file threshold</label>
           <InputNumber
             id={`${id}smt`}
             allowEmpty={false}
             inputClassName="w-full font-mono text-end"
             inputMode="numeric"
-            suffix={` ${getUnit('megabyte')}`}
+            suffix={MB}
             value={smallFileThreshold / 1024 / 1024}
             onValueChange={(e) => setSmallFileThreshold((e.value ?? 200) * 1024 * 1024)}
           />
@@ -89,6 +79,21 @@ export default function SettingsDialog(props: SettingsDialogProps) {
               }}
             />
           </div>
+        </div>
+        <div className="flex flex-auto flex-col gap-1">
+          <label htmlFor={`${id}proxy`}>Proxy</label>
+          <Dropdown
+            value={proxy}
+            onChange={(e) => setProxy(e.value)}
+            options={[
+              { label: 'Use system proxy', value: '<system>' },
+              { label: 'No proxy', value: '<direct>' },
+            ]}
+            optionLabel="label"
+            optionValue="value"
+            dataKey="value"
+            editable
+          />
         </div>
         <div className="flex flex-auto items-center justify-between">
           <label htmlFor={`${id}wc`}>Watch clipboard</label>

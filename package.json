@@ -1,7 +1,7 @@
 {
   "name": "qbt",
   "private": true,
-  "version": "0.2.2",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,12 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
-    "@tauri-apps/api": "^1.6.0",
+    "@tauri-apps/api": "^2.0.0",
+    "@tauri-apps/plugin-dialog": "^2.2.0",
+    "@tauri-apps/plugin-http": "^2.2.0",
+    "@tauri-apps/plugin-log": "~2",
+    "@tauri-apps/plugin-shell": "^2.2.0",
+    "@tauri-apps/plugin-store": "~2",
     "clsx": "^2.1.1",
     "primeicons": "^7.0.0",
     "primereact": "^10.8.2",
@@ -20,13 +25,14 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.53.0",
     "tailwind-merge": "^2.5.2",
-    "tauri-plugin-clipboard-api": "^1",
+    "tauri-plugin-clipboard-api": "^2.1.11",
     "tough-cookie": "^4.1.4",
     "usehooks-ts": "^3.1.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.6.1",
+    "@tauri-apps/cli": "^2.1.0",
+    "@trivago/prettier-plugin-sort-imports": "^5.2.0",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@types/tough-cookie": "^4.0.5",
@@ -41,9 +47,21 @@
     "prettier": "^3.3.3",
     "prettier-plugin-organize-attributes": "^1.0.0",
     "prettier-plugin-tailwindcss": "^0.6.6",
+    "rollup-plugin-visualizer": "^5.13.1",
     "tailwindcss": "^3.4.10",
     "typescript": "^5.5.4",
     "vite": "^5.4.3"
   },
-  "packageManager": "yarn@4.4.1"
+  "packageManager": "yarn@4.4.1",
+  "dependenciesMeta": {
+    "@trivago/prettier-plugin-sort-imports@5.2.0": {
+      "unplugged": true
+    },
+    "prettier-plugin-organize-attributes@1.0.0": {
+      "unplugged": true
+    },
+    "prettier-plugin-tailwindcss@0.6.6": {
+      "unplugged": true
+    }
+  }
 }

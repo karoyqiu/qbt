@@ -1,0 +1,17 @@
+{
+  "identifier": "migrated",
+  "description": "permissions that were migrated from v1",
+  "local": true,
+  "windows": ["main"],
+  "permissions": [
+    "clipboard:allow-has-files",
+    "clipboard:allow-start-monitor",
+    "clipboard:monitor-all",
+    "clipboard:read-all",
+    "core:default",
+    "core:window:allow-maximize",
+    "core:window:allow-show",
+    "dialog:allow-open",
+    "shell:allow-open"
+  ]
+}

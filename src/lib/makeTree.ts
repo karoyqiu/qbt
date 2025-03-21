@@ -2,8 +2,10 @@ import type {
   TreeTableCheckboxSelectionKeyType,
   TreeTableExpandedKeysType,
 } from 'primereact/treetable';
+
 import type { TorrentNode } from '../ui/TorrentDialog';
-import { type TorrentContent, TorrentContentPriority } from './qBittorrentTypes';
+import type { TorrentContent } from './bindings';
+import { TorrentContentPriority } from './qBittorrentTypes';
 
 const findChild = (parent: TorrentNode, childName: string) => {
   if (parent.children) {
@@ -70,7 +72,7 @@ const makeTree = (content: TorrentContent[]) => {
       size: 0,
       priority: TorrentContentPriority.DO_NOT_DOWNLOAD,
       progress: 0,
-      is_seed: false,
+      //is_seed: false,
       piece_range: [],
       availability: 0,
     },
