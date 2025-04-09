@@ -2,6 +2,7 @@ import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { debug, error } from '@tauri-apps/plugin-log';
 import { PrimeIcons } from 'primereact/api';
 import { Button } from 'primereact/button';
+import { useInterval, useLocalStorage } from 'primereact/hooks';
 import { IconField } from 'primereact/iconfield';
 import { InputIcon } from 'primereact/inputicon';
 import { InputText } from 'primereact/inputtext';
@@ -12,7 +13,6 @@ import { TabMenu } from 'primereact/tabmenu';
 import type { TreeTableExpandedKeysType, TreeTableSelectionKeysType } from 'primereact/treetable';
 import { diff, fork, max, unique } from 'radashi';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useInterval, useLocalStorage } from 'usehooks-ts';
 
 import { type MainData, type TorrentContent, commands } from './lib/bindings';
 import cn from './lib/cn';
@@ -79,11 +79,14 @@ function remove<T>(list: T[], value: T, toKey: (item: T) => number | string | sy
 }
 
 function App() {
-  const [credentials, setCredentials] = useLocalStorage<Credentials>('credentials', {
-    url: '',
-    username: '',
-    password: '',
-  });
+  const [credentials, setCredentials] = useLocalStorage<Credentials>(
+    {
+      url: '',
+      username: '',
+      password: '',
+    },
+    'credentials',
+  );
   const [showLogin, setShowLogin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filter, setFilterRaw] = useState<TorrentFilter>('downloading');
@@ -302,7 +305,8 @@ function App() {
     () => {
       refresh().catch(console.error);
     },
-    showLogin ? null : refreshInterval,
+    refreshInterval,
+    !showLogin,
   );
 
   const onClipboard = useCallback((text: string) => {

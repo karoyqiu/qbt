@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use log::debug;
 use reqwest::{Client, Proxy, multipart};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_with::skip_serializing_none;
@@ -247,8 +246,8 @@ impl QBittorrentStateInner {
       return match serde_json::from_str(&text) {
         Ok(data) => Ok(data),
         Err(e) => {
-          debug!("Error: {}", e);
-          debug!("Text: {}", text);
+          log::debug!("Error: {}", e);
+          log::debug!("Text: {}", text);
           anyhow::anyhow!(e).into_result()
         }
       };
