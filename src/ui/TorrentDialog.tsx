@@ -1,5 +1,5 @@
 import { join } from '@tauri-apps/api/path';
-import { open as shellOpen } from '@tauri-apps/plugin-shell';
+import { openPath } from '@tauri-apps/plugin-opener';
 import { PrimeIcons } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
@@ -205,7 +205,7 @@ export default function TorrentDialog(props: TorrentDialogProps) {
                     className="cursor-pointer text-[--primary-color] underline-offset-4 hover:underline"
                     onClick={async () => {
                       const path = await join(localDownloadDir, node.data.fullPath);
-                      await shellOpen(path);
+                      await openPath(path);
                     }}
                   >
                     {node.data.name}

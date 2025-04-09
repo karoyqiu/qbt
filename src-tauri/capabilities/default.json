@@ -1,6 +1,22 @@
 {
+  "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main-capability",
   "description": "Capability for the main window",
   "windows": ["main"],
-  "permissions": ["log:allow-log", "log:default", "store:allow-load", "store:default"]
+  "permissions": [
+    "clipboard:allow-has-files",
+    "clipboard:allow-start-monitor",
+    "clipboard:monitor-all",
+    "clipboard:read-all",
+    "core:default",
+    "core:window:allow-maximize",
+    "core:window:allow-show",
+    "dialog:allow-open",
+    "log:default",
+    "store:default",
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [{ "path": "**/*" }]
+    }
+  ]
 }
