@@ -8,26 +8,22 @@ import { useId } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-export type Credentials = {
-  url: string;
-  username: string;
-  password: string;
-};
-
-type LoginDialogProps = {
-  open: boolean;
-  onLogin: (data?: Credentials) => Promise<unknown> | unknown;
-};
-
 const credentialsSchema = z.object({
   url: z.string().url(),
   username: z.string().min(1),
   password: z.string().min(1),
 });
 
+export type Credentials = z.infer<typeof credentialsSchema>;
+
+type LoginDialogProps = {
+  open: boolean;
+  onLogin: (data?: Credentials) => Promise<unknown> | unknown;
+};
+
 export default function LoginDialog(props: LoginDialogProps) {
   const { open, onLogin } = props;
-  const form = useForm<Credentials>({
+  const form = useForm({
     resolver: zodResolver(credentialsSchema),
     defaultValues: {
       url: '',
