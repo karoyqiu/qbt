@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import { type TorrentContent, VideoInfo, commands } from '../lib/bindings';
 import { formatPercent, formatSize } from '../lib/format';
 import { useStore } from '../lib/useStore';
+import RenameDialog from './RenameDialog';
 import VideoInfoPanel from './VideoInfoPanel';
 
 export type TorrentNode = Omit<TreeNode, 'data' | 'children'> & {
@@ -79,9 +80,11 @@ export default function TorrentDialog(props: TorrentDialogProps) {
   const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
   const [downloadedAt, setDownloadedAt] = useState<number | null>(0);
   const [tabIndex, setTabIndex] = useState(0);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [code, setCode] = useState(name);
   const [localDownloadDir] = useStore<string>('localDownloadDir', '');
 
-  const autoRename = async () => {
+  const guessMovieCode = async () => {
     const checked: TorrentContent[] = [];
     getSelectedNodes(checked, nodes, selected);
     checked.sort((a, b) => b.size - a.size);
@@ -90,9 +93,17 @@ export default function TorrentDialog(props: TorrentDialogProps) {
       const code = await commands.guessMovieCode(sel.name);
 
       if (code) {
-        await commands.rename(hash, code);
-        break;
+        setCode(code);
+        return;
       }
+    }
+
+    setCode('');
+  };
+
+  const autoRename = async () => {
+    if (code) {
+      await commands.rename(hash, code);
     }
   };
 
@@ -104,6 +115,10 @@ export default function TorrentDialog(props: TorrentDialogProps) {
     setVideoInfo(null);
     setTabIndex(0);
   }, [nodes]);
+
+  useEffect(() => {
+    guessMovieCode();
+  }, [name, nodes, selected]);
 
   return (
     <Dialog
@@ -118,6 +133,7 @@ export default function TorrentDialog(props: TorrentDialogProps) {
               <Button label="Magnet to torrent" onClick={onMagnetToTorrent} />
             ) : (
               <>
+                <Button label="Rename" onClick={() => setRenameOpen(true)} />
                 <Button label="Auto rename" onClick={autoRename} />
                 <Button label="Auto select" onClick={onAutoSelect} />
               </>
@@ -221,6 +237,18 @@ export default function TorrentDialog(props: TorrentDialogProps) {
               )}
             />
           </TreeTable>
+          <RenameDialog
+            open={renameOpen}
+            onClose={async (name) => {
+              if (name) {
+                await commands.rename(hash, name);
+              }
+
+              setRenameOpen(false);
+            }}
+            originalName={name}
+            suggestion={code}
+          />
         </TabPanel>
         <TabPanel header="Information">
           <VideoInfoPanel
