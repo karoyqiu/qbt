@@ -2,21 +2,21 @@ use std::{ffi::OsStr, sync::Arc, time::Duration};
 
 use cookie::SameSite;
 use headless_chrome::{
+  Browser, Element, LaunchOptionsBuilder, Tab,
   protocol::cdp::{
+    DOM::RequestNode,
     Network::{CookieParam, CookieSameSite},
     Runtime::{RemoteObjectSubtype, RemoteObjectType},
-    DOM::RequestNode,
   },
-  Browser, Element, LaunchOptionsBuilder, Tab,
 };
 use log::{debug, error, info};
 use url::Url;
 
 use crate::{
-  error::{err, IntoResult, Result},
+  error::{IntoResult, Result, err},
   scrape::{
-    crawlers::{load_cookies, web::get_proxy},
     Actress, TranslatedText, VideoInfo, VideoInfoBuilder,
+    crawlers::{load_cookies, web::get_proxy},
   },
 };
 

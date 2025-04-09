@@ -6,9 +6,9 @@ use serde::Deserialize;
 use crate::error::{Error, IntoResult, Result};
 
 use super::{
+  Crawler,
   crawler::convert_date_string_to_epoch,
   web::{get_selector, optional, remove_first},
-  Crawler,
 };
 
 lazy_static! {

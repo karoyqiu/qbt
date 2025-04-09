@@ -2,11 +2,11 @@ mod code;
 mod crawl;
 mod crawlers;
 
-use base64::{prelude::BASE64_STANDARD, Engine};
+use base64::{Engine, prelude::BASE64_STANDARD};
 use crawlers::get_response;
 use derive_builder::Builder;
 use lazy_static::lazy_static;
-use quick_cache::{sync::Cache, Weighter};
+use quick_cache::{Weighter, sync::Cache};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri::http::HeaderValue;

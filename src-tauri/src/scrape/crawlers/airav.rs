@@ -3,13 +3,13 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::{
-  error::{err, Result},
+  error::{Result, err},
   scrape::{Actress, TranslatedText},
 };
 
 use super::{
   airav_cdp::AiravCDP,
-  crawler::{convert_datetime_string_to_epoch, Crawler},
+  crawler::{Crawler, convert_datetime_string_to_epoch},
   web::{get_selector, optional},
 };
 

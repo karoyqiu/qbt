@@ -5,12 +5,12 @@ use log::{debug, warn};
 use regex::Regex;
 use translators::Translator;
 
-use crate::error::{err, Result};
+use crate::error::{Result, err};
 
 use super::{
-  code::is_uncensored,
-  crawlers::{self, get_translator, Crawler},
   VideoInfo,
+  code::is_uncensored,
+  crawlers::{self, Crawler, get_translator},
 };
 
 lazy_static! {
@@ -124,8 +124,9 @@ lazy_static! {
     "airav", "avsex", "avsox", "7mmtv", "fc2", "fc2hub", "iqqtv", "javbus", "xcity", "lulubar",
   ];
   static ref DIRECTOR_WEBSITE: Vec<&'static str> = vec!["javbus", "freejavbt"];
-  static ref DIRECTOR_WEBSITE_EXCLUDE: Vec<&'static str> =
-    vec!["airav", "avsex", "avsox", "fc2", "fc2hub", "iqqtv", "jav321", "mgstage", "lulubar",];
+  static ref DIRECTOR_WEBSITE_EXCLUDE: Vec<&'static str> = vec![
+    "airav", "avsex", "avsox", "fc2", "fc2hub", "iqqtv", "jav321", "mgstage", "lulubar",
+  ];
   static ref SERIES_WEBSITE: Vec<&'static str> = vec!["javbus", "freejavbt"];
   static ref SERIES_WEBSITE_EXCLUDE: Vec<&'static str> =
     vec!["airav", "avsex", "iqqtv", "7mmtv", "javlibrary", "lulubar",];
@@ -269,10 +270,13 @@ where
   let mut result = crawlers::crawl(crawler, code).await;
 
   if result.is_err() {
-    if let Some(cdp) = crawler.cdp() {
-      result = crawlers::crawl_cdp(cdp.as_ref(), code).await;
-    } else {
-      warn!("Failed to crawl: {:?}", result.as_ref().err());
+    match crawler.cdp() {
+      Some(cdp) => {
+        result = crawlers::crawl_cdp(cdp.as_ref(), code).await;
+      }
+      _ => {
+        warn!("Failed to crawl: {:?}", result.as_ref().err());
+      }
     }
   }
 
@@ -337,9 +341,8 @@ async fn crawl_websites(code: &String, websites: &Vec<&'static str>) -> Result<V
 }
 
 async fn crawl_officials(code: &String) -> Result<VideoInfo> {
-  if let Ok(info) = crawl_website(code, "officials").await {
-    Ok(info)
-  } else {
-    crawl_website(code, "prestige").await
+  match crawl_website(code, "officials").await {
+    Ok(info) => Ok(info),
+    _ => crawl_website(code, "prestige").await,
   }
 }

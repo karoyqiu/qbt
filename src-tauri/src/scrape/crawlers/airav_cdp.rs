@@ -5,13 +5,13 @@ use log::debug;
 
 use crate::{
   error::{IntoResult, Result},
-  scrape::{crawlers::crawler_cdp::take_screenshot, Actress, TranslatedText},
+  scrape::{Actress, TranslatedText, crawlers::crawler_cdp::take_screenshot},
 };
 
 use super::{
   airav::VideoObject,
   crawler::convert_datetime_string_to_epoch,
-  crawler_cdp::{get_parent_element, CrawlerCDP},
+  crawler_cdp::{CrawlerCDP, get_parent_element},
   web::optional,
 };
 

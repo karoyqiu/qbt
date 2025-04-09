@@ -1,12 +1,12 @@
 use scraper::{ElementRef, Html};
 
 use crate::{
-  error::{err, Result},
+  error::{Result, err},
   scrape::Actress,
 };
 
 use super::{
-  crawler::{convert_date_string_to_epoch, Crawler},
+  crawler::{Crawler, convert_date_string_to_epoch},
   web::{get_selector, optional},
 };
 

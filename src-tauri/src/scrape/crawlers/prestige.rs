@@ -3,8 +3,8 @@ use log::debug;
 use serde::Deserialize;
 
 use crate::{
-  error::{err, IntoResult, Result},
-  scrape::{code::get_code_prefix, Actress, TranslatedText, VideoInfo, VideoInfoBuilder},
+  error::{IntoResult, Result, err},
+  scrape::{Actress, TranslatedText, VideoInfo, VideoInfoBuilder, code::get_code_prefix},
 };
 
 use super::crawler::Crawler;
@@ -89,7 +89,10 @@ impl Crawler for Prestige {
     let prefix = get_code_prefix(code).unwrap_or_default();
 
     if PREFIXES.binary_search(&prefix.as_str()).is_ok() {
-      Ok(format!("https://www.prestige-av.com/api/search?isEnabledQuery=true&searchText={}&isEnableAggregation=false&release=false&reservation=false&soldOut=false&from=0&aggregationTermsSize=0&size=20",code))
+      Ok(format!(
+        "https://www.prestige-av.com/api/search?isEnabledQuery=true&searchText={}&isEnableAggregation=false&release=false&reservation=false&soldOut=false&from=0&aggregationTermsSize=0&size=20",
+        code
+      ))
     } else {
       err("Invalid code")
     }
