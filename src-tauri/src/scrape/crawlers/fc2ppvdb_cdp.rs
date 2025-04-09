@@ -9,7 +9,7 @@ use crate::{
 
 use super::{
   crawler::{convert_date_string_to_epoch, convert_duration_string_to_seconds},
-  crawler_cdp::{get_parent_element, CrawlerCDP},
+  crawler_cdp::{CrawlerCDP, get_parent_element},
 };
 
 #[derive(Default)]

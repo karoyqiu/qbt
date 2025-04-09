@@ -5,12 +5,12 @@ use scraper::{ElementRef, Html};
 use url::Url;
 
 use crate::{
-  error::{err, Result},
+  error::{Result, err},
   scrape::{Actress, TranslatedText},
 };
 
 use super::{
-  crawler::{convert_date_string_to_epoch, convert_duration_string_to_seconds, Crawler},
+  crawler::{Crawler, convert_date_string_to_epoch, convert_duration_string_to_seconds},
   web::{get_selector, optional},
 };
 

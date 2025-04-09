@@ -7,8 +7,8 @@ use std::{
 use lazy_static::lazy_static;
 use log::{debug, trace};
 use reqwest::{
-  header::{ACCEPT, ACCEPT_LANGUAGE, CONNECTION, DNT, UPGRADE_INSECURE_REQUESTS},
   Client, ClientBuilder, Proxy, Response,
+  header::{ACCEPT, ACCEPT_LANGUAGE, CONNECTION, DNT, UPGRADE_INSECURE_REQUESTS},
 };
 use scraper::Selector;
 use tauri::http::{HeaderMap, HeaderName, HeaderValue};
@@ -18,7 +18,7 @@ use url::Url;
 
 use crate::{
   app_handle::get_app_handle,
-  error::{err, Error, IntoResult, Result},
+  error::{Error, IntoResult, Result, err},
 };
 
 use super::cookie_jar::CookieJar;
@@ -179,14 +179,9 @@ pub fn get_selector(selector: &'static str) -> Arc<Selector> {
 }
 
 pub fn get_translator() -> Result<GoogleTranslator> {
-  let app = get_app_handle().ok_or(Error(anyhow::anyhow!("App handle not found")))?;
-  let store = app.store("settings.json").into_result()?;
-  let proxy = store.get("proxy");
+  let proxy = get_proxy()?;
 
   if let Some(proxy) = proxy {
-    let proxy: StringValue = serde_json::from_value(proxy).into_result()?;
-    let proxy = proxy.value;
-
     if !proxy.is_empty() && proxy != "<system>" && proxy != "<direct>" {
       return Ok(GoogleTranslator::builder().proxy_address(proxy).build());
     }
@@ -196,11 +191,7 @@ pub fn get_translator() -> Result<GoogleTranslator> {
 }
 
 pub fn optional<T>(v: Vec<T>) -> Option<Vec<T>> {
-  if v.is_empty() {
-    None
-  } else {
-    Some(v)
-  }
+  if v.is_empty() { None } else { Some(v) }
 }
 
 pub fn remove_first<T>(mut v: Vec<T>) -> Option<Vec<T>> {

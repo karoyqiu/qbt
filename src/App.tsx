@@ -2,6 +2,7 @@ import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { debug, error } from '@tauri-apps/plugin-log';
 import { PrimeIcons } from 'primereact/api';
 import { Button } from 'primereact/button';
+import { useInterval, useLocalStorage, useTimeout } from 'primereact/hooks';
 import { IconField } from 'primereact/iconfield';
 import { InputIcon } from 'primereact/inputicon';
 import { InputText } from 'primereact/inputtext';
@@ -12,7 +13,6 @@ import { TabMenu } from 'primereact/tabmenu';
 import type { TreeTableExpandedKeysType, TreeTableSelectionKeysType } from 'primereact/treetable';
 import { diff, fork, max, unique } from 'radashi';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useInterval, useLocalStorage } from 'usehooks-ts';
 
 import { type MainData, type TorrentContent, commands } from './lib/bindings';
 import cn from './lib/cn';
@@ -34,7 +34,7 @@ import AddDialog from './ui/AddDialog';
 import InfoDialog from './ui/InfoDialog';
 import LoginDialog, { type Credentials } from './ui/LoginDialog';
 import SettingsDialog from './ui/SettingsDialog';
-import TorrentDialog, { TorrentNode } from './ui/TorrentDialog';
+import TorrentDialog, { type TorrentNode } from './ui/TorrentDialog';
 import TorrentTable from './ui/TorrentTable';
 
 const appWindow = getCurrentWebviewWindow();
@@ -79,12 +79,16 @@ function remove<T>(list: T[], value: T, toKey: (item: T) => number | string | sy
 }
 
 function App() {
-  const [credentials, setCredentials] = useLocalStorage<Credentials>('credentials', {
-    url: '',
-    username: '',
-    password: '',
-  });
+  const [credentials, setCredentials] = useLocalStorage<Credentials>(
+    {
+      url: '',
+      username: '',
+      password: '',
+    },
+    'credentials',
+  );
   const [showLogin, setShowLogin] = useState(false);
+  const [hideLogin, setHideLogin] = useState(true);
   const [loading, setLoading] = useState(true);
   const [filter, setFilterRaw] = useState<TorrentFilter>('downloading');
   const [search, setSearch] = useState('');
@@ -298,11 +302,14 @@ function App() {
       });
   }, [credentials]);
 
+  useTimeout(() => setHideLogin(false), 1000);
+
   useInterval(
     () => {
       refresh().catch(console.error);
     },
-    showLogin ? null : refreshInterval,
+    refreshInterval,
+    !showLogin,
   );
 
   const onClipboard = useCallback((text: string) => {
@@ -365,7 +372,7 @@ function App() {
         }}
       />
       <LoginDialog
-        open={showLogin}
+        open={!hideLogin && showLogin}
         onLogin={(data) => {
           if (data) {
             setCredentials(data);

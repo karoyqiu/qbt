@@ -1,14 +1,14 @@
 use log::debug;
 use ormlite::{
+  Connection, Executor, Model, Row, TableMeta,
   model::ModelBuilder,
   sqlite::{SqliteConnectOptions, SqliteConnection, SqliteJournalMode, SqliteSynchronous},
-  Connection, Executor, Model, Row, TableMeta,
 };
-use tauri::{async_runtime::Mutex, path::BaseDirectory, AppHandle, Manager, State};
+use tauri::{AppHandle, Manager, State, async_runtime::Mutex, path::BaseDirectory};
 
 use crate::{
   error::{Error, IntoResult, Result},
-  scrape::{crawl, get_movie_code, VideoInfo},
+  scrape::{VideoInfo, crawl, get_movie_code},
 };
 
 const CURRENT_DB_VERSION: u32 = 1;

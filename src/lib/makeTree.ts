@@ -130,7 +130,12 @@ const makeTree = (content: TorrentContent[]) => {
 
   const expanded: TreeTableExpandedKeysType = {};
   finalize(root, selected, expanded);
-  delete selected.root;
+
+  for (const [key, value] of Object.entries(selected)) {
+    if (key === 'root' || (!value.checked && !value.partialChecked)) {
+      delete selected[key];
+    }
+  }
 
   return { nodes: root.children!, selected, expanded };
 };

@@ -1,9 +1,9 @@
 [package]
 name = "qbt"
-version = "0.3.0"
+version = "0.4.0"
 description = "qBittorrent"
 authors = ["karoyqiu@gmail.com"]
-edition = "2021"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -27,7 +27,7 @@ log = "0.4.22"
 ormlite = { version = "0.22.8", features = ["sqlite"] }
 quick_cache = "0.6.9"
 regex = "1.11.1"
-reqwest = { version = "0.12.11", features = ["gzip", "deflate", "brotli", "cookies", "json", "http2", "multipart", "zstd"] }
+reqwest = { version = "0.12.11", features = ["gzip", "deflate", "brotli", "cookies", "json", "http2", "multipart", "stream", "zstd"] }
 reqwest_cookie_store = "0.8.0"
 scraper = "0.22.0"
 serde = { version = "1", features = ["derive"] }

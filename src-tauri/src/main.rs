@@ -7,15 +7,15 @@ mod error;
 mod qbittorrent;
 mod scrape;
 
-use db::{get_video_info, has_been_downloaded, mark_as_downloaded, rescrape, DbState};
-use log::{error, LevelFilter};
+use db::{DbState, get_video_info, has_been_downloaded, mark_as_downloaded, rescrape};
+use log::{LevelFilter, error};
 use scrape::{download_image, guess_movie_code};
 use tauri::{Manager, State};
-use tauri_specta::{collect_commands, Builder, ErrorHandlingMode};
+use tauri_specta::{Builder, ErrorHandlingMode, collect_commands};
 
 use qbittorrent::{
-  add_files, add_urls, delete, get_main_data, get_torrent_contents, initialize, login, recheck,
-  rename, set_file_priority, start, stop, QBittorrentState,
+  QBittorrentState, add_files, add_urls, delete, get_main_data, get_torrent_contents, initialize,
+  login, recheck, rename, set_file_priority, start, stop,
 };
 
 fn main() {

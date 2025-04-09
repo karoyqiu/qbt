@@ -4,8 +4,8 @@ use scraper::Html;
 use url::Url;
 
 use crate::{
-  error::{err, IntoResult, Result},
-  scrape::{crawlers::web::get_html, Actress, TranslatedText, VideoInfo, VideoInfoBuilder},
+  error::{IntoResult, Result, err},
+  scrape::{Actress, TranslatedText, VideoInfo, VideoInfoBuilder, crawlers::web::get_html},
 };
 
 use super::CrawlerCDP;

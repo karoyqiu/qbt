@@ -7,12 +7,12 @@ use scraper::{ElementRef, Html};
 use url::Url;
 
 use crate::{
-  error::{err, Result},
-  scrape::{code::get_code_prefix, Actress, TranslatedText, VideoInfoBuilder},
+  error::{Result, err},
+  scrape::{Actress, TranslatedText, VideoInfoBuilder, code::get_code_prefix},
 };
 
 use super::{
-  crawler::{convert_date_string_to_epoch, Crawler},
+  crawler::{Crawler, convert_date_string_to_epoch},
   web::{get_selector, optional, remove_first},
 };
 

@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
-use log::debug;
-use reqwest::{multipart, Client, Proxy};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use reqwest::{Client, Proxy, multipart};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_with::skip_serializing_none;
 use specta::Type;
-use tauri::{async_runtime::Mutex, State};
+use tauri::{State, async_runtime::Mutex};
 use url::Url;
 
 use crate::error::{IntoResult, Result};
@@ -247,8 +246,8 @@ impl QBittorrentStateInner {
       return match serde_json::from_str(&text) {
         Ok(data) => Ok(data),
         Err(e) => {
-          debug!("Error: {}", e);
-          debug!("Text: {}", text);
+          log::debug!("Error: {}", e);
+          log::debug!("Text: {}", text);
           anyhow::anyhow!(e).into_result()
         }
       };

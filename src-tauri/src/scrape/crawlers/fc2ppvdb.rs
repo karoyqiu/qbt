@@ -1,12 +1,12 @@
 use scraper::{ElementRef, Html};
 
 use crate::{
-  error::{err, Result},
+  error::{Result, err},
   scrape::{Actress, VideoInfoBuilder},
 };
 
 use super::{
-  crawler::{convert_date_string_to_epoch, convert_duration_string_to_seconds, Crawler},
+  crawler::{Crawler, convert_date_string_to_epoch, convert_duration_string_to_seconds},
   fc2ppvdb_cdp::Fc2ppvdbCDP,
   web::get_selector,
 };
@@ -140,7 +140,10 @@ mod tests {
     let crawler = Fc2ppvdb::default();
     let title = crawler.get_title(&doc);
     assert!(title.is_ok());
-    assert_eq!(title.unwrap(), "【無】清楚で美人なお姉さんをホテルに連れ込みプライベートSEX！お風呂でちゃっかりアナルをオ〇ス。お互いに気持ちいいことだけを追求したハメ撮りです！※特典高画質");
+    assert_eq!(
+      title.unwrap(),
+      "【無】清楚で美人なお姉さんをホテルに連れ込みプライベートSEX！お風呂でちゃっかりアナルをオ〇ス。お互いに気持ちいいことだけを追求したハメ撮りです！※特典高画質"
+    );
 
     let info = crawler.get_info_builder(&doc).build();
     assert!(info.is_ok());
