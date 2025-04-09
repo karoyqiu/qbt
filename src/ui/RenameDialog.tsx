@@ -23,6 +23,7 @@ export default function RenameDialog(props: RenameDialogProps) {
 
   return (
     <Dialog
+      className="w-1/3 min-w-96"
       header="Rename"
       visible={open}
       onHide={onClose}
@@ -35,6 +36,7 @@ export default function RenameDialog(props: RenameDialogProps) {
       dismissableMask
     >
       <InputText
+        className="w-full"
         value={name}
         onChange={(e) => setName(e.target.value)}
         autoFocus
