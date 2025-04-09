@@ -2,7 +2,7 @@ import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { debug, error } from '@tauri-apps/plugin-log';
 import { PrimeIcons } from 'primereact/api';
 import { Button } from 'primereact/button';
-import { useInterval, useLocalStorage } from 'primereact/hooks';
+import { useInterval, useLocalStorage, useTimeout } from 'primereact/hooks';
 import { IconField } from 'primereact/iconfield';
 import { InputIcon } from 'primereact/inputicon';
 import { InputText } from 'primereact/inputtext';
@@ -34,7 +34,7 @@ import AddDialog from './ui/AddDialog';
 import InfoDialog from './ui/InfoDialog';
 import LoginDialog, { type Credentials } from './ui/LoginDialog';
 import SettingsDialog from './ui/SettingsDialog';
-import TorrentDialog, { TorrentNode } from './ui/TorrentDialog';
+import TorrentDialog, { type TorrentNode } from './ui/TorrentDialog';
 import TorrentTable from './ui/TorrentTable';
 
 const appWindow = getCurrentWebviewWindow();
@@ -88,6 +88,7 @@ function App() {
     'credentials',
   );
   const [showLogin, setShowLogin] = useState(false);
+  const [hideLogin, setHideLogin] = useState(true);
   const [loading, setLoading] = useState(true);
   const [filter, setFilterRaw] = useState<TorrentFilter>('downloading');
   const [search, setSearch] = useState('');
@@ -301,6 +302,8 @@ function App() {
       });
   }, [credentials]);
 
+  useTimeout(() => setHideLogin(false), 1000);
+
   useInterval(
     () => {
       refresh().catch(console.error);
@@ -369,7 +372,7 @@ function App() {
         }}
       />
       <LoginDialog
-        open={showLogin}
+        open={!hideLogin && showLogin}
         onLogin={(data) => {
           if (data) {
             setCredentials(data);
