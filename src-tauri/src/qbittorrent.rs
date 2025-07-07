@@ -104,7 +104,7 @@ pub struct TorrentInfo {
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct TorrentContent {
   /// File index
-  index: usize,
+  index: i32,
   /// File name (including relative path)
   name: String,
   /// File size (bytes)
@@ -116,7 +116,7 @@ pub struct TorrentContent {
   /// True if file is seeding/complete
   //is_seed: bool,
   /// The first number is the starting piece index and the second number is the ending piece index (inclusive)
-  piece_range: Vec<usize>,
+  piece_range: Vec<i64>,
   /// Percentage of file pieces currently available
   availability: f32,
 }
