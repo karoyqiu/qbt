@@ -8,12 +8,15 @@
     "clipboard:allow-start-monitor",
     "clipboard:monitor-all",
     "clipboard:read-all",
-    "core:default",
+    "core:event:allow-emit",
+    "core:event:allow-listen",
     "core:window:allow-maximize",
     "core:window:allow-show",
     "dialog:allow-open",
-    "log:default",
-    "store:default",
+    "log:allow-log",
+    "store:allow-get",
+    "store:allow-load",
+    "store:allow-set",
     {
       "identifier": "opener:allow-open-path",
       "allow": [{ "path": "**/*" }]

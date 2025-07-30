@@ -55,6 +55,8 @@ fn main() {
   }
 
   tauri::Builder::default()
+    .plugin(tauri_plugin_clipboard::init())
+    .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_store::Builder::new().build())
     .plugin(
@@ -67,7 +69,6 @@ fn main() {
         .level_for("qbt", LevelFilter::Trace)
         .build(),
     )
-    .plugin(tauri_plugin_clipboard::init())
     .manage(QBittorrentState::default())
     .manage(DbState::default())
     .invoke_handler(builder.invoke_handler())

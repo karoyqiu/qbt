@@ -1,6 +1,6 @@
 [package]
 name = "qbt"
-version = "0.4.1"
+version = "0.4.2"
 description = "qBittorrent"
 authors = ["karoyqiu@gmail.com"]
 edition = "2024"
@@ -36,7 +36,7 @@ serde_urlencoded = "0.7.1"
 serde_with = "3.12.0"
 specta = "=2.0.0-rc.20"
 specta-typescript = "0.0.7"
-tauri = { version = "2", features = ["devtools"] }
+tauri = { version = "2", features = [] }
 tauri-plugin-clipboard = "2.1.11"
 tauri-plugin-dialog = "2"
 tauri-plugin-log = "2"
@@ -53,5 +53,6 @@ custom-protocol = ["tauri/custom-protocol"]
 [profile.release]
 codegen-units = 1
 lto = "fat"
-strip = "symbols"
+opt-level = "s"
 panic = "abort"
+strip = "symbols"
