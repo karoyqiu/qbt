@@ -1,8 +1,7 @@
+import 'primeicons/primeicons.css';
 import { PrimeReactProvider } from 'primereact/api';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-
-import 'primeicons/primeicons.css';
 
 import App from './App';
 import './app.css';

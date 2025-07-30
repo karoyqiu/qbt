@@ -38,23 +38,38 @@ export default function InfoDialog(props: InfoDialogProps) {
   return (
     <Dialog
       className="w-[calc(100vw-16rem)] max-w-screen-lg"
-      header="Movie information"
+      header="Movie Information"
       visible={open}
       onHide={onClose}
       dismissableMask
       footer={
-        <Button
-          label="Re-scrape"
-          icon={PrimeIcons.REFRESH}
-          disabled={!code}
-          loading={loading}
-          onClick={async () => {
-            setStatus('doing');
-            setVideoInfo(null);
-            setVideoInfo(await commands.rescrape(code));
-            setStatus('done');
-          }}
-        />
+        <div className="mt-4 flex gap-4 justify-end">
+          <Button
+            label="Re-scrape"
+            icon={PrimeIcons.REFRESH}
+            disabled={!code}
+            loading={loading}
+            onClick={async () => {
+              setStatus('doing');
+              setVideoInfo(null);
+              setVideoInfo(await commands.rescrape(code));
+              setStatus('done');
+            }}
+            text
+          />
+          <Button
+            label="Mark as Downloaded"
+            icon={PrimeIcons.DOWNLOAD}
+            disabled={!videoInfo || !!downloadedAt}
+            onClick={async () => {
+              if (videoInfo) {
+                const t = Math.floor(Date.now() / 1000);
+                await commands.markAsDownloaded(videoInfo.code, '', t);
+                setDownloadedAt(t);
+              }
+            }}
+          />
+        </div>
       }
     >
       <IconField className="grow self-center mb-4" iconPosition="left">

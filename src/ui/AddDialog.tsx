@@ -21,7 +21,7 @@ export default function AddDialog(props: AddDialogProps) {
 
   return (
     <Dialog
-      header="Add torrents"
+      header="Add Torrents"
       visible={open}
       onHide={() => onClose()}
       className="w-full max-w-2xl"
