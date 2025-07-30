@@ -10,6 +10,7 @@
     "clipboard:read-all",
     "core:event:allow-emit",
     "core:event:allow-listen",
+    "core:path:allow-join",
     "core:window:allow-maximize",
     "core:window:allow-show",
     "dialog:allow-open",
