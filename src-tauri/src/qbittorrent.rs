@@ -11,7 +11,7 @@ use specta::Type;
 use tauri::{State, async_runtime::Mutex};
 use url::Url;
 
-use crate::error::{IntoResult, Result};
+use crate::error::{Error, IntoResult, Result};
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -224,9 +224,19 @@ pub struct QBittorrentStateInner {
 
 impl QBittorrentStateInner {
   fn get_url(&self, api_name: &str, method_name: &str) -> Result<Url> {
-    let url = self.url.as_ref().unwrap();
+    let url = self
+      .url
+      .as_ref()
+      .ok_or_else(|| Error::new("Not initialized"))?;
     let path = format!("/api/v2/{}/{}", api_name, method_name);
     url.join(&path).into_result()
+  }
+
+  fn get_client(&self) -> Result<&Client> {
+    self
+      .client
+      .as_ref()
+      .ok_or_else(|| Error::new("Not initialized"))
   }
 
   async fn get<F, T>(&self, api_name: &str, method_name: &str, query: Option<&F>) -> Result<T>
@@ -241,7 +251,7 @@ impl QBittorrentStateInner {
       url.set_query(Some(&query));
     }
 
-    let client = self.client.as_ref().unwrap();
+    let client = self.get_client()?;
     let res = client.get(url).send().await.into_result()?;
 
     #[cfg(debug_assertions)]
@@ -267,7 +277,7 @@ impl QBittorrentStateInner {
     method_name: &str,
     body: &F,
   ) -> Result<String> {
-    let client = self.client.as_ref().unwrap();
+    let client = self.get_client()?;
     let res = client
       .post(self.get_url(api_name, method_name)?)
       .form(body)
@@ -367,7 +377,7 @@ pub async fn add_files(state: State<'_, QBittorrentState>, paths: Vec<String>) -
   }
 
   let state = state.lock().await;
-  let client = state.client.as_ref().unwrap();
+  let client = state.get_client()?;
   client
     .post(state.get_url("torrents", "add")?)
     .multipart(form)

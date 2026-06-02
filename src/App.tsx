@@ -281,8 +281,11 @@ function App() {
     appWindow.maximize();
   }, []);
 
+  const connected = useRef(false);
+
   useEffect(() => {
     if (!credentials.url || !credentials.apiKey) {
+      setShowLogin(true);
       return;
     }
 
@@ -296,6 +299,7 @@ function App() {
         debug('Setting main data');
         setMainData(data);
         setShowLogin(false);
+        connected.current = true;
       })
       .catch((e) => {
         error(`Failed to connect: ${e}`);
@@ -310,7 +314,7 @@ function App() {
       refresh().catch(console.error);
     },
     refreshInterval,
-    !showLogin,
+    !showLogin && connected.current,
   );
 
   const onClipboard = useCallback((text: string) => {
