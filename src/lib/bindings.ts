@@ -60,14 +60,8 @@ async hasBeenDownloaded(name: string, hash: string | null) : Promise<number | nu
 /**
  * 设置 URL
  */
-async initialize(url: string, proxy: string | null) : Promise<null> {
-    return await TAURI_INVOKE("initialize", { url, proxy });
-},
-/**
- * 登录
- */
-async login(username: string, password: string) : Promise<boolean> {
-    return await TAURI_INVOKE("login", { username, password });
+async initialize(url: string, apiKey: string, proxy: string | null) : Promise<null> {
+    return await TAURI_INVOKE("initialize", { url, apiKey, proxy });
 },
 /**
  * 标记为已下载

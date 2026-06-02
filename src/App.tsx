@@ -31,8 +31,8 @@ import {
 import useClipboard from './lib/useClipboard';
 import { useStore } from './lib/useStore';
 import AddDialog from './ui/AddDialog';
+import ConnectDialog, { type Credentials } from './ui/ConnectDialog';
 import InfoDialog from './ui/InfoDialog';
-import LoginDialog, { type Credentials } from './ui/LoginDialog';
 import SettingsDialog from './ui/SettingsDialog';
 import TorrentDialog, { type TorrentNode } from './ui/TorrentDialog';
 import TorrentTable from './ui/TorrentTable';
@@ -82,8 +82,7 @@ function App() {
   const [credentials, setCredentials] = useLocalStorage<Credentials>(
     {
       url: '',
-      username: '',
-      password: '',
+      apiKey: '',
     },
     'credentials',
   );
@@ -242,10 +241,9 @@ function App() {
       setMainData(data);
       setLoading(false);
     } catch (e) {
-      console.warn('Re-login');
-      await commands.login(credentials.username, credentials.password);
+      error(`Failed to refresh: ${e}`);
     }
-  }, [setMainData, setLoading, credentials]);
+  }, [setMainData, setLoading]);
 
   useEffect(() => {
     const ts = Object.values(mainData.torrents);
@@ -284,20 +282,23 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (!credentials.url || !credentials.apiKey) {
+      return;
+    }
+
     commands
-      .initialize(credentials.url, null)
-      .then(() => commands.login(credentials.username, credentials.password))
-      .then((ok) => {
-        setShowLogin(!ok);
+      .initialize(credentials.url, credentials.apiKey, null)
+      .then(() => {
         debug('Getting main data');
         return commands.getMainData();
       })
       .then((data) => {
         debug('Setting main data');
         setMainData(data);
+        setShowLogin(false);
       })
       .catch((e) => {
-        error(`Failed to login: ${e}`);
+        error(`Failed to connect: ${e}`);
         setShowLogin(true);
       });
   }, [credentials]);
@@ -371,9 +372,9 @@ function App() {
           setContentLoading(false);
         }}
       />
-      <LoginDialog
+      <ConnectDialog
         open={!hideLogin && showLogin}
-        onLogin={(data) => {
+        onConnect={(data) => {
           if (data) {
             setCredentials(data);
           }

@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
-use reqwest::{Client, Proxy, multipart};
+use reqwest::{
+  Client, Proxy,
+  header::{HeaderName, HeaderValue},
+  multipart,
+};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_with::skip_serializing_none;
 use specta::Type;
@@ -282,12 +286,17 @@ pub type QBittorrentState = Mutex<QBittorrentStateInner>;
 pub async fn initialize(
   state: State<'_, QBittorrentState>,
   url: String,
+  api_key: String,
   proxy: Option<String>,
 ) -> Result<()> {
   let mut state = state.lock().await;
   state.url = Some(Url::parse(&url).into_result()?);
 
-  let mut builder = Client::builder().cookie_store(true);
+  let auth_value = HeaderValue::from_str(&format!("Bearer {}", api_key)).into_result()?;
+  let mut headers = reqwest::header::HeaderMap::new();
+  headers.insert(HeaderName::from_static("authorization"), auth_value);
+
+  let mut builder = Client::builder().default_headers(headers);
 
   if let Some(proxy) = proxy {
     if proxy.is_empty() {
@@ -299,28 +308,6 @@ pub async fn initialize(
 
   state.client = Some(builder.build().into_result()?);
   Ok(())
-}
-
-/// 登录
-#[tauri::command]
-#[specta::specta]
-pub async fn login(
-  state: State<'_, QBittorrentState>,
-  username: String,
-  password: String,
-) -> Result<bool> {
-  let state = state.lock().await;
-  let result = state
-    .post(
-      "auth",
-      "login",
-      &[
-        ("username", username.as_str()),
-        ("password", password.as_str()),
-      ],
-    )
-    .await?;
-  Ok(result == "Ok.")
 }
 
 /// 获取主要数据

@@ -10,32 +10,30 @@ import { z } from 'zod';
 
 const credentialsSchema = z.object({
   url: z.string().url(),
-  username: z.string().min(1),
-  password: z.string().min(1),
+  apiKey: z.string().min(1),
 });
 
 export type Credentials = z.infer<typeof credentialsSchema>;
 
-type LoginDialogProps = {
+type ConnectDialogProps = {
   open: boolean;
-  onLogin: (data?: Credentials) => Promise<unknown> | unknown;
+  onConnect: (data?: Credentials) => Promise<unknown> | unknown;
 };
 
-export default function LoginDialog(props: LoginDialogProps) {
-  const { open, onLogin } = props;
+export default function ConnectDialog(props: ConnectDialogProps) {
+  const { open, onConnect } = props;
   const form = useForm({
     resolver: zodResolver(credentialsSchema),
     defaultValues: {
       url: '',
-      username: '',
-      password: '',
+      apiKey: '',
     },
   });
   const id = useId();
 
   return (
-    <Dialog header="Login" visible={open} onHide={() => onLogin()} closable={false}>
-      <form className="flex min-w-96 flex-col gap-8 pt-6" onSubmit={form.handleSubmit(onLogin)}>
+    <Dialog header="Connect" visible={open} onHide={() => onConnect()} closable={false}>
+      <form className="flex min-w-96 flex-col gap-8 pt-6" onSubmit={form.handleSubmit(onConnect)}>
         <FloatLabel>
           <InputText
             id={`${id}url`}
@@ -49,28 +47,17 @@ export default function LoginDialog(props: LoginDialogProps) {
         </FloatLabel>
         <FloatLabel>
           <InputText
-            id={`${id}u`}
-            className="w-full"
-            autoComplete="username"
-            required
-            {...form.register('username')}
-          />
-          <label htmlFor={`${id}u`}>Username</label>
-        </FloatLabel>
-        <FloatLabel>
-          <InputText
-            id={`${id}p`}
+            id={`${id}key`}
             className="w-full"
             type="password"
-            autoComplete="current-password"
             required
-            {...form.register('password')}
+            {...form.register('apiKey')}
           />
-          <label htmlFor={`${id}p`}>Password</label>
+          <label htmlFor={`${id}key`}>API Key</label>
         </FloatLabel>
         <div className="flex flex-row-reverse">
           <Button
-            label="Login"
+            label="Connect"
             icon={PrimeIcons.SIGN_IN}
             type="submit"
             disabled={form.formState.isSubmitting}
