@@ -244,11 +244,12 @@ function App() {
     const hashes = getInfoHashes(ts);
     setSelected((old) => old.filter((item) => hashes.includes(item.infohash_v1)));
 
-    // 待选文件：带标记且已有元数据的任务
+    // 待选文件：带标记、已有元数据且已停止的任务。
+    // 元数据到达后 qBittorrent 异步停止任务，须等到 stoppedDL，否则停止会在 start 之后生效。
     const pendings = ts.filter(
       (t) =>
         t.total_size > 0 &&
-        !['metaDL', 'error', 'missingFiles'].includes(t.state) &&
+        t.state === 'stoppedDL' &&
         t.tags.split(',').some((tag) => tag.trim() === AUTO_SELECT_TAG) &&
         !autoSelecting.current.has(t.infohash_v1),
     );
@@ -259,11 +260,7 @@ function App() {
 
       (async () => {
         await autoSelect(hash);
-
-        if (t.state === 'stoppedDL') {
-          await commands.start([hash]);
-        }
-
+        await commands.start([hash]);
         await commands.removeAutoSelectTag([hash]);
       })()
         .catch((e) => error(`Failed to auto select ${hash}: ${e}`))
