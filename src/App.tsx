@@ -301,7 +301,7 @@ function App() {
     }
 
     commands
-      .initialize(credentials.url, credentials.apiKey, null)
+      .initialize(credentials.url, credentials.apiKey, '')
       .then(() => {
         debug('Getting main data');
         return commands.getMainData();
