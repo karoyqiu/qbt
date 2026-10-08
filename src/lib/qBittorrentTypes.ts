@@ -60,6 +60,9 @@ export const TorrentContentPriority = {
   MAXIMUM: 7,
 } as const;
 
+/** 待选文件任务的标记，与后端一致 */
+export const AUTO_SELECT_TAG = 'qbt:auto-select';
+
 export const torrentFilters = [
   'all',
   'downloading',

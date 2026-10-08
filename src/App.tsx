@@ -11,7 +11,7 @@ import type { MenuItem } from 'primereact/menuitem';
 import { Sidebar } from 'primereact/sidebar';
 import { TabMenu } from 'primereact/tabmenu';
 import type { TreeTableExpandedKeysType, TreeTableSelectionKeysType } from 'primereact/treetable';
-import { diff, fork, max, unique } from 'radashi';
+import { fork, max } from 'radashi';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { type MainData, type TorrentContent, commands } from './lib/bindings';
@@ -19,11 +19,11 @@ import cn from './lib/cn';
 import { formatSize, formatSpeed } from './lib/format';
 import makeTree from './lib/makeTree';
 import {
+  AUTO_SELECT_TAG,
   type RequiredTorrentInfo,
   TorrentContentPriority,
   type TorrentFilter,
   defaultMainData,
-  getInfoHash,
   getInfoHashes,
   matchTorrent,
   mergeMainData,
@@ -106,7 +106,7 @@ function App() {
   const [smallFileThreshold] = useStore<number>('smallFileThreshold', 200 * 1024 * 1024);
   const [watchClipboard] = useStore<boolean>('watchClipboard', false);
 
-  const metas = useRef<RequiredTorrentInfo[]>([]);
+  const autoSelecting = useRef(new Set<string>());
   const torrents = Object.values(mainData.torrents);
   const currentTorrent = torrents.find((t) => t.infohash_v1 === currentHash);
   const refreshInterval = mainData.server_state.refresh_interval;
@@ -149,13 +149,7 @@ function App() {
         label: 'Delete',
         icon: PrimeIcons.TRASH,
         disabled: selected.length === 0,
-        command: () => {
-          for (const sel of selected) {
-            remove(metas.current, sel, getInfoHash);
-          }
-
-          commands.delete(getInfoHashes(selected));
-        },
+        command: () => commands.delete(getInfoHashes(selected)),
       },
       { label: 'Settings', icon: PrimeIcons.COG, command: () => setShowSettings(true) },
       { label: 'Info', icon: PrimeIcons.INFO_CIRCLE, command: () => setShowInfo(true) },
@@ -250,13 +244,30 @@ function App() {
     const hashes = getInfoHashes(ts);
     setSelected((old) => old.filter((item) => hashes.includes(item.infohash_v1)));
 
-    const newMetas = ts.filter((item) => item.state === 'metaDL');
-    const noLongers = diff(metas.current, newMetas, getInfoHash);
-    const rest = diff(metas.current, noLongers, getInfoHash);
-    metas.current = unique([...rest, ...newMetas], getInfoHash);
+    // 待选文件：带标记且已有元数据的任务
+    const pendings = ts.filter(
+      (t) =>
+        t.total_size > 0 &&
+        !['metaDL', 'error', 'missingFiles'].includes(t.state) &&
+        t.tags.split(',').some((tag) => tag.trim() === AUTO_SELECT_TAG) &&
+        !autoSelecting.current.has(t.infohash_v1),
+    );
 
-    if (noLongers.length > 0) {
-      Promise.all(noLongers.map((m) => autoSelect(m.infohash_v1))).catch(() => {});
+    for (const t of pendings) {
+      const hash = t.infohash_v1;
+      autoSelecting.current.add(hash);
+
+      (async () => {
+        await autoSelect(hash);
+
+        if (t.state === 'stoppedDL') {
+          await commands.start([hash]);
+        }
+
+        await commands.removeAutoSelectTag([hash]);
+      })()
+        .catch((e) => error(`Failed to auto select ${hash}: ${e}`))
+        .finally(() => autoSelecting.current.delete(hash));
     }
   }, [mainData.torrents, autoSelect]);
 
@@ -414,6 +425,7 @@ function App() {
         onAutoSelect={async () => {
           if (commands) {
             const content = await autoSelect(currentHash);
+            await commands.removeAutoSelectTag([currentHash]);
 
             const { nodes, selected, expanded } = makeTree(content);
             setNodes(nodes);

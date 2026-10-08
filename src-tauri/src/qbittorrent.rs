@@ -290,6 +290,9 @@ impl QBittorrentStateInner {
 
 pub type QBittorrentState = Mutex<QBittorrentStateInner>;
 
+/// 待选文件任务的标记
+const AUTO_SELECT_TAG: &str = "qbt:auto-select";
+
 /// 设置 URL
 #[tauri::command]
 #[specta::specta]
@@ -358,7 +361,12 @@ pub async fn add_urls(state: State<'_, QBittorrentState>, urls: String) -> Resul
     .post(
       "torrents",
       "add",
-      &[("urls", urls.as_str()), ("root_folder", "true")],
+      &[
+        ("urls", urls.as_str()),
+        ("stopCondition", "MetadataReceived"),
+        ("tags", AUTO_SELECT_TAG),
+        ("contentLayout", "Subfolder"),
+      ],
     )
     .await?;
   Ok(())
@@ -369,8 +377,9 @@ pub async fn add_urls(state: State<'_, QBittorrentState>, urls: String) -> Resul
 #[specta::specta]
 pub async fn add_files(state: State<'_, QBittorrentState>, paths: Vec<String>) -> Result<()> {
   let mut form = multipart::Form::new()
-    .text("paused", "true")
-    .text("root_folder", "true");
+    .text("stopped", "true")
+    .text("tags", AUTO_SELECT_TAG)
+    .text("contentLayout", "Subfolder");
 
   for path in paths {
     form = form.file("torrents", path).await.into_result()?;
@@ -485,6 +494,27 @@ pub async fn set_file_priority(
         ("hash", hash.as_str()),
         ("id", id.as_str()),
         ("priority", priority.to_string().as_str()),
+      ],
+    )
+    .await?;
+  Ok(())
+}
+
+/// 移除待选文件标记
+#[tauri::command]
+#[specta::specta]
+pub async fn remove_auto_select_tag(
+  state: State<'_, QBittorrentState>,
+  hashes: Vec<String>,
+) -> Result<()> {
+  let state = state.lock().await;
+  state
+    .post(
+      "torrents",
+      "removeTags",
+      &[
+        ("hashes", hashes.join("|").as_str()),
+        ("tags", AUTO_SELECT_TAG),
       ],
     )
     .await?;

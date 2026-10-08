@@ -104,6 +104,12 @@ async start(hashes: string[]) : Promise<null> {
  */
 async stop(hashes: string[]) : Promise<null> {
     return await TAURI_INVOKE("stop", { hashes });
+},
+/**
+ * 移除待选文件标记
+ */
+async removeAutoSelectTag(hashes: string[]) : Promise<null> {
+    return await TAURI_INVOKE("remove_auto_select_tag", { hashes });
 }
 }
 

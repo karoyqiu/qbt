@@ -15,7 +15,7 @@ use tauri_specta::{Builder, ErrorHandlingMode, collect_commands};
 
 use qbittorrent::{
   QBittorrentState, add_files, add_urls, delete, get_main_data, get_torrent_contents, initialize,
-  recheck, rename, set_file_priority, start, stop,
+  recheck, remove_auto_select_tag, rename, set_file_priority, start, stop,
 };
 
 fn main() {
@@ -34,6 +34,7 @@ fn main() {
       initialize,
       mark_as_downloaded,
       recheck,
+      remove_auto_select_tag,
       rename,
       rescrape,
       set_file_priority,
